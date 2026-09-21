@@ -1,4 +1,4 @@
-ot3_necropolis_ffa_epic_only
+ot3_necropolis_ffa_epic_only_single_draft
 {
 	material materials/overviews/ot3_necropolis_ffa.vmat
 	pos_x -5469

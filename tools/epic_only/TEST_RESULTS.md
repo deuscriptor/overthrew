@@ -114,3 +114,14 @@ This was a one-player local smoke test, not an eight-player playtest. Existing
 addon asset/localization warnings remain. A test-harness shop-enumeration
 assertion was corrected because Lua LoadKeyValues loses repeated shop `item`
 keys; the final check exercises actual items and inventory filtering instead.
+
+## Minimap correction
+
+User screenshots exposed missing minimap terrain and incorrect camera projection
+on Epic Only Single Draft. Both Single Draft variants lacked their map-named
+`resource/overviews/*.txt` files; the first Epic Only copy already had one.
+Added both files with the original FFA material, position and scale, and made
+the map builder generate/verify overviews. The regression runner checks every
+registered FFA variant's overview and the referenced compiled material.
+Prior in-engine smoke checks did not visually inspect the minimap. The fix
+requires a map reload; a running user game was not interrupted to test it.

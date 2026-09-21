@@ -105,6 +105,11 @@ The builder creates `maps/ot3_necropolis_ffa_epic_only.vpk` from the existing
 `maps/ot3_necropolis_ffa.vpk`. The editable Necropolis map source is not present
 in this checkout. This is a package alias copy, not a Hammer rebuild.
 
+Each variant also needs `resource/overviews/<map_name>.txt` outside its VPK.
+The builder writes and verifies this file, retaining the original Necropolis
+terrain material and minimap position/scale. Include these overview files when
+publishing. Missing them causes absent minimap terrain and incorrect projection.
+
 The output keeps every original internal path and adds a matching path under
 the new map name. Geometry, entities, navigation and world data remain unchanged.
 The new root `.vmap_c` and three `.vrman_c` manifests register both namespaces,

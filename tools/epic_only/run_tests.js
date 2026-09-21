@@ -6,6 +6,14 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '../..');
 const read = name => fs.readFileSync(path.join(root, name), 'utf8');
+const baseOverview = read('resource/overviews/ot3_necropolis_ffa.txt');
+const registeredMaps = [...read('addoninfo.txt').matchAll(/"(ot3_necropolis_ffa_[^"]+)"/g)].map(match => match[1]);
+for (const map of new Set(registeredMaps)) {
+  assert.equal(read(`resource/overviews/${map}.txt`), map + baseOverview.slice('ot3_necropolis_ffa'.length), `${map} minimap terrain and projection`);
+}
+const overviewMaterial = baseOverview.match(/material\s+(\S+)/)[1];
+assert.ok(fs.existsSync(path.join(root, overviewMaterial + '_c')), 'Minimap material exists');
+console.log('PASS all registered FFA variants include the original minimap material and coordinate calibration');
 const original = read('scripts/npc/items/orbs.txt');
 const variant = read('scripts/npc/items/orbs_epic_only.txt');
 const shop = read('scripts/shops/ot3_necropolis_ffa_epic_only_shops.txt');
