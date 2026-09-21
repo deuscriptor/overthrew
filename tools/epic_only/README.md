@@ -1,6 +1,6 @@
 # Epic-only FFA
 
-`ot3_necropolis_ffa_epic_only` is a separately selectable copy of Necropolis FFA.
+`ot3_ffa_epic` is a separately selectable copy of Necropolis FFA.
 The English label is `Ffa Epic Only`; existing UI styles apply their usual casing.
 All original orb-producing events grant epic rewards, including passive/kill
 meters, hero-pick bonuses, captured drops, overthrow bursts, shops and gifts.
@@ -15,7 +15,7 @@ The original map remains registered. Gameplay and UI inherit its FFA settings
 without replacing the new map identity. No public leaderboard entry or new
 backend integration is added. Existing private/local lobby fallbacks still apply.
 
-`ot3_necropolis_ffa_epic_only_single_draft` is an additional private-play copy,
+`ot3_ffa_epic_draft` is an additional private-play copy,
 displayed as `Ffa Epic Only Single Draft`. It retains all Epic Only rules,
 including 30 reroll points at 1 per reroll. Banning is disabled. Each player
 receives one Strength, Agility, Intelligence and Universal hero, drawn from
@@ -28,17 +28,17 @@ and the supporter pick-delay overlay is bypassed on this variant.
 Launch it with:
 
 ```text
-dota_launch_custom_game overthrew ot3_necropolis_ffa_epic_only_single_draft
+dota_launch_custom_game overthrew ot3_ffa_epic_draft
 ```
 
-`ot3_necropolis_ffa_single_draft` / `Ffa Single Draft` provides the same
+`ot3_ffa_draft` / `Ffa Single Draft` provides the same
 four-choice, no-ban draft with standard FFA orb rules. Common, rare and epic
 rewards, timed epic events, shop items and rarity-dependent reroll costs
 (1 / 2 / 4, with the existing 30-point allowance) match the original FFA map.
 Both Epic Only variants remain available separately.
 
 ```text
-dota_launch_custom_game overthrew ot3_necropolis_ffa_single_draft
+dota_launch_custom_game overthrew ot3_ffa_draft
 ```
 
 `script_reload_code single_draft_smoke` checks offers and any selected hero.
@@ -53,7 +53,7 @@ Launch from the Dota console using the standard
 [addon launch command](https://developer.valvesoftware.com/wiki/Dota_2_Workshop_Tools/Addon_Overview/Playing_Addons):
 
 ```text
-dota_launch_custom_game overthrew ot3_necropolis_ffa_epic_only
+dota_launch_custom_game overthrew ot3_ffa_epic
 ```
 
 In a disposable Tools-mode session, after addon initialization, run
@@ -88,10 +88,10 @@ Run from PowerShell:
 ```powershell
 & ./tools/epic_only/Build-Map.ps1
 & ./tools/epic_only/Build-Map.ps1 -VerifyOnly
-& ./tools/epic_only/Build-Map.ps1 -TargetMap ot3_necropolis_ffa_epic_only_single_draft
-& ./tools/epic_only/Build-Map.ps1 -TargetMap ot3_necropolis_ffa_epic_only_single_draft -VerifyOnly
-& ./tools/epic_only/Build-Map.ps1 -TargetMap ot3_necropolis_ffa_single_draft
-& ./tools/epic_only/Build-Map.ps1 -TargetMap ot3_necropolis_ffa_single_draft -VerifyOnly
+& ./tools/epic_only/Build-Map.ps1 -TargetMap ot3_ffa_epic_draft
+& ./tools/epic_only/Build-Map.ps1 -TargetMap ot3_ffa_epic_draft -VerifyOnly
+& ./tools/epic_only/Build-Map.ps1 -TargetMap ot3_ffa_draft
+& ./tools/epic_only/Build-Map.ps1 -TargetMap ot3_ffa_draft -VerifyOnly
 ```
 
 If local PowerShell execution policy disables scripts, use a process-local
@@ -101,7 +101,7 @@ invocation (this does not change the machine's policy):
 powershell -NoProfile -ExecutionPolicy Bypass -File ./tools/epic_only/Build-Map.ps1 -VerifyOnly
 ```
 
-The builder creates `maps/ot3_necropolis_ffa_epic_only.vpk` from the existing
+The builder creates `maps/ot3_ffa_epic.vpk` from the existing
 `maps/ot3_necropolis_ffa.vpk`. The editable Necropolis map source is not present
 in this checkout. This is a package alias copy, not a Hammer rebuild.
 
@@ -138,6 +138,6 @@ source: 27C8477F5609286A9BE4453C490687F83B7BCF804D18B778697A0CE21E53B9A2
 copy:   907E9809DCE86DD17797DF1179BB7A241E1596582C76D811AC88B07C09306D45
 ```
 
-After building, launch the addon with `ot3_necropolis_ffa_epic_only` and verify
+After building, launch the addon with `ot3_ffa_epic` and verify
 the map loads, pathing/minimap work, and Lua reports the new map name. Also load
 `ot3_necropolis_ffa` separately to verify the existing map still works.

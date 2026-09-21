@@ -16,7 +16,7 @@ const blocks = ['common', 'rare', 'epic'].map(rarity => {
 write('scripts/npc/items/orbs_epic_only.txt', '"DOTAAbilities"\r\n{\r\n' + blocks.join('\r\n\r\n') + '\r\n}\r\n');
 const shop = read('scripts/shops/ot3_necropolis_ffa_shops.txt')
   .replace(/item_(common|rare|epic)_orb_ffa/g, '$&_epic_only');
-for (const suffix of ['epic_only', 'epic_only_single_draft'])
-  write(`scripts/shops/ot3_necropolis_ffa_${suffix}_shops.txt`, shop);
-write('scripts/shops/ot3_necropolis_ffa_single_draft_shops.txt', read('scripts/shops/ot3_necropolis_ffa_shops.txt'));
+for (const map of ['ot3_ffa_epic', 'ot3_ffa_epic_draft'])
+  write(`scripts/shops/${map}_shops.txt`, shop);
+write('scripts/shops/ot3_ffa_draft_shops.txt', read('scripts/shops/ot3_necropolis_ffa_shops.txt'));
 console.log('Generated epic-only items and shop; retained original FFA prices.');

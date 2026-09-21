@@ -296,9 +296,9 @@ UPGRADE_RARITY_COMMON = 1
 UPGRADE_RARITY_RARE = 2
 UPGRADE_RARITY_EPIC = 4
 
-EPIC_ONLY_MAP_NAME = "ot3_necropolis_ffa_epic_only"
-EPIC_ONLY_SINGLE_DRAFT_MAP_NAME = "ot3_necropolis_ffa_epic_only_single_draft"
-SINGLE_DRAFT_MAP_NAME = "ot3_necropolis_ffa_single_draft"
+EPIC_ONLY_MAP_NAME = "ot3_ffa_epic"
+EPIC_ONLY_SINGLE_DRAFT_MAP_NAME = "ot3_ffa_epic_draft"
+SINGLE_DRAFT_MAP_NAME = "ot3_ffa_draft"
 
 -- Keep the variant independent while inheriting the complete FFA rule set.
 local function copy_map_settings(value)

@@ -1,7 +1,7 @@
 param(
     [switch]$VerifyOnly,
-    [ValidateSet('ot3_necropolis_ffa_epic_only', 'ot3_necropolis_ffa_epic_only_single_draft', 'ot3_necropolis_ffa_single_draft')]
-    [string]$TargetMap = 'ot3_necropolis_ffa_epic_only'
+    [ValidateSet('ot3_ffa_epic', 'ot3_ffa_epic_draft', 'ot3_ffa_draft')]
+    [string]$TargetMap = 'ot3_ffa_epic'
 )
 
 $ErrorActionPreference = 'Stop'

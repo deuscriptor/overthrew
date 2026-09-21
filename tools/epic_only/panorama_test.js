@@ -8,15 +8,15 @@ const scripts = path.join(sources, "panorama/layout/custom_game");
 
 const utils = fs.readFileSync(path.join(scripts, "scripts/utils.js"), "utf8");
 const declarations = utils.slice(0, utils.indexOf("Object.defineProperties"));
-for (const map of ["ot3_necropolis_ffa", "ot3_necropolis_ffa_epic_only", "ot3_necropolis_ffa_epic_only_single_draft", "ot3_necropolis_ffa_single_draft", "ot3_gardens_duo", "ot3_demo"]) {
+for (const map of ["ot3_necropolis_ffa", "ot3_ffa_epic", "ot3_ffa_epic_draft", "ot3_ffa_draft", "ot3_gardens_duo", "ot3_demo"]) {
 	const context = vm.createContext({ Game: {
 		GetLocalPlayerID: () => 0,
 		GetLocalPlayerInfo: () => ({ player_steamid: "0" }),
 		GetMapInfo: () => ({ map_display_name: map }),
 	} });
 	vm.runInContext(declarations, context);
-	const epic = map === "ot3_necropolis_ffa_epic_only" || map === "ot3_necropolis_ffa_epic_only_single_draft";
-	const singleDraft = map === "ot3_necropolis_ffa_epic_only_single_draft" || map === "ot3_necropolis_ffa_single_draft";
+	const epic = map === "ot3_ffa_epic" || map === "ot3_ffa_epic_draft";
+	const singleDraft = map === "ot3_ffa_epic_draft" || map === "ot3_ffa_draft";
 	assert.equal(vm.runInContext("IS_SINGLE_DRAFT_MAP", context), singleDraft);
 	assert.equal(vm.runInContext("MAP_NAME", context), map);
 	assert.equal(vm.runInContext("IS_EPIC_ONLY_MAP", context), epic);

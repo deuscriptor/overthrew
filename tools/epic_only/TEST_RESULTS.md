@@ -1,5 +1,15 @@
 # Validation — 2026-09-21
 
+## Current map names
+
+The variants have been renamed to `ot3_ffa_epic`, `ot3_ffa_epic_draft` and
+`ot3_ffa_draft`. Earlier runtime markers below retain the names used when
+those tests actually ran. The renamed packages were rebuilt with new internal
+resource namespaces, and registration, shops, overview calibration, localization
+keys and compiled UI were updated. Shop eligibility now uses the inherited
+FFA map name. All Lua/UI regression checks and VPK resource/checksum validation
+pass under the new names. The renamed packages have not been relaunched in Dota.
+
 Passed automated checks:
 
 - Eleven regression cases execute production Lua with mocked Dota services: map
