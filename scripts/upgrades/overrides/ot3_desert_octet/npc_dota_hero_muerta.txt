@@ -1,0 +1,19 @@
+"npc_dota_hero_muerta"
+{
+	"muerta_the_calling_lua"
+	{
+		"damage"
+		{
+			"value" "10"
+			"operator" "OP_ADD"
+		}
+		"aura_movespeed_slow"
+		{
+			"value" "-2.5"
+			"operator" "OP_MULTIPLY"
+			
+			"multiplicative_target" "-60"
+			"multiplicative_base_value" "-20"
+		}
+	}
+}

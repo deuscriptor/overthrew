@@ -1,0 +1,23 @@
+"npc_dota_hero_tidehunter"
+{
+	"tidehunter_anchor_smash"
+	{
+		"attack_damage"
+		{
+			"value" "30"
+			"operator" "OP_ADD"
+		}
+		"damage_reduction"
+		{
+			"value" "-5"
+			"operator" "OP_ADD"
+			"max_count" "8"
+		}
+		"additional_range"
+		{
+			"value" "35"
+			"operator" "OP_ADD"
+			"max_count" "10"
+		}
+	}
+}

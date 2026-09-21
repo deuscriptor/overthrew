@@ -1,0 +1,24 @@
+"npc_dota_hero_meepo"
+{
+	"meepo_poof"
+	{
+		"cooldown_and_manacost"
+		{
+			"value" "8"
+			"operator" "OP_MULTIPLY"
+		}
+		"poof_damage"
+		{
+			"value" "20"
+			"operator" "OP_ADD"
+		}
+	}
+	"meepo_ransack"
+	{
+		"health_steal_heroes"
+		{
+			"value" "5"
+			"operator" "OP_ADD"
+		}
+	}
+}

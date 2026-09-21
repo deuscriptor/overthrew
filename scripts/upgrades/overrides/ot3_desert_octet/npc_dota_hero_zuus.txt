@@ -1,0 +1,16 @@
+"npc_dota_hero_zuus"
+{
+	"zuus_thundergods_wrath"
+	{
+		"cooldown_and_manacost"
+		{
+			"value" "4"
+			"operator" "OP_MULTIPLY"
+		}
+		"damage"
+		{
+			"value" "20"
+			"operator" "OP_ADD"
+		}
+	}
+}

@@ -1,0 +1,26 @@
+"npc_dota_hero_life_stealer"
+{
+	"life_stealer_rage"
+	{
+		"cooldown_and_manacost"
+		{
+			"value" "4"
+			"operator" "OP_MULTIPLY"
+			"max_count" "6"
+		}
+	}
+	"life_stealer_infest"
+	{
+		"cooldown_and_manacost"
+		{
+			"value" "7"
+			"operator" "OP_MULTIPLY"
+			"max_count" "10"
+		}
+		"damage"
+		{
+			"value" "70"
+			"operator" "OP_ADD"
+		}
+	}
+}

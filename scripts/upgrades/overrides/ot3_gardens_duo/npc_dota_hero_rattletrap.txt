@@ -1,0 +1,11 @@
+"npc_dota_hero_rattletrap"
+{
+	"rattletrap_rocket_flare"
+	{
+		"damage"
+		{
+			"value" "25"
+			"operator" "OP_ADD"
+		}
+	}
+}

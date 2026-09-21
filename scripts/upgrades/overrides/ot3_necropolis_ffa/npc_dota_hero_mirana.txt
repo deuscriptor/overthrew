@@ -1,0 +1,35 @@
+"npc_dota_hero_mirana"
+{
+	"mirana_starfall"
+	{
+		"starfall_radius"
+		{
+			"value" "35"
+			"operator" "OP_ADD"
+			"max_count" "10"
+			"linked_special_values"
+			{
+				"starfall_secondary_radius" "35"
+			}
+			"linked_abilities"
+			{
+				"mirana_arrow"
+				{
+					"scepter_radius" "35"
+				}
+			}
+		}
+	}
+	"mirana_arrow"
+	{
+		"arrow_bonus_damage"
+		{
+			"value" "90"
+			"operator" "OP_ADD"
+			"linked_special_values"
+			{
+				"scepter_starstorm_target_pct" "5"
+			}
+		}
+	}
+}

@@ -1,0 +1,22 @@
+"npc_dota_hero_meepo"
+{
+	"meepo_poof"
+	{
+		"cooldown_and_manacost"
+		{
+			"value" "8"
+			"operator" "OP_MULTIPLY"
+		}
+		"radius"
+		{
+			"value" "30"
+			"operator" "OP_ADD"
+			"max_count" "10"
+		}
+		"poof_damage"
+		{
+			"value" "20"
+			"operator" "OP_ADD"
+		}
+	}
+}

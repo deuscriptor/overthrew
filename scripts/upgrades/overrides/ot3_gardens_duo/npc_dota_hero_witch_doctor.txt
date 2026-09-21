@@ -1,0 +1,31 @@
+"npc_dota_hero_witch_doctor"
+{
+	"witch_doctor_paralyzing_cask"
+	{
+		"base_damage"
+		{
+			"value" "35"
+			"operator" "OP_ADD"
+		}
+	}
+	"witch_doctor_maledict"
+	{
+		"cooldown_and_manacost"
+		{
+			"value" "6"
+			"operator" "OP_MULTIPLY"
+		}
+		"radius"
+		{
+			"value" "20"
+			"operator" "OP_ADD"
+			"max_count" "10"
+		}
+		"bonus_damage"
+		{
+			"value" "7"
+			"operator" "OP_ADD"
+			"max_count" "10"
+		}
+	}
+}

@@ -1,0 +1,38 @@
+"npc_dota_hero_abaddon"
+{
+	"abaddon_death_coil"
+	{
+		"damage_heal"
+		{
+			"value" "45"
+			"operator" "OP_ADD"
+		}
+	}
+	"abaddon_aphotic_shield"
+	{
+		"cooldown_and_manacost"
+		{
+			"value" "7"
+			"operator" "OP_MULTIPLY"
+		}
+		"radius"
+		{
+			"value" "35"
+			"operator" "OP_ADD"
+			"max_count" "10"
+		}
+	}
+	"abaddon_frostmourne"
+	{
+		"curse_attack_speed"
+		{
+			"value" "25"
+			"operator" "OP_ADD"
+		}
+		"curse_dps"
+		{
+			"value" "25"
+			"operator" "OP_ADD"
+		}
+	}
+}

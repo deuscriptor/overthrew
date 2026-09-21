@@ -1,0 +1,12 @@
+"npc_dota_hero_axe"
+{
+	"axe_one_man_army"
+	{
+		"radius"
+		{
+			"value" "-175"
+			"operator" "OP_ADD"
+			"max_count" "0"
+		}
+	}
+}

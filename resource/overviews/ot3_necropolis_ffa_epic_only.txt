@@ -1,0 +1,7 @@
+ot3_necropolis_ffa_epic_only
+{
+	material materials/overviews/ot3_necropolis_ffa.vmat
+	pos_x -5469
+	pos_y 5814
+	scale 11.000
+}

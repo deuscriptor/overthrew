@@ -1,0 +1,16 @@
+"npc_dota_hero_abaddon"
+{
+	"abaddon_withering_mist"
+	{
+		"heal_reduction_pct"
+		{
+			"value" "5"
+			"operator" "OP_ADD"
+			"max_count" "6"
+			"linked_special_values"
+			{
+				"hp_threshold_pct" "5"
+			}
+		}
+	}
+}

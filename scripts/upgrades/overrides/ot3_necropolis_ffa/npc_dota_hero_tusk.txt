@@ -1,0 +1,26 @@
+"npc_dota_hero_tusk"
+{
+	"tusk_tag_team"
+	{
+		"bonus_damage"
+		{
+			"value" "10"
+			"operator" "OP_ADD"
+		}
+	}
+	"tusk_walrus_punch"
+	{
+		"crit_multiplier"
+		{
+			"value" "15"
+			"operator" "OP_ADD"
+			"linked_abilities"
+			{
+				"tusk_walrus_kick"
+				{
+					"damage" "30"
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,31 @@
+"npc_dota_hero_brewmaster"
+{
+	"brewmaster_drunken_brawler"
+	{
+		"crit_chance"
+		{
+			"value" "2"
+			"operator" "OP_ADD"
+			"linked_special_values"
+			{
+				"crit_multiplier" "10"
+				"attack_speed" "10"
+			}
+			"linked_abilities"
+			{
+				"brewmaster_fire_permanent_immolation"
+				{
+					"damage" "25"
+					"radius"
+					{
+						"value" "45"
+						"operator" "OP_MULTIPLY"
+
+						"multiplicative_target"			"620"
+						"multiplicative_base_value"		"220"
+					}
+				}
+			}
+		}
+	}
+}
