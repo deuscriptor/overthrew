@@ -1,10 +1,10 @@
 const LOCAL_PLAYER_ID = Game.GetLocalPlayerID();
 const LOCAL_STEAM_ID = Game.GetLocalPlayerInfo() ? Game.GetLocalPlayerInfo().player_steamid : "0";
 const MAP_NAME = Game.GetMapInfo().map_display_name;
-const IS_SINGLE_DRAFT_MAP = MAP_NAME === "ot3_necropolis_ffa_epic_only_single_draft";
-const IS_EPIC_ONLY_MAP = MAP_NAME === "ot3_necropolis_ffa_epic_only" || IS_SINGLE_DRAFT_MAP;
+const IS_SINGLE_DRAFT_MAP = MAP_NAME === "ot3_necropolis_ffa_epic_only_single_draft" || MAP_NAME === "ot3_necropolis_ffa_single_draft";
+const IS_EPIC_ONLY_MAP = MAP_NAME === "ot3_necropolis_ffa_epic_only" || MAP_NAME === "ot3_necropolis_ffa_epic_only_single_draft";
 // Keep the actual map identity for labels; inherit FFA layout and configuration.
-const MAP_BASE_NAME = IS_EPIC_ONLY_MAP ? "ot3_necropolis_ffa" : MAP_NAME;
+const MAP_BASE_NAME = IS_EPIC_ONLY_MAP || IS_SINGLE_DRAFT_MAP ? "ot3_necropolis_ffa" : MAP_NAME;
 const B_LOCAL_LOBBY = true;
 
 Object.defineProperties(Array.prototype, {

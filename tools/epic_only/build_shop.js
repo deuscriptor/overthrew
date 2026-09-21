@@ -18,4 +18,5 @@ const shop = read('scripts/shops/ot3_necropolis_ffa_shops.txt')
   .replace(/item_(common|rare|epic)_orb_ffa/g, '$&_epic_only');
 for (const suffix of ['epic_only', 'epic_only_single_draft'])
   write(`scripts/shops/ot3_necropolis_ffa_${suffix}_shops.txt`, shop);
+write('scripts/shops/ot3_necropolis_ffa_single_draft_shops.txt', read('scripts/shops/ot3_necropolis_ffa_shops.txt'));
 console.log('Generated epic-only items and shop; retained original FFA prices.');

@@ -23,6 +23,13 @@ FFA layout, art, and map-specific UI constants. The private map is not added to
 the public leaderboard/profile map list. The loading screen uses the same
 mapping locally because it does not load the shared HUD utilities.
 
+Both Epic Only variants and standard Single Draft use that FFA mapping.
+`IS_EPIC_ONLY_MAP` excludes standard Single Draft, which keeps normal orb
+visuals, shop items and rarity-dependent reroll prices. On both draft copies,
+`IS_SINGLE_DRAFT_MAP` hides smart random and bypasses the supporter pick delay.
+The native hero picker receives its four legal choices from server-side player
+availability; normal random remains available and uses the restricted pool.
+
 Progress bars keep source channels 1 (time) and 2 (kills). Their reward visuals
 and tooltips use `reward_rarity`, with an epic fallback during initialization on
 the variant. Gift descriptions and the hero bonus icon also show epic rewards.

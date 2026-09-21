@@ -10,6 +10,7 @@ const original = read('scripts/npc/items/orbs.txt');
 const variant = read('scripts/npc/items/orbs_epic_only.txt');
 const shop = read('scripts/shops/ot3_necropolis_ffa_epic_only_shops.txt');
 assert.equal(read('scripts/shops/ot3_necropolis_ffa_epic_only_single_draft_shops.txt'), shop);
+assert.equal(read('scripts/shops/ot3_necropolis_ffa_single_draft_shops.txt'), read('scripts/shops/ot3_necropolis_ffa_shops.txt'));
 
 for (const [rarity, price] of [['common', 2000], ['rare', 4000], ['epic', 8000]]) {
   const name = `item_${rarity}_orb_ffa`;

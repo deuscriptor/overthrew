@@ -298,6 +298,7 @@ UPGRADE_RARITY_EPIC = 4
 
 EPIC_ONLY_MAP_NAME = "ot3_necropolis_ffa_epic_only"
 EPIC_ONLY_SINGLE_DRAFT_MAP_NAME = "ot3_necropolis_ffa_epic_only_single_draft"
+SINGLE_DRAFT_MAP_NAME = "ot3_necropolis_ffa_single_draft"
 
 -- Keep the variant independent while inheriting the complete FFA rule set.
 local function copy_map_settings(value)
@@ -312,6 +313,9 @@ TEAMS_LAYOUTS[EPIC_ONLY_MAP_NAME].base_map = "ot3_necropolis_ffa"
 TEAMS_LAYOUTS[EPIC_ONLY_MAP_NAME].orb_rarity_override = UPGRADE_RARITY_EPIC
 TEAMS_LAYOUTS[EPIC_ONLY_SINGLE_DRAFT_MAP_NAME] = copy_map_settings(TEAMS_LAYOUTS[EPIC_ONLY_MAP_NAME])
 TEAMS_LAYOUTS[EPIC_ONLY_SINGLE_DRAFT_MAP_NAME].single_draft = true
+TEAMS_LAYOUTS[SINGLE_DRAFT_MAP_NAME] = copy_map_settings(TEAMS_LAYOUTS.ot3_necropolis_ffa)
+TEAMS_LAYOUTS[SINGLE_DRAFT_MAP_NAME].base_map = "ot3_necropolis_ffa"
+TEAMS_LAYOUTS[SINGLE_DRAFT_MAP_NAME].single_draft = true
 
 function IsEpicOnlyMap()
 	local layout = TEAMS_LAYOUTS[GetMapName()]

@@ -5,6 +5,7 @@
 		"ot3_necropolis_ffa",
 		"ot3_necropolis_ffa_epic_only",
 		"ot3_necropolis_ffa_epic_only_single_draft",
+		"ot3_necropolis_ffa_single_draft",
 		"ot3_gardens_duo",
 		"ot3_jungle_quintet",
 		"ot3_desert_octet",
@@ -28,6 +29,10 @@
 		{
 			MaxPlayers = 8
 			map = "ot3_necropolis_ffa_epic_only_single_draft"
+		},
+		{
+			MaxPlayers = 8
+			map = "ot3_necropolis_ffa_single_draft"
 		},
 		{
 			MaxPlayers = 10

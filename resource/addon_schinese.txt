@@ -2934,6 +2934,7 @@
 		"ot3_necropolis_ffa"							"FFA"
 		"ot3_necropolis_ffa_epic_only" "FFA EPIC ONLY"
 		"ot3_necropolis_ffa_epic_only_single_draft" "FFA EPIC ONLY SINGLE DRAFT"
+		"ot3_necropolis_ffa_single_draft" "FFA SINGLE DRAFT"
 		"reroll_tooltip_epic_only" "每次重选升级仅消耗1次重选机会，与宝珠稀有度无关。"
 		"orbs_hint_common_epic_only" "朝着团队的下一个史诗宝珠前进。将随着时间推移逐步填充。"
 		"orbs_hint_rare_epic_only" "朝着团队的下一个史诗宝珠前进。将随着击杀敌人逐步填充。"

@@ -3198,6 +3198,7 @@ If you do not send us your steam URL or steamID we wont be adle to grant you ben
 		"ot3_necropolis_ffa"	"Ffa"
 		"ot3_necropolis_ffa_epic_only" "Ffa Epic Only"
 		"ot3_necropolis_ffa_epic_only_single_draft" "Ffa Epic Only Single Draft"
+		"ot3_necropolis_ffa_single_draft" "Ffa Single Draft"
 		"reroll_tooltip_epic_only" "Each upgrade reroll costs 1 reroll, regardless of orb rarity."
 		"orbs_hint_common_epic_only" "Progress towards your team's next epic orb. Fills up gradually over time."
 		"orbs_hint_rare_epic_only" "Progress towards your team's next epic orb. Fills up by killing enemies."

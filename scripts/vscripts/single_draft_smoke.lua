@@ -1,6 +1,9 @@
 -- Disposable Tools session: script_reload_code single_draft_smoke
 assert(IsInToolsMode() and IsSingleDraftMap(), "Load the Single Draft map in Tools mode")
-assert(IsEpicOnlyMap() and Upgrades:GetRerollPrice(4) == 1)
+for _, rarity in ipairs({1, 2, 4}) do
+	assert(ResolveOrbRarity(rarity) == (IsEpicOnlyMap() and 4 or rarity))
+	assert(Upgrades:GetRerollPrice(rarity) == (IsEpicOnlyMap() and 1 or rarity))
+end
 assert(not GameRules:IsInBanPhase(), "Unexpected ban phase")
 local seen, count = {}, 0
 for player_id, offers in pairs(SingleDraft.offers) do

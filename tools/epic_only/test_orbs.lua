@@ -171,7 +171,7 @@ test("variant copies FFA settings without sharing mutable nested tables", functi
 end)
 
 test("ordinary maps retain all reward rarities and physical orb visuals", function()
-    for _, map in ipairs({ "ot3_necropolis_ffa", "ot3_gardens_duo", "ot3_jungle_quintet", "ot3_desert_octet", "ot3_demo" }) do
+    for _, map in ipairs({ "ot3_necropolis_ffa", SINGLE_DRAFT_MAP_NAME, "ot3_gardens_duo", "ot3_jungle_quintet", "ot3_desert_octet", "ot3_demo" }) do
         for _, rarity in ipairs({ 1, 2, 4 }) do
             reset(map)
             equal(ResolveOrbRarity(rarity), rarity)
@@ -292,7 +292,7 @@ test("shop rewards keep source prices and announce/account for epic rewards", fu
 end)
 
 test("variant shop items reject normal-map orders and quickbuy, accept variant", function()
-    for _, map in ipairs({ "ot3_necropolis_ffa", EPIC_ONLY_MAP_NAME }) do
+    for _, map in ipairs({ "ot3_necropolis_ffa", SINGLE_DRAFT_MAP_NAME, EPIC_ONLY_MAP_NAME, EPIC_ONLY_SINGLE_DRAFT_MAP_NAME }) do
         reset(map)
         entities[1] = make_item("item_common_orb_ffa_epic_only", 2000)
         entities[2] = heroes[0]
@@ -301,7 +301,7 @@ test("variant shop items reject normal-map orders and quickbuy, accept variant",
             entindex_target = 0, entindex_ability = 0, units = { ["0"] = 2 },
             shop_item_name = entities[1]:GetName(),
         }
-        local expected = map == EPIC_ONLY_MAP_NAME
+        local expected = IsEpicOnlyMap()
         equal(Filters:ExecuteOrderFilter(event), expected, "purchase order eligibility")
         equal(Filters:ItemAddedToInventoryFilter({ item_entindex_const = 1, inventory_parent_entindex_const = 2 }), expected, "quickbuy eligibility")
         equal(queue_count(), expected and 1 or 0)

@@ -2937,6 +2937,7 @@
 		"ot3_necropolis_ffa"							"Ffa"
 		"ot3_necropolis_ffa_epic_only" "Ffa Epic Only"
 		"ot3_necropolis_ffa_epic_only_single_draft" "Ffa Epic Only Single Draft"
+		"ot3_necropolis_ffa_single_draft" "Ffa Single Draft"
 		"reroll_tooltip_epic_only" "Каждая замена выбора улучшений стоит 1 реролл независимо от редкости осколка."
 		"orbs_hint_common_epic_only" "Прогресс получения следующего эпического осколка улучшения. Постепенно заполняется со временем."
 		"orbs_hint_rare_epic_only" "Прогресс получения следующего эпического осколка улучшения. Заполняется путем убийства противников."

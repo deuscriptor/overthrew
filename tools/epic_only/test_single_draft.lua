@@ -47,12 +47,18 @@ end
 GetMapName = function() return EPIC_ONLY_MAP_NAME end
 SingleDraft:Init()
 equal(filtered, false)
-GetMapName = function() return EPIC_ONLY_SINGLE_DRAFT_MAP_NAME end
+for _, draft_map in ipairs({ EPIC_ONLY_SINGLE_DRAFT_MAP_NAME, SINGLE_DRAFT_MAP_NAME }) do
+state = 2
+for _, player in pairs(players) do player.selected = nil; player.randomed = nil end
+GetMapName = function() return draft_map end
 GameLoop.current_layout = TEAMS_LAYOUTS[GetMapName()]
 equal(GetBaseMapName(), "ot3_necropolis_ffa")
-equal(IsEpicOnlyMap(), true)
-equal(Upgrades:GetRerollPrice(4), 1)
-for _, rarity in ipairs({1, 2, 4}) do equal(ResolveOrbRarity(rarity), 4) end
+local epic_only = draft_map == EPIC_ONLY_SINGLE_DRAFT_MAP_NAME
+equal(IsEpicOnlyMap(), epic_only)
+for _, rarity in ipairs({1, 2, 4}) do
+    equal(ResolveOrbRarity(rarity), epic_only and 4 or rarity)
+    equal(Upgrades:GetRerollPrice(rarity), epic_only and 1 or rarity)
+end
 SingleDraft:Init()
 equal(filtered, true)
 equal(bans, 0)
@@ -89,4 +95,5 @@ players[0].selected = nil
 SingleDraft:PickRandomHero(0)
 equal(players[0].selected, nil)
 equal(callback(), nil)
+end
 report("PASS Single Draft: four attributes, 32 distinct offers, native availability, no bans, reconnects, spectators, both random routes, map inheritance\n")

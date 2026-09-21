@@ -31,9 +31,23 @@ Launch it with:
 dota_launch_custom_game overthrew ot3_necropolis_ffa_epic_only_single_draft
 ```
 
+`ot3_necropolis_ffa_single_draft` / `Ffa Single Draft` provides the same
+four-choice, no-ban draft with standard FFA orb rules. Common, rare and epic
+rewards, timed epic events, shop items and rarity-dependent reroll costs
+(1 / 2 / 4, with the existing 30-point allowance) match the original FFA map.
+Both Epic Only variants remain available separately.
+
+```text
+dota_launch_custom_game overthrew ot3_necropolis_ffa_single_draft
+```
+
 `script_reload_code single_draft_smoke` checks offers and any selected hero.
 `script_reload_code single_draft_random_smoke` deliberately chooses a random
 hero from player 0's offers; run it only during a disposable Tools-mode draft.
+After a hero initializes on standard Single Draft, run
+`script_reload_code standard_single_draft_smoke` in a fresh disposable session
+to check real shop-item rewards and reroll spending. It grants three item
+rewards and spends 7 of the starting 30 reroll points.
 
 Launch from the Dota console using the standard
 [addon launch command](https://developer.valvesoftware.com/wiki/Dota_2_Workshop_Tools/Addon_Overview/Playing_Addons):
@@ -76,6 +90,8 @@ Run from PowerShell:
 & ./tools/epic_only/Build-Map.ps1 -VerifyOnly
 & ./tools/epic_only/Build-Map.ps1 -TargetMap ot3_necropolis_ffa_epic_only_single_draft
 & ./tools/epic_only/Build-Map.ps1 -TargetMap ot3_necropolis_ffa_epic_only_single_draft -VerifyOnly
+& ./tools/epic_only/Build-Map.ps1 -TargetMap ot3_necropolis_ffa_single_draft
+& ./tools/epic_only/Build-Map.ps1 -TargetMap ot3_necropolis_ffa_single_draft -VerifyOnly
 ```
 
 If local PowerShell execution policy disables scripts, use a process-local

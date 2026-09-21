@@ -1,6 +1,6 @@
 param(
     [switch]$VerifyOnly,
-    [ValidateSet('ot3_necropolis_ffa_epic_only', 'ot3_necropolis_ffa_epic_only_single_draft')]
+    [ValidateSet('ot3_necropolis_ffa_epic_only', 'ot3_necropolis_ffa_epic_only_single_draft', 'ot3_necropolis_ffa_single_draft')]
     [string]$TargetMap = 'ot3_necropolis_ffa_epic_only'
 )
 
