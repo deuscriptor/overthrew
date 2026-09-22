@@ -16,7 +16,7 @@ function HostOptions:Init()
 	HostOptions.host = nil
 	HostOptions.locked = false
 	if UsesHostRules() then
-		for _, name in ipairs({"single_draft", "epic_orbs"}) do
+		for _, name in ipairs({"single_draft", "epic_orbs", "turbo"}) do
 			HostOptions.available_options[name] = true
 			HostOptions.options[name] = false
 		end
@@ -89,6 +89,7 @@ function HostOptions:PublishRules()
 		host_id = host_id, locked = self.locked and 1 or 0,
 		single_draft = self:GetOption("single_draft") and 1 or 0,
 		epic_orbs = self:GetOption("epic_orbs") and 1 or 0,
+		turbo = self:GetOption("turbo") and 1 or 0,
 	})
 end
 
@@ -109,7 +110,7 @@ function HostOptions:ApplyRules(event)
 	local player = PlayerResource:GetPlayer(id)
 	if not IsValidEntity(player) or not GameRules:PlayerHasCustomGameHostPrivileges(player) then return false end
 	local rules = {}
-	for _, name in ipairs({"single_draft", "epic_orbs"}) do
+	for _, name in ipairs({"single_draft", "epic_orbs", "turbo"}) do
 		local value = event[name]
 		if value ~= 0 and value ~= 1 and value ~= false and value ~= true then return false end
 		rules[name] = value == 1 or value == true

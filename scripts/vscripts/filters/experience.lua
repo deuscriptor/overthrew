@@ -1,8 +1,8 @@
 function Filters:FilterModifyExperience(event)
-	local hero = event.hero_entindex_const and EntIndexToHScript(event.hero_entindex_const)
-
-	if hero and hero.IsTempestDouble and hero:IsTempestDouble() then
-		return false
+	if TurboRewards and TurboRewards.experience then return true end
+	if IsTurboMode() and GameRules:State_Get() >= DOTA_GAMERULES_STATE_PRE_GAME
+		and event.experience and event.experience > 0 then
+		event.experience = event.experience * 2
 	end
 
 	return true

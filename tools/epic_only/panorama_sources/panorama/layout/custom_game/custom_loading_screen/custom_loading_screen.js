@@ -225,9 +225,9 @@ function InitMatchRules() {
 	panel.style.flowChildren = "down";
 	panel.style.horizontalAlign = "center";
 	panel.style.verticalAlign = "top";
-	panel.style.backgroundColor = "#101923";
-	panel.style.padding = "28px 36px 36px";
-	panel.style.border = "1px solid #607988";
+	panel.style.backgroundColor = "gradient(linear, 0% 0%, 100% 100%, from(#172330), to(#0c141e))";
+	panel.style.padding = "24px 30px";
+	panel.style.border = "1px solid #415465";
 	panel.style.zIndex = "100";
 	function label(parent, text) {
 		const p = $.CreatePanel("Label", parent, "");
@@ -237,24 +237,47 @@ function InitMatchRules() {
 		p.style.marginBottom = "4px";
 		return p;
 	}
-	label(panel, "#host_rules_title");
 	const controls = {};
-	["single_draft", "epic_orbs"].forEach(function(name) {
-		const row = $.CreatePanel("ToggleButton", panel, "Rule_" + name);
-		row.style.width = "100%";
-		row.style.marginBottom = "0px";
-		label(row, "#host_rules_" + name);
-		controls[name] = row;
-		row.SetPanelEvent("onactivate", function() {
-			GameEvents.SendToServerEnsured("HostOptions:set_option_state", {name: name, state: row.IsSelected()});
+	const categories = [{ id: "core", options: ["epic_orbs", "turbo", "single_draft"] }];
+	const body = $.CreatePanel("Panel", panel, "MatchRulesCategories");
+	body.style.width = "100%";
+	body.style.height = "fill-parent-flow(1.0)";
+	body.style.flowChildren = "down";
+	body.style.overflow = "squish scroll";
+	categories.forEach(function(category) {
+		const group = $.CreatePanel("Panel", body, "MatchRules_" + category.id);
+		group.style.width = "100%";
+		group.style.flowChildren = "down";
+		group.style.marginBottom = "16px";
+		const heading = label(group, "#host_rules_category_" + category.id);
+		heading.style.color = "#d4bb86";
+		heading.style.fontSize = "20px";
+		heading.style.fontWeight = "semi-bold";
+		heading.style.letterSpacing = "1px";
+		heading.style.marginBottom = "12px";
+		category.options.forEach(function(name) {
+			const row = $.CreatePanel("ToggleButton", group, "Rule_" + name);
+			row.style.width = "100%";
+			row.style.height = "48px";
+			row.style.padding = "10px 14px";
+			row.style.marginBottom = "6px";
+			row.style.backgroundColor = "#1b2b3b";
+			row.style.border = "1px solid #304456";
+			const caption = label(row, "#host_rules_" + name);
+			caption.style.marginBottom = "0px";
+			caption.style.verticalAlign = "center";
+			controls[name] = row;
+			row.SetPanelEvent("onactivate", function() {
+				GameEvents.SendToServerEnsured("HostOptions:set_option_state", {name: name, state: row.IsSelected()});
+			});
 		});
 	});
-	label(panel, "#host_rules_description").style.fontSize = "14px";
-	const status = label(panel, "#host_rules_waiting");
-	status.style.fontSize = "14px";
 	const start = $.CreatePanel("Button", panel, "ApplyMatchRules");
-	start.style.backgroundColor = "#42683c";
-	start.style.padding = "8px 24px";
+	start.style.horizontalAlign = "right";
+	start.style.marginTop = "16px";
+	start.style.backgroundColor = "gradient(linear, 0% 0%, 0% 100%, from(#527647), to(#344e30))";
+	start.style.border = "1px solid #789364";
+	start.style.padding = "10px 26px";
 	label(start, "#host_rules_start").style.marginBottom = "0px";
 	start.SetPanelEvent("onactivate", function() {
 		const event = {};
@@ -270,7 +293,6 @@ function InitMatchRules() {
 		});
 		start.enabled = canEdit;
 		start.visible = canEdit;
-		status.text = $.Localize(rules.locked === 1 ? "#host_rules_locked" : canEdit ? "#host_rules_ready" : "#host_rules_waiting");
 	}
 	CustomNetTables.SubscribeNetTableListener("game_options", function(table, key) { if (key === "match_rules") refresh(); });
 	refresh();

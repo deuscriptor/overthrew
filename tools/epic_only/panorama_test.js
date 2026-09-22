@@ -59,7 +59,7 @@ class Panel {
 	IsSelected() { return !!this.selected; }
 }
 
-for (let draft = 0; draft < 2; draft++) for (let epic = 0; epic < 2; epic++) for (let flat = 0; flat < 2; flat++) {
+for (let draft = 0; draft < 2; draft++) for (let epic = 0; epic < 2; epic++) {
 	let data;
 	let listener;
 	const context = vm.createContext({Game: {
@@ -70,11 +70,11 @@ for (let draft = 0; draft < 2; draft++) for (let epic = 0; epic < 2; epic++) for
 		SubscribeNetTableListener: (table, fn) => {listener = fn;},
 	}});
 	vm.runInContext(declarations, context);
-	data = {single_draft: draft, epic_orbs: epic, flat_rerolls: flat};
+	data = {single_draft: draft, epic_orbs: epic};
 	listener("game_options", "match_rules");
 	assert.equal(vm.runInContext("IS_SINGLE_DRAFT_MAP", context), !!draft);
 	assert.equal(vm.runInContext("IS_EPIC_ONLY_MAP", context), !!epic);
-	assert.equal(vm.runInContext("IS_FLAT_REROLL_MAP", context), !!flat);
+	assert.equal(vm.runInContext("IS_FLAT_REROLL_MAP", context), !!epic);
 }
 
 const loading = fs.readFileSync(path.join(scripts, "custom_loading_screen/custom_loading_screen.js"), "utf8");
@@ -92,15 +92,21 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	});
 	vm.runInContext(initRules + "InitMatchRules();", context);
 	assert.equal(root.children.length, 0, "wait for rules before constructing controls");
-	data = {host_id: 0, locked: 0, single_draft: 1, epic_orbs: 0, flat_rerolls: 1};
+	const logo = new Panel("Logo", "Image", root, ["LS_Tips_Logo"]);
+	const discord = new Panel("Discord", "Button", root, ["LS_DiscordButton"]);
+	data = {host_id: 0, locked: 0, single_draft: 1, epic_orbs: 0, turbo: 1};
 	vm.runInContext("InitMatchRules(); InitMatchRules();", context);
-	assert.equal(root.children.length, 1, "initialize only once");
+	assert.equal(root.children.length, 3, "initialize only once");
+	assert.equal(logo.visible, false);
+	assert.equal(discord.visible, false);
+	assert.equal(root.FindChildTraverse("Rule_flat_rerolls"), null);
+	assert.deepEqual(root.FindChildTraverse("MatchRules_core").children.filter(p => p.paneltype === "ToggleButton").map(p => p.id), ["Rule_epic_orbs", "Rule_turbo", "Rule_single_draft"]);
 	assert.equal(vm.runInContext("hints.length", context), 1, "only settings page remains");
 	assert.equal(vm.runInContext("hints[0][0]", context), "settings");
 	const start = root.FindChildTraverse("ApplyMatchRules");
 	assert.equal(start.enabled, true);
 	start.events.onactivate();
-	assert.deepEqual(JSON.parse(JSON.stringify(requests[0])), {name:"HostOptions:apply_rules", args:{single_draft:1,epic_orbs:0,flat_rerolls:1}});
+	assert.deepEqual(JSON.parse(JSON.stringify(requests[0])), {name:"HostOptions:apply_rules", args:{single_draft:1,epic_orbs:0,turbo:1}});
 	data.host_id = 1;
 	listener("game_options", "match_rules");
 	assert.equal(start.visible, false, "non-host cannot start");

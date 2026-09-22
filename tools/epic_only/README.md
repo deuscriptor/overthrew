@@ -1,27 +1,45 @@
 # Configurable FFA
 
 Select **Ffa** (`ot3_necropolis_ffa`) in the lobby. Before hero selection, the
-host can enable Single Draft, Epic-only orbs, and 1-point rerolls independently.
+host can enable Epic-Only, Turbo, and Single Draft independently in the **Core**
+category, in that order. Epic-Only also makes
+every reroll cost 1; there is no separate reroll option.
 All are off by default. Settings replace the guides/videos as the only first page
 on configurable FFA; page indicators and navigation remain for future settings
-pages. **Apply & Start** freezes the settings and begins hero
+pages. The menu shows category headings, options, and the apply button; it omits
+explanatory paragraphs. **Apply & Start** freezes the settings and begins hero
 selection. Everyone sees the host's current settings; only the current host can
 change them. The server rejects changes after setup and duplicate start requests.
+
+Turbo doubles earned gold and experience, including passive and central-ring
+income, kills, creeps, objectives, and custom ability rewards. Starting gold stays
+700. Sales, refunds, redistributed gold, and spending retain their original
+amounts. Turbo defaults off and does not change any other Turbo-mode mechanics.
 
 Single Draft disables bans and offers each player four heroes, one per attribute,
 without shared offers. Epic mode converts all existing orb rewards, including
 shop purchases, while retaining prices and source-specific triggers. The shop
 uses its original item names/icons; rewards follow the selected rule. Rerolls
-start at 30 and cost either their original 1/2/4 or always 1, independently of
-orb rarity. Other original maps retain their behavior.
+start at 30 and cost their original 1/2/4 with normal orbs, or always 1 with
+Epic Orbs. Other original maps retain their behavior.
 
-Only the original FFA map is registered now. The older variant packages and build
-tools remain available for backwards compatibility but are no longer lobby
-choices; the configurable mode requires only the original VPK and overview.
+Only the original FFA map is registered now. The three older variant VPKs have
+been removed; the configurable mode uses the original VPK and overview.
+Historical build tools remain available.
 
 Validation: `test_host_rules.lua` covers all eight rule combinations, host changes,
 invalid values, locking, and repeated Apply. `panorama_test.js` covers delayed
-settings arrival, read-only controls, the Apply payload and independent flags.
+settings arrival, read-only controls, the Apply payload, Epic-linked reroll costs,
+and removal of the separate reroll toggle and overlapping logos.
+`test_turbo.lua` checks earning multipliers and excluded transactions through the
+production filters. `turbo_smoke.lua` exercises the actual engine gold/XP calls
+in a disposable local tools session. Its live checks passed: starting gold 700,
+scripted grants doubled exactly once, a native creep kill awarded 202 gold/XP
+from a 101 bounty, and sales/refunds/redistribution/spending stayed unchanged.
+The smoke script suppresses demo gold and single-player auto-victory only inside
+the disposable test session. Scripted grants use `game/turbo_rewards.lua` because
+the native Lua grant methods can bypass the engine filters; its suppression
+guard prevents duplicate multiplication when an engine callback also runs.
 Run these with the existing Node/Fengari runtime. Multiplayer testing is skipped
 at the user's request. Local in-game checks passed through the actual settings
 controls for All Pick + Epic orbs + 1-point rerolls, and Single Draft + normal

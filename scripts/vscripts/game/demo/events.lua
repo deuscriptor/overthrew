@@ -6,7 +6,7 @@ function OT3Demo:OnItemPurchased(event)
 	local buyer_hero = buyer:GetAssignedHero()
 
 	if IsValidEntity(buyer_hero) then
-		buyer_hero:ModifyGold(event.itemcost, true, 0)
+		buyer_hero:ModifyGold(event.itemcost, true, DOTA_ModifyGold_PurchaseItem)
 	end
 end
 

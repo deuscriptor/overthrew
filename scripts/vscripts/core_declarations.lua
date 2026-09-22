@@ -325,6 +325,10 @@ function IsFlatRerollMap()
 	return IsEpicOnlyMap()
 end
 
+function IsTurboMode()
+	return UsesHostRules() and HostOptions ~= nil and HostOptions.locked == true and HostOptions:GetOption("turbo")
+end
+
 function IsEpicOnlyMap()
 	if UsesHostRules() then return HostOptions ~= nil and HostOptions:GetOption("epic_orbs") end
 	local layout = TEAMS_LAYOUTS[GetMapName()]
