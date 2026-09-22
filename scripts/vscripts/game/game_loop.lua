@@ -449,7 +449,12 @@ function GameLoop:InitFOWRevealers()
 	end
 end
 
+function GameLoop:HasFixedKillGoal()
+	return UsesHostRules() and HostOptions.locked == true and HostOptions.options.kill_goal ~= nil
+end
+
 function GameLoop:UpdateScoreGoal()
+	if self:HasFixedKillGoal() then self.target_kill_goal = HostOptions.options.kill_goal end
 	CustomNetTables:SetTableValue("game_options", "score_goal", {
 		goal = self.target_kill_goal,
 		limit = self.current_layout.game_base_duration,
@@ -460,7 +465,7 @@ function GameLoop:IncreaseScoreByVote(player_id)
 	local kills_by_vote = TEAMS_LAYOUTS[GetMapName()].kills_by_vote
 	local time_by_vote = TEAMS_LAYOUTS[GetMapName()].time_by_vote
 
-	self.target_kill_goal = self.target_kill_goal + kills_by_vote
+	if not self:HasFixedKillGoal() then self.target_kill_goal = self.target_kill_goal + kills_by_vote end
 	self.current_layout.game_base_duration = self.current_layout.game_base_duration + time_by_vote
 	EarlyConsumables:RegisterScoreVoteForPlayer(player_id, EXTRA_SCORE_VOTE_TYPE.DEFAULT)
 
@@ -469,6 +474,7 @@ end
 
 
 function GameLoop:DecreaseScoreByPlayerDisconnect(player_id)
+	if self:HasFixedKillGoal() then return end
 	if GameLoop.game_over then return end
 
 	local reduction = math.ceil(self.target_kill_goal / (self.current_layout.player_count * #self.current_layout.teamlist))
@@ -488,6 +494,7 @@ end
 
 
 function GameLoop:IncreaseScoreByPlayerDisconnect(player_id, iCount)
+	if self:HasFixedKillGoal() then return end
 	self.target_kill_goal = self.target_kill_goal + iCount
 --	self.current_layout.game_base_duration = self.current_layout.game_base_duration - GAME_DURATION_INCREASE_PER_VOTE
 
@@ -496,7 +503,7 @@ end
 
 
 function GameLoop:IncreaseTimeAndGoal(amount)
-	self.target_kill_goal = self.target_kill_goal + amount
+	if not self:HasFixedKillGoal() then self.target_kill_goal = self.target_kill_goal + amount end
 	self.current_layout.game_base_duration = self.current_layout.game_base_duration + (amount * 10)
 
 	GameLoop:UpdateScoreGoal()

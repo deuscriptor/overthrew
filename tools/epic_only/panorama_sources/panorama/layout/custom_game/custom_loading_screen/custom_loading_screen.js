@@ -226,7 +226,7 @@ function InitMatchRules() {
 	panel.style.horizontalAlign = "center";
 	panel.style.verticalAlign = "top";
 	panel.style.backgroundColor = "gradient(linear, 0% 0%, 100% 100%, from(#172330), to(#0c141e))";
-	panel.style.padding = "24px 30px";
+	panel.style.padding = "20px 30px";
 	panel.style.border = "1px solid #415465";
 	panel.style.zIndex = "100";
 	function label(parent, text) {
@@ -238,7 +238,11 @@ function InitMatchRules() {
 		return p;
 	}
 	const controls = {};
-	const categories = [{ id: "core", options: ["epic_orbs", "turbo", "single_draft"] }];
+	let killGoal, goalDirty = false, syncingGoal = false, canEditRules = false;
+	function validKillGoal() {
+		return /^\d+$/.test(killGoal.text) && Number(killGoal.text) >= 1 && Number(killGoal.text) <= 2147483647;
+	}
+	const categories = [{ id: "core", options: ["epic_orbs", "turbo", "single_draft", "kill_goal"] }];
 	const body = $.CreatePanel("Panel", panel, "MatchRulesCategories");
 	body.style.width = "100%";
 	body.style.height = "fill-parent-flow(1.0)";
@@ -248,7 +252,7 @@ function InitMatchRules() {
 		const group = $.CreatePanel("Panel", body, "MatchRules_" + category.id);
 		group.style.width = "100%";
 		group.style.flowChildren = "down";
-		group.style.marginBottom = "16px";
+		group.style.marginBottom = "12px";
 		const heading = label(group, "#host_rules_category_" + category.id);
 		heading.style.color = "#d4bb86";
 		heading.style.fontSize = "20px";
@@ -256,16 +260,31 @@ function InitMatchRules() {
 		heading.style.letterSpacing = "1px";
 		heading.style.marginBottom = "12px";
 		category.options.forEach(function(name) {
-			const row = $.CreatePanel("ToggleButton", group, "Rule_" + name);
+			const row = $.CreatePanel(name === "kill_goal" ? "Panel" : "ToggleButton", group, "Rule_" + name);
 			row.style.width = "100%";
-			row.style.height = "48px";
-			row.style.padding = "10px 14px";
-			row.style.marginBottom = "6px";
+			row.style.height = "42px";
+			row.style.padding = "6px 14px";
+			row.style.marginBottom = "4px";
 			row.style.backgroundColor = "#1b2b3b";
 			row.style.border = "1px solid #304456";
 			const caption = label(row, "#host_rules_" + name);
 			caption.style.marginBottom = "0px";
 			caption.style.verticalAlign = "center";
+			if (name === "kill_goal") {
+				killGoal = $.CreatePanel("TextEntry", row, "KillGoalInput");
+				killGoal.style.horizontalAlign = "right";
+				killGoal.style.verticalAlign = "center";
+				killGoal.style.width = "100px";
+				killGoal.style.height = "30px";
+				killGoal.style.fontSize = "18px";
+				killGoal.style.textAlign = "right";
+				killGoal.style.color = "#eeeeee";
+				killGoal.style.backgroundColor = "#0c141e";
+				killGoal.style.border = "1px solid #607988";
+				killGoal.maxchars = 10;
+				killGoal.text = "30";
+				return;
+			}
 			controls[name] = row;
 			row.SetPanelEvent("onactivate", function() {
 				GameEvents.SendToServerEnsured("HostOptions:set_option_state", {name: name, state: row.IsSelected()});
@@ -280,18 +299,36 @@ function InitMatchRules() {
 	start.style.padding = "10px 26px";
 	label(start, "#host_rules_start").style.marginBottom = "0px";
 	start.SetPanelEvent("onactivate", function() {
-		const event = {};
+		if (!canEditRules || !validKillGoal()) return;
+		const event = {kill_goal: Number(killGoal.text)};
 		Object.keys(controls).forEach(function(name) { event[name] = controls[name].IsSelected() ? 1 : 0; });
 		GameEvents.SendToServerEnsured("HostOptions:apply_rules", event);
+	});
+	killGoal.SetPanelEvent("ontextentrychange", function() {
+		if (syncingGoal || !canEditRules) return;
+		goalDirty = true;
+		const valid = validKillGoal();
+		killGoal.style.border = valid ? "1px solid #607988" : "1px solid #d66b62";
+		start.enabled = valid;
+		if (valid) GameEvents.SendToServerEnsured("HostOptions:set_option_state", {name: "kill_goal", state: Number(killGoal.text)});
 	});
 	function refresh() {
 		const rules = CustomNetTables.GetTableValue("game_options", "match_rules") || {};
 		const canEdit = rules.host_id === Game.GetLocalPlayerID() && rules.locked === 0;
+		canEditRules = canEdit;
+		killGoal.enabled = canEdit;
+		if (!canEdit || !goalDirty) {
+			syncingGoal = true;
+			killGoal.text = String(rules.kill_goal === undefined ? 30 : rules.kill_goal);
+			syncingGoal = false;
+			goalDirty = false;
+			killGoal.style.border = "1px solid #607988";
+		}
 		Object.keys(controls).forEach(function(name) {
 			controls[name].enabled = canEdit;
 			controls[name].SetSelected(rules[name] === 1);
 		});
-		start.enabled = canEdit;
+		start.enabled = canEdit && validKillGoal();
 		start.visible = canEdit;
 	}
 	CustomNetTables.SubscribeNetTableListener("game_options", function(table, key) { if (key === "match_rules") refresh(); });

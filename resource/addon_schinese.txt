@@ -2941,6 +2941,7 @@
 		"host_rules_epic_orbs" "Epic-Only"
 		"host_rules_category_core" "核心"
 		"host_rules_turbo" "Turbo"
+		"host_rules_kill_goal" "击杀目标"
 		"host_rules_description" "未勾选的选项使用原有规则。单一征召提供每种属性各一名英雄，玩家之间不重复。重选次数：30。商店宝珠价格不变；史诗模式将所有购买的宝珠升级为史诗品质。"
 		"host_rules_start" "应用并开始"
 		"host_rules_ready" "选择规则，然后开始选择英雄。"

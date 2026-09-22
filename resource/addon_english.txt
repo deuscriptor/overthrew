@@ -3685,6 +3685,7 @@ If you do not send us your steam URL or steamID we wont be adle to grant you ben
 		"host_rules_epic_orbs" "Epic-Only"
 		"host_rules_category_core" "Core"
 		"host_rules_turbo" "Turbo"
+		"host_rules_kill_goal" "Kill Goal"
 		"host_rules_description" "Unchecked options use the original rules. Single Draft offers one hero per attribute, with no shared offers. Reroll allowance: 30. Shop orbs keep their prices; Epic mode upgrades every purchase."
 		"host_rules_start" "APPLY & START"
 		"host_rules_ready" "Choose the rules, then start hero selection."

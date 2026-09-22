@@ -16,6 +16,8 @@ function HostOptions:Init()
 	HostOptions.host = nil
 	HostOptions.locked = false
 	if UsesHostRules() then
+		HostOptions.available_options.kill_goal = true
+		HostOptions.options.kill_goal = 30
 		for _, name in ipairs({"single_draft", "epic_orbs", "turbo"}) do
 			HostOptions.available_options[name] = true
 			HostOptions.options[name] = false
@@ -36,7 +38,7 @@ function HostOptions:Init()
 		local player = PlayerResource:GetPlayer(player_id)
 		if not IsValidEntity(player) or not GameRules:PlayerHasCustomGameHostPrivileges(player) then return end
 
-		HostOptions:SetOptionState(event.name, toboolean(event.state))
+		HostOptions:SetOptionState(event.name, event.name == "kill_goal" and event.state or toboolean(event.state))
 	end)
 
 	EventDriver:Listen("Events:state_changed", function(event)
@@ -62,8 +64,13 @@ function HostOptions:Init()
 end
 
 
+function HostOptions:IsValidKillGoal(value)
+	return type(value) == "number" and value >= 1 and value <= 2147483647 and value == math.floor(value)
+end
+
 function HostOptions:SetOptionState(option_name, state)
 	if self.locked or GameRules:State_Get() > DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then return end
+	if option_name == "kill_goal" and not self:IsValidKillGoal(state) then return end
 	if not HostOptions:IsOptionAvailable(option_name) then
 		print("[Host Options] attempted to change state of unavailable host option!\nHINT: use SetOptionAvailable or edit available_options to enable by default")
 		return
@@ -90,6 +97,7 @@ function HostOptions:PublishRules()
 		single_draft = self:GetOption("single_draft") and 1 or 0,
 		epic_orbs = self:GetOption("epic_orbs") and 1 or 0,
 		turbo = self:GetOption("turbo") and 1 or 0,
+		kill_goal = self.options.kill_goal,
 	})
 end
 
@@ -109,6 +117,7 @@ function HostOptions:ApplyRules(event)
 	if type(id) ~= "number" or not PlayerResource:IsValidPlayerID(id) then return false end
 	local player = PlayerResource:GetPlayer(id)
 	if not IsValidEntity(player) or not GameRules:PlayerHasCustomGameHostPrivileges(player) then return false end
+	if not self:IsValidKillGoal(event.kill_goal) then return false end
 	local rules = {}
 	for _, name in ipairs({"single_draft", "epic_orbs", "turbo"}) do
 		local value = event[name]
@@ -116,6 +125,9 @@ function HostOptions:ApplyRules(event)
 		rules[name] = value == 1 or value == true
 	end
 	for name, value in pairs(rules) do self.options[name] = value end
+	self.options.kill_goal = event.kill_goal
+	GameLoop.target_kill_goal = event.kill_goal
+	GameLoop:UpdateScoreGoal()
 	-- Configure selection before allowing the engine to leave setup.
 	GameRules:SetCustomGameBansPerTeam(IsSingleDraftMap() and 0 or TEAMS_LAYOUTS[GetMapName()].player_count)
 	SingleDraft:Init()

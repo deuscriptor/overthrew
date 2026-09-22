@@ -19,10 +19,12 @@ EventDriver = {Listen = function() end}
 CustomNetTables = {SetTableValue = function() end}
 SingleDraft.Init = function() if IsSingleDraftMap() then initialized = initialized + 1 end end
 dofile("scripts/vscripts/libraries/host_options.lua")
+GameLoop.current_layout = TEAMS_LAYOUTS.ot3_necropolis_ffa
 for draft = 0, 1 do for epic = 0, 1 do for turbo = 0, 1 do
     HostOptions:Init()
     assert(not HostOptions:GetOption("turbo"), "Turbo must default off")
-    local event = {PlayerID = 1, single_draft = draft, epic_orbs = epic, turbo = turbo}
+    assert(HostOptions.options.kill_goal == 30)
+    local event = {PlayerID = 1, single_draft = draft, epic_orbs = epic, turbo = turbo, kill_goal = 45}
     assert(not HostOptions:ApplyRules(event), "non-host accepted")
     event.PlayerID = 0
     event.epic_orbs = "true"
@@ -36,6 +38,16 @@ for draft = 0, 1 do for epic = 0, 1 do for turbo = 0, 1 do
     assert(bans == (draft == 1 and 0 or 1))
     assert(IsSingleDraftMap() == (draft == 1))
     assert(IsTurboMode() == (turbo == 1))
+    assert(GameLoop.target_kill_goal == 45)
+    HostOptions:SetOptionState("kill_goal", 90)
+    assert(HostOptions.options.kill_goal == 45, "locked goal changed")
+    GameLoop:DecreaseScoreByPlayerDisconnect(0)
+    GameLoop:IncreaseScoreByPlayerDisconnect(0, 10)
+    GameLoop:IncreaseTimeAndGoal(10)
+    EarlyConsumables = {RegisterScoreVoteForPlayer = function() end}
+    EXTRA_SCORE_VOTE_TYPE = {DEFAULT=0}
+    GameLoop:IncreaseScoreByVote(0)
+    assert(GameLoop.target_kill_goal == 45, "fixed goal changed during match")
     for _, rarity in ipairs({1, 2, 4}) do
         assert(ResolveOrbRarity(rarity) == (epic == 1 and 4 or rarity))
         assert(Upgrades:GetRerollPrice(rarity) == (epic == 1 and 1 or rarity))
@@ -47,11 +59,16 @@ end end end
 assert(initialized == 4)
 HostOptions:Init()
 host = 1
-assert(not HostOptions:ApplyRules({PlayerID=0, single_draft=0, epic_orbs=0, turbo=0}))
-assert(HostOptions:ApplyRules({PlayerID=1, single_draft=0, epic_orbs=0, turbo=0}))
+assert(not HostOptions:ApplyRules({PlayerID=0, single_draft=0, epic_orbs=0, turbo=0, kill_goal=30}))
+for _, invalid in ipairs({0, -1, 1.5, "30", false, math.huge, 2147483648}) do
+    assert(not HostOptions:ApplyRules({PlayerID=1, single_draft=0, epic_orbs=0, turbo=0, kill_goal=invalid}))
+    HostOptions:SetOptionState("kill_goal", invalid)
+    assert(HostOptions.options.kill_goal == 30)
+end
+assert(HostOptions:ApplyRules({PlayerID=1, single_draft=0, epic_orbs=0, turbo=0, kill_goal=30}))
 HostOptions:Init()
 state = DOTA_GAMERULES_STATE_HERO_SELECTION
-assert(not HostOptions:ApplyRules({PlayerID=1, single_draft=1, epic_orbs=1, turbo=1}))
+assert(not HostOptions:ApplyRules({PlayerID=1, single_draft=1, epic_orbs=1, turbo=1, kill_goal=30}))
 map = "ot3_gardens_duo"
 assert(not IsEpicOnlyMap() and not IsSingleDraftMap() and not IsFlatRerollMap())
 dofile("tools/epic_only/test_turbo.lua")

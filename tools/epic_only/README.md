@@ -4,6 +4,10 @@ Select **Ffa** (`ot3_necropolis_ffa`) in the lobby. Before hero selection, the
 host can enable Epic-Only, Turbo, and Single Draft independently in the **Core**
 category, in that order. Epic-Only also makes
 every reroll cost 1; there is no separate reroll option.
+**Kill Goal** is a numeric input at the bottom of Core, prefilled with 30. The
+host can enter a positive whole number. Apply locks this as the match's fixed
+kill cap and updates the scoreboard; disconnects and goal-increase events no
+longer alter it on configurable FFA. Existing match-time adjustments still apply.
 All are off by default. Settings replace the guides/videos as the only first page
 on configurable FFA; page indicators and navigation remain for future settings
 pages. The menu shows category headings, options, and the apply button; it omits
