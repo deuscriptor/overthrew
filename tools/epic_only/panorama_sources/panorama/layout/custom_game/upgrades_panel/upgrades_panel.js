@@ -312,7 +312,7 @@ function UpdateRerollButton() {
 	let reroll_tooltip = "reroll_tooltip";
 	if (no_rerolls) reroll_tooltip = "reroll_buy_in_shop_hint";
 	else if (is_using_consumable_rerolls) reroll_tooltip = "reroll_tooltip_consumable";
-	if (IS_EPIC_ONLY_MAP && !no_rerolls) reroll_tooltip = "reroll_tooltip_epic_only";
+	if (IS_FLAT_REROLL_MAP && !no_rerolls) reroll_tooltip = "reroll_tooltip_epic_only";
 
 	HUD.REROLL_BUTTON.SetPanelEvent("onmouseover", () => {
 		$.DispatchEvent("DOTAShowTextTooltip", HUD.REROLL_BUTTON, `#${reroll_tooltip}`);

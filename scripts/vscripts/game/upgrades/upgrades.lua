@@ -228,7 +228,7 @@ end
 
 
 function Upgrades:GetRerollPrice(rarity)
-	if IsEpicOnlyMap() then return 1 end
+	if IsFlatRerollMap() then return 1 end
 	return REROLL_PRICES[rarity]
 end
 

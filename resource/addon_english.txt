@@ -3680,5 +3680,14 @@ If you do not send us your steam URL or steamID we wont be adle to grant you ben
 		"donation_local_lobby"					"Donation are unavailable while playing on Local Host"
 		"glory_purchases_local_lobby"			"Glory shop is disabled while playing on Local Host"
 		"treasures_local_lobby"					"Treasures are disabled while playing on Local Host"
+		"host_rules_title" "FFA MATCH SETTINGS"
+		"host_rules_single_draft" "Single Draft (no bans)"
+		"host_rules_epic_orbs" "All orbs are Epic"
+		"host_rules_flat_rerolls" "Every reroll costs 1"
+		"host_rules_description" "Unchecked options use the original rules. Single Draft offers one hero per attribute, with no shared offers. Reroll allowance: 30. Shop orbs keep their prices; Epic mode upgrades every purchase."
+		"host_rules_start" "APPLY & START"
+		"host_rules_ready" "Choose the rules, then start hero selection."
+		"host_rules_waiting" "Waiting for the lobby host to choose the rules."
+		"host_rules_locked" "Rules locked. Starting hero selection..."
 	}
 }

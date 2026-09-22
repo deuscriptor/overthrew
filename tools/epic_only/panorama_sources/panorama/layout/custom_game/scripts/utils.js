@@ -1,8 +1,19 @@
 const LOCAL_PLAYER_ID = Game.GetLocalPlayerID();
 const LOCAL_STEAM_ID = Game.GetLocalPlayerInfo() ? Game.GetLocalPlayerInfo().player_steamid : "0";
 const MAP_NAME = Game.GetMapInfo().map_display_name;
-const IS_SINGLE_DRAFT_MAP = MAP_NAME === "ot3_ffa_epic_draft" || MAP_NAME === "ot3_ffa_draft";
-const IS_EPIC_ONLY_MAP = MAP_NAME === "ot3_ffa_epic" || MAP_NAME === "ot3_ffa_epic_draft";
+function MatchRuleEnabled(name) {
+	const rules = typeof CustomNetTables !== "undefined" && CustomNetTables.GetTableValue("game_options", "match_rules");
+	return MAP_NAME === "ot3_necropolis_ffa" && !!rules && rules[name] === 1;
+}
+let IS_SINGLE_DRAFT_MAP = MatchRuleEnabled("single_draft") || MAP_NAME === "ot3_ffa_epic_draft" || MAP_NAME === "ot3_ffa_draft";
+let IS_EPIC_ONLY_MAP = MatchRuleEnabled("epic_orbs") || MAP_NAME === "ot3_ffa_epic" || MAP_NAME === "ot3_ffa_epic_draft";
+let IS_FLAT_REROLL_MAP = IS_EPIC_ONLY_MAP;
+if (typeof CustomNetTables !== "undefined") CustomNetTables.SubscribeNetTableListener("game_options", function(table, key) {
+	if (key !== "match_rules" || MAP_NAME !== "ot3_necropolis_ffa") return;
+	IS_SINGLE_DRAFT_MAP = MatchRuleEnabled("single_draft");
+	IS_EPIC_ONLY_MAP = MatchRuleEnabled("epic_orbs");
+	IS_FLAT_REROLL_MAP = IS_EPIC_ONLY_MAP;
+});
 // Keep the actual map identity for labels; inherit FFA layout and configuration.
 const MAP_BASE_NAME = IS_EPIC_ONLY_MAP || IS_SINGLE_DRAFT_MAP ? "ot3_necropolis_ffa" : MAP_NAME;
 const B_LOCAL_LOBBY = true;

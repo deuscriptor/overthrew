@@ -76,7 +76,7 @@ function GameLoop:OnStateChanged(event)
 
 		DebugMessage("[Game Loop] full lobby status: ", GameLoop.is_full_lobby, player_count, "/", max_players)
 
-		if not GameLoop.is_full_lobby then
+		if not GameLoop.is_full_lobby and not UsesHostRules() then
 			--GameRules:LockCustomGameSetupTeamAssignment(false)
 			GameRules:SetCustomGameSetupAutoLaunchDelay(15)
 		end

@@ -14,13 +14,27 @@ function HostOptions:Init()
 		[HOST_OPTION.BOTS] = true,
 	}
 	HostOptions.host = nil
+	HostOptions.locked = false
+	if UsesHostRules() then
+		for _, name in ipairs({"single_draft", "epic_orbs"}) do
+			HostOptions.available_options[name] = true
+			HostOptions.options[name] = false
+		end
+	end
+	EventStream:Listen("HostOptions:apply_rules", function(event, user_id)
+		local sender = EntIndexToHScript(user_id)
+		if not IsValidEntity(sender) or sender:GetPlayerID() ~= event.PlayerID then return end
+		HostOptions:ApplyRules(event)
+	end)
 
-	EventStream:Listen("HostOptions:set_option_state", function(event)
+	EventStream:Listen("HostOptions:set_option_state", function(event, user_id)
+		local sender = EntIndexToHScript(user_id)
+		if not IsValidEntity(sender) or sender:GetPlayerID() ~= event.PlayerID then return end
 		local player_id = event.PlayerID
 		if not player_id or not PlayerResource:IsValidPlayerID(player_id) then return end
 
 		local player = PlayerResource:GetPlayer(player_id)
-		if not IsValidEntity(player) or HostOptions.host ~= player then return end
+		if not IsValidEntity(player) or not GameRules:PlayerHasCustomGameHostPrivileges(player) then return end
 
 		HostOptions:SetOptionState(event.name, toboolean(event.state))
 	end)
@@ -49,6 +63,7 @@ end
 
 
 function HostOptions:SetOptionState(option_name, state)
+	if self.locked or GameRules:State_Get() > DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then return end
 	if not HostOptions:IsOptionAvailable(option_name) then
 		print("[Host Options] attempted to change state of unavailable host option!\nHINT: use SetOptionAvailable or edit available_options to enable by default")
 		return
@@ -57,6 +72,57 @@ function HostOptions:SetOptionState(option_name, state)
 	HostOptions.options[option_name] = state
 
 	CustomNetTables:SetTableValue("game_options", "host_options", HostOptions.options)
+	if UsesHostRules() then self:PublishRules() end
+end
+
+function HostOptions:PublishRules()
+	local host_id = -1
+	for id = 0, DOTA_MAX_TEAM_PLAYERS - 1 do
+		local player = PlayerResource:GetPlayer(id)
+		if IsValidEntity(player) and GameRules:PlayerHasCustomGameHostPrivileges(player) then
+			host_id = id
+			self.host = player
+			break
+		end
+	end
+	CustomNetTables:SetTableValue("game_options", "match_rules", {
+		host_id = host_id, locked = self.locked and 1 or 0,
+		single_draft = self:GetOption("single_draft") and 1 or 0,
+		epic_orbs = self:GetOption("epic_orbs") and 1 or 0,
+	})
+end
+
+function HostOptions:HoldSetup()
+	GameRules:EnableCustomGameSetupAutoLaunch(false)
+	GameRules:SetCustomGameSetupTimeout(-1)
+	GameRules:GetGameModeEntity():SetContextThink("host_rules_sync", function()
+		self:PublishRules()
+		if GameRules:State_Get() > DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then return end
+		return 0.5
+	end, 0)
+end
+
+function HostOptions:ApplyRules(event)
+	if not UsesHostRules() or self.locked or GameRules:State_Get() ~= DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then return false end
+	local id = event.PlayerID
+	if type(id) ~= "number" or not PlayerResource:IsValidPlayerID(id) then return false end
+	local player = PlayerResource:GetPlayer(id)
+	if not IsValidEntity(player) or not GameRules:PlayerHasCustomGameHostPrivileges(player) then return false end
+	local rules = {}
+	for _, name in ipairs({"single_draft", "epic_orbs"}) do
+		local value = event[name]
+		if value ~= 0 and value ~= 1 and value ~= false and value ~= true then return false end
+		rules[name] = value == 1 or value == true
+	end
+	for name, value in pairs(rules) do self.options[name] = value end
+	-- Configure selection before allowing the engine to leave setup.
+	GameRules:SetCustomGameBansPerTeam(IsSingleDraftMap() and 0 or TEAMS_LAYOUTS[GetMapName()].player_count)
+	SingleDraft:Init()
+	self.locked = true
+	CustomNetTables:SetTableValue("game_options", "host_options", self.options)
+	self:PublishRules()
+	GameRules:FinishCustomGameSetup()
+	return true
 end
 
 

@@ -37,7 +37,7 @@ function GameMode:Init()
 	Events:Init()
 
 	GameMode:SetTeams()
-	SingleDraft:Init()
+	if not UsesHostRules() then SingleDraft:Init() end
 	OrbDropManager:Init()
 	Filters:Init()
 	CustomChat:Init()
@@ -78,6 +78,7 @@ function GameMode:Init()
 	GameRules:SetTimeOfDay(0.251)
 
 	if IsInToolsMode() or GetMapName() == "ot3_demo" then OT3Demo:Init(game_mode_entity) end
+	if UsesHostRules() then HostOptions:HoldSetup() end
 
 	EventDriver:Dispatch("GameMode:init_finished", {})
 

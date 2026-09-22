@@ -8,13 +8,13 @@ const root = path.resolve(__dirname, '../..');
 const read = name => fs.readFileSync(path.join(root, name), 'utf8');
 const baseOverview = read('resource/overviews/ot3_necropolis_ffa.txt');
 const registeredMaps = [...read('addoninfo.txt').matchAll(/"(ot3_ffa_[^"]+)"/g)].map(match => match[1]);
-assert.equal(new Set(registeredMaps).size, 3, 'All three renamed variants registered');
+assert.equal(new Set(registeredMaps).size, 0, 'Variants replaced by configurable original FFA');
 for (const map of new Set(registeredMaps)) {
   assert.equal(read(`resource/overviews/${map}.txt`), map + baseOverview.slice('ot3_necropolis_ffa'.length), `${map} minimap terrain and projection`);
 }
 const overviewMaterial = baseOverview.match(/material\s+(\S+)/)[1];
 assert.ok(fs.existsSync(path.join(root, overviewMaterial + '_c')), 'Minimap material exists');
-console.log('PASS all registered FFA variants include the original minimap material and coordinate calibration');
+console.log('PASS configurable FFA uses the original minimap material and coordinate calibration');
 const original = read('scripts/npc/items/orbs.txt');
 const variant = read('scripts/npc/items/orbs_epic_only.txt');
 const shop = read('scripts/shops/ot3_ffa_epic_shops.txt');
@@ -39,12 +39,14 @@ console.log('PASS actual shop definitions retain prices/rules and use epic visua
 
 const result = spawnSync(process.execPath, [
   path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
-  'tools/epic_only/test_orbs.lua',
+  'tools/epic_only/test_host_rules.lua',
 ], { cwd: root, encoding: 'utf8' });
 if (result.stdout) process.stdout.write(result.stdout);
 if (result.stderr) process.stderr.write(result.stderr);
 assert.equal(result.error, undefined, 'Lua process startup');
 assert.equal(result.status, 0, 'Lua process exit');
 // Fengari versions can print a Lua error without setting a nonzero process exit.
-assert.match(result.stdout || '', /\d+ orb regression cases passed\s*$/);
+assert.match(result.stdout || '', /\d+ orb regression cases passed/);
+assert.match(result.stdout || '', /PASS host rules:.*one-time start\s*$/);
 assert.equal((result.stderr || '').trim(), '', 'Lua stderr');
+require('./panorama_test');

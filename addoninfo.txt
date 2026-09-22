@@ -3,9 +3,6 @@
 	maps =
 	[
 		"ot3_necropolis_ffa",
-		"ot3_ffa_epic",
-		"ot3_ffa_epic_draft",
-		"ot3_ffa_draft",
 		"ot3_gardens_duo",
 		"ot3_jungle_quintet",
 		"ot3_desert_octet",
@@ -21,18 +18,6 @@
 		{
 			MaxPlayers = 8
 			map = "ot3_necropolis_ffa"
-		},
-		{
-			MaxPlayers = 8
-			map = "ot3_ffa_epic"
-		},
-		{
-			MaxPlayers = 8
-			map = "ot3_ffa_epic_draft"
-		},
-		{
-			MaxPlayers = 8
-			map = "ot3_ffa_draft"
 		},
 		{
 			MaxPlayers = 10

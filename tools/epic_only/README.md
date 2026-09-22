@@ -1,4 +1,39 @@
-# Epic-only FFA
+# Configurable FFA
+
+Select **Ffa** (`ot3_necropolis_ffa`) in the lobby. Before hero selection, the
+host can enable Single Draft, Epic-only orbs, and 1-point rerolls independently.
+All are off by default. Settings replace the guides/videos as the only first page
+on configurable FFA; page indicators and navigation remain for future settings
+pages. **Apply & Start** freezes the settings and begins hero
+selection. Everyone sees the host's current settings; only the current host can
+change them. The server rejects changes after setup and duplicate start requests.
+
+Single Draft disables bans and offers each player four heroes, one per attribute,
+without shared offers. Epic mode converts all existing orb rewards, including
+shop purchases, while retaining prices and source-specific triggers. The shop
+uses its original item names/icons; rewards follow the selected rule. Rerolls
+start at 30 and cost either their original 1/2/4 or always 1, independently of
+orb rarity. Other original maps retain their behavior.
+
+Only the original FFA map is registered now. The older variant packages and build
+tools remain available for backwards compatibility but are no longer lobby
+choices; the configurable mode requires only the original VPK and overview.
+
+Validation: `test_host_rules.lua` covers all eight rule combinations, host changes,
+invalid values, locking, and repeated Apply. `panorama_test.js` covers delayed
+settings arrival, read-only controls, the Apply payload and independent flags.
+Run these with the existing Node/Fengari runtime. Multiplayer testing is skipped
+at the user's request. Local in-game checks passed through the actual settings
+controls for All Pick + Epic orbs + 1-point rerolls, and Single Draft + normal
+orbs + normal reroll costs. The latter produced four native hero offers. The
+settings page was visually checked in the original guide panel, with one page
+indicator and no guides/videos. `script_reload_code host_rules_smoke` validates
+the locked rules in a tools-mode FFA session without changing them.
+
+## Historical variant implementation
+
+The following records the earlier separate-map implementation and its tooling;
+its lobby-registration and launch instructions have been superseded above.
 
 `ot3_ffa_epic` is a separately selectable copy of Necropolis FFA.
 The English label is `Ffa Epic Only`; existing UI styles apply their usual casing.

@@ -25,6 +25,7 @@ const hints = [
 	["collection", 11],
 ];
 const additional_hints_config = {
+	settings: { b_image: true, b_hide_desc: true, b_ignore_hover: true },
 	tournament: {
 		b_image: true,
 		b_hide_desc: true,
@@ -63,6 +64,8 @@ function SetHint(idx) {
 	idx = Math.clamp(idx, 0, hints.length - 1);
 
 	const hint_name = hints[idx][0];
+	const settings = LOADING_HUD.CONTEXT.FindChildTraverse("MatchRulesPanel");
+	if (settings) settings.visible = hint_name === "settings";
 	const hint_config = additional_hints_config[hint_name];
 	const b_image = !!hint_config && hint_config.b_image;
 	const b_hide_desc = !!hint_config && hint_config.b_hide_desc;
@@ -95,6 +98,8 @@ function SetHint(idx) {
 
 	current_hint = idx;
 	CheckCurrentHint();
+	// Settings pages never advance automatically while the host is editing.
+	if (hint_name === "settings") return;
 	auto_hint_schedule = $.Schedule(hints[idx][1], () => {
 		auto_hint_schedule = undefined;
 		if (idx < hints.length - 1) NextHint();
@@ -207,6 +212,72 @@ function UpdateChatStyle() {
 	LOADING_HUD.CHAT.style.horizontalAlign = "right";
 }
 
+function InitMatchRules() {
+	// Loading panels can initialize before map information and net tables arrive.
+	if (!CustomNetTables.GetTableValue("game_options", "match_rules")) return;
+	if (LOADING_HUD.CONTEXT.FindChildTraverse("MatchRulesPanel")) return;
+	["LS_Tips_Logo", "LS_DiscordButton"].forEach(function(className) {
+		LOADING_HUD.CONTEXT.FindChildrenWithClassTraverse(className).forEach(function(element) { element.visible = false; });
+	});
+	const panel = $.CreatePanel("Panel", LOADING_HUD.MOVIE_CONTAINER, "MatchRulesPanel");
+	panel.style.width = "100%";
+	panel.style.height = "100%";
+	panel.style.flowChildren = "down";
+	panel.style.horizontalAlign = "center";
+	panel.style.verticalAlign = "top";
+	panel.style.backgroundColor = "#101923";
+	panel.style.padding = "28px 36px 36px";
+	panel.style.border = "1px solid #607988";
+	panel.style.zIndex = "100";
+	function label(parent, text) {
+		const p = $.CreatePanel("Label", parent, "");
+		p.text = $.Localize(text);
+		p.style.color = "#eeeeee";
+		p.style.fontSize = "18px";
+		p.style.marginBottom = "4px";
+		return p;
+	}
+	label(panel, "#host_rules_title");
+	const controls = {};
+	["single_draft", "epic_orbs"].forEach(function(name) {
+		const row = $.CreatePanel("ToggleButton", panel, "Rule_" + name);
+		row.style.width = "100%";
+		row.style.marginBottom = "0px";
+		label(row, "#host_rules_" + name);
+		controls[name] = row;
+		row.SetPanelEvent("onactivate", function() {
+			GameEvents.SendToServerEnsured("HostOptions:set_option_state", {name: name, state: row.IsSelected()});
+		});
+	});
+	label(panel, "#host_rules_description").style.fontSize = "14px";
+	const status = label(panel, "#host_rules_waiting");
+	status.style.fontSize = "14px";
+	const start = $.CreatePanel("Button", panel, "ApplyMatchRules");
+	start.style.backgroundColor = "#42683c";
+	start.style.padding = "8px 24px";
+	label(start, "#host_rules_start").style.marginBottom = "0px";
+	start.SetPanelEvent("onactivate", function() {
+		const event = {};
+		Object.keys(controls).forEach(function(name) { event[name] = controls[name].IsSelected() ? 1 : 0; });
+		GameEvents.SendToServerEnsured("HostOptions:apply_rules", event);
+	});
+	function refresh() {
+		const rules = CustomNetTables.GetTableValue("game_options", "match_rules") || {};
+		const canEdit = rules.host_id === Game.GetLocalPlayerID() && rules.locked === 0;
+		Object.keys(controls).forEach(function(name) {
+			controls[name].enabled = canEdit;
+			controls[name].SetSelected(rules[name] === 1);
+		});
+		start.enabled = canEdit;
+		start.visible = canEdit;
+		status.text = $.Localize(rules.locked === 1 ? "#host_rules_locked" : canEdit ? "#host_rules_ready" : "#host_rules_waiting");
+	}
+	CustomNetTables.SubscribeNetTableListener("game_options", function(table, key) { if (key === "match_rules") refresh(); });
+	refresh();
+	hints.splice(0, hints.length, ["settings", 0]);
+	InitHints();
+}
+
 function ToggleHostOption(name) {
 	if (!host_options_enabled) return;
 
@@ -273,4 +344,8 @@ function UpdateTournamentDates() {
 	FindDotaHudElementInLS("SidebarAndBattleCupLayoutContainer").visible = false;
 
 	GameEvents.Subscribe("HostOptions:show", ShowHostOptions);
+	CustomNetTables.SubscribeNetTableListener("game_options", function(table, key) {
+		if (key === "match_rules") InitMatchRules();
+	});
+	InitMatchRules();
 })();

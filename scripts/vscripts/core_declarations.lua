@@ -317,12 +317,22 @@ TEAMS_LAYOUTS[SINGLE_DRAFT_MAP_NAME] = copy_map_settings(TEAMS_LAYOUTS.ot3_necro
 TEAMS_LAYOUTS[SINGLE_DRAFT_MAP_NAME].base_map = "ot3_necropolis_ffa"
 TEAMS_LAYOUTS[SINGLE_DRAFT_MAP_NAME].single_draft = true
 
+function UsesHostRules()
+	return GetMapName() == "ot3_necropolis_ffa"
+end
+
+function IsFlatRerollMap()
+	return IsEpicOnlyMap()
+end
+
 function IsEpicOnlyMap()
+	if UsesHostRules() then return HostOptions ~= nil and HostOptions:GetOption("epic_orbs") end
 	local layout = TEAMS_LAYOUTS[GetMapName()]
 	return layout ~= nil and layout.orb_rarity_override == UPGRADE_RARITY_EPIC
 end
 
 function IsSingleDraftMap()
+	if UsesHostRules() then return HostOptions ~= nil and HostOptions:GetOption("single_draft") end
 	local layout = TEAMS_LAYOUTS[GetMapName()]
 	return layout ~= nil and layout.single_draft == true
 end
@@ -335,6 +345,7 @@ function GetBaseMapName(map_name)
 end
 
 function ResolveOrbRarity(rarity)
+	if UsesHostRules() then return IsEpicOnlyMap() and UPGRADE_RARITY_EPIC or rarity end
 	local layout = TEAMS_LAYOUTS[GetMapName()]
 	return layout and layout.orb_rarity_override or rarity
 end
