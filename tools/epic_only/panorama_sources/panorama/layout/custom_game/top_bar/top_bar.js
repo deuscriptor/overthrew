@@ -299,6 +299,7 @@ function CheckAltPress() {
 }
 
 (function () {
+	CreateHeroSwapPanel();
 	HUD.TEAMS_ROOT.RemoveAndDeleteChildren();
 	HUD.CONTEXT.SwitchClass("map_name", MAP_BASE_NAME);
 

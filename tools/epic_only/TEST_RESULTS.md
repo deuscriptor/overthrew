@@ -135,3 +135,25 @@ the map builder generate/verify overviews. The regression runner checks every
 registered FFA variant's overview and the referenced compiled material.
 Prior in-engine smoke checks did not visually inspect the minimap. The fix
 requires a map reload; a running user game was not interrupted to test it.
+# Hero swaps validation — 2026-09-23
+
+- Automated regression suite passed, including request authentication, recipient
+  consent, cross-team eligibility, all pre-match phases, expiration, cancellation,
+  disconnects, changed heroes, competing requests, deferred execution, exact
+  rarity refunds, and prevention of duplicate refunds on a second swap.
+- Panorama tests passed for requesting, accepting, declining, cancelling, busy
+  players, spectators, and match-start closure. All 23 script resources rebuilt
+  with syntax, DATA, block bounds and CRC verification.
+- Disposable local Dota Tools session: real hero entities swapped across teams;
+  player teams, gold, items/slots and remaining rerolls stayed with their players.
+  Hero facets and selected-hero references remained correct. A spent rare ability
+  orb, epic auto-rune orb and rare stat-boost orb were refunded as 2/4/2 choices.
+  Old upgrade counts and residual rune/stat buffs were cleared. Reassignment also
+  passed with native hero availability restricted to each player's original hero.
+- Actual client **Accept** button completed the authenticated swap. The panel was
+  visually checked in strategy and preparation. Forcing match start closed the
+  server's swap window and published `open = 0` to the UI.
+- Runtime markers: `HERO_SWAPS_SMOKE_PASS`, `HERO_SWAPS_UI_PASS`, and
+  `HERO_SWAPS_CLOSE_PASS`. Smoke scripts use a synthetic local second player and
+  temporarily simulate its connected flag; they do not test online networking.
+  Multiplayer testing was skipped as requested.

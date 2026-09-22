@@ -43,10 +43,12 @@ function modifier_generic_auto_rune_upgrade:OnIntervalThink()
 	end
 
 	local rune_name = self.rune_cycle[self.rune_index]
-	self:GetParent():AddNewModifier(self:GetParent(), nil, rune_name, {duration = self.rune_duration})
+	local rune = self:GetParent():AddNewModifier(self:GetParent(), nil, rune_name, {duration = self.rune_duration})
+	-- Retain handles so a pre-match hero swap can remove this upgrade's buffs.
+	self.granted_runes = self.granted_runes or {}
+	self.granted_runes[rune_name] = rune
 	EmitSoundOn(self.rune_sound_map[rune_name], self:GetParent())
 
 	self.rune_index = self.rune_index % #self.rune_cycle + 1
 	self:StartIntervalThink(self.rune_buff_interval)
 end
-

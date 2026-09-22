@@ -11,6 +11,7 @@ require("game/turbo_rewards")
 require("events/init")
 require("game/init")
 require("game/single_draft")
+require("game/hero_swaps")
 require("modifiers/init")
 
 function Activate()
@@ -38,6 +39,7 @@ function GameMode:Init()
 	Events:Init()
 
 	GameMode:SetTeams()
+	HeroSwaps:Init()
 	if not UsesHostRules() then SingleDraft:Init() end
 	OrbDropManager:Init()
 	Filters:Init()

@@ -18,6 +18,132 @@ if (typeof CustomNetTables !== "undefined") CustomNetTables.SubscribeNetTableLis
 const MAP_BASE_NAME = IS_EPIC_ONLY_MAP || IS_SINGLE_DRAFT_MAP ? "ot3_necropolis_ffa" : MAP_NAME;
 const B_LOCAL_LOBBY = true;
 
+// Shared by the hero-selection overlay and the in-game HUD during preparation.
+function CreateHeroSwapPanel() {
+	if (MAP_NAME !== "ot3_necropolis_ffa") return;
+	// The top bar itself is only as tall as its portraits. Mount on its full-screen
+	// custom-UI container so the expanded menu is not clipped by the top bar.
+	const root = $.CreatePanel("Panel", $.GetContextPanel().GetParent(), "HeroSwaps");
+	root.style.horizontalAlign = "right";
+	root.style.verticalAlign = "top";
+	root.style.marginTop = "130px";
+	root.style.marginRight = "24px";
+	root.style.width = "350px";
+	root.style.flowChildren = "down";
+	root.style.zIndex = "100";
+	let expanded = false, signature = "";
+	const localID = Game.GetLocalPlayerID();
+	function label(parent, text) {
+		const panel = $.CreatePanel("Label", parent, "");
+		panel.text = text;
+		panel.style.fontSize = "16px";
+		panel.style.color = "#e1e8ef";
+		panel.style.verticalAlign = "center";
+		return panel;
+	}
+	function button(parent, id, text, action) {
+		const panel = $.CreatePanel("Button", parent, id);
+		panel.style.padding = "6px 10px";
+		panel.style.backgroundColor = "#2b4258";
+		panel.style.border = "1px solid #56728d";
+		panel.style.marginLeft = "4px";
+		label(panel, $.Localize("#hero_swaps_" + text));
+		panel.SetPanelEvent("onactivate", action);
+		return panel;
+	}
+	const toggle = button(root, "HeroSwapsToggle", "title", function() {
+		expanded = !expanded;
+		body.visible = expanded;
+	});
+	toggle.style.horizontalAlign = "right";
+	const body = $.CreatePanel("Panel", root, "HeroSwapsBody");
+	body.style.width = "100%";
+	body.style.flowChildren = "down";
+	body.style.backgroundColor = "#101c29";
+	body.style.border = "1px solid #3c5268";
+	body.style.padding = "12px";
+	body.visible = false;
+	const hint = label(body, $.Localize("#hero_swaps_hint"));
+	hint.style.width = "100%";
+	hint.style.fontSize = "14px";
+	hint.style.marginBottom = "10px";
+	const status = label(body, "");
+	status.style.width = "100%";
+	status.style.color = "#e7c58a";
+	status.style.fontSize = "14px";
+	const rows = $.CreatePanel("Panel", body, "HeroSwapsRows");
+	rows.style.width = "100%";
+	rows.style.flowChildren = "down";
+	rows.style.maxHeight = "490px";
+	rows.style.overflow = "squish scroll";
+	function send(action, payload) {
+		GameEvents.SendToServerEnsured("HeroSwaps:" + action, payload);
+	}
+	function render(value) {
+		const me = value && value.players && value.players[String(localID)];
+		root.visible = !!value && value.open === 1 && !!me;
+		const next = JSON.stringify(value);
+		if (signature === next) return;
+		signature = next;
+		rows.RemoveAndDeleteChildren();
+		if (!root.visible) return;
+		const requests = Object.values(value.requests || {});
+		const incoming = requests.filter(request => request.to === localID);
+		if (incoming.length) { expanded = true; body.visible = true; }
+		if (me.busy !== 1 && requests.some(request => request.from === localID || request.to === localID)) status.text = "";
+		if (me.busy === 1) status.text = $.Localize("#hero_swaps_accepted");
+		let count = 0;
+		Object.keys(value.players).forEach(function(key) {
+			const id = Number(key), player = value.players[key];
+			if (id === localID) return;
+			count++;
+			const row = $.CreatePanel("Panel", rows, "HeroSwapPlayer_" + id);
+			row.style.width = "100%";
+			row.style.flowChildren = "down";
+			row.style.padding = "8px 0px";
+			row.style.borderBottom = "1px solid #304456";
+			const identity = $.CreatePanel("Panel", row, "");
+			identity.style.flowChildren = "right";
+			const portrait = $.CreatePanel("Image", identity, "");
+			portrait.SetImage("file://{images}/heroes/" + player.hero + ".png");
+			portrait.style.width = "48px";
+			portrait.style.height = "27px";
+			portrait.style.marginRight = "8px";
+			const info = Game.GetPlayerInfo(id);
+			const name = label(identity, info ? info.player_name : String(id));
+			name.style.width = "245px";
+			name.style.textOverflow = "ellipsis";
+			label(row, $.Localize("#" + player.hero)).style.fontSize = "14px";
+			const actions = $.CreatePanel("Panel", row, "");
+			actions.style.horizontalAlign = "right";
+			actions.style.flowChildren = "right";
+			const received = incoming.find(request => request.from === id);
+			const sent = requests.find(request => request.from === localID && request.to === id);
+			if (received) {
+				button(actions, "AcceptSwap_" + id, "accept", () => send("accept", {request_id: received.id}));
+				button(actions, "DeclineSwap_" + id, "decline", () => send("decline", {request_id: received.id}));
+			} else if (sent) {
+				button(actions, "CancelSwap_" + id, "cancel", () => send("cancel", {request_id: sent.id}));
+			} else if (me.busy !== 1 && player.busy !== 1 && player.hero !== me.hero) {
+				button(actions, "RequestSwap_" + id, "request", () => send("request", {target: id}));
+			}
+		});
+		if (!count) label(rows, $.Localize("#hero_swaps_waiting"));
+	}
+	const protectedFrame = GameEvents.NewProtectedFrame($.GetContextPanel());
+	protectedFrame.SubscribeProtected("HeroSwaps:status", function(event) {
+		status.text = $.Localize("#hero_swaps_" + event.status);
+		if (event.status === "accepted") { expanded = true; body.visible = true; }
+	});
+	CustomNetTables.SubscribeNetTableListener("game_options", function(table, key, value) {
+		if (key === "hero_swaps") render(value);
+	});
+	render(CustomNetTables.GetTableValue("game_options", "hero_swaps"));
+	GameEvents.Subscribe("game_rules_state_change", function() {
+		if (Game.GameStateIsAfter(DOTA_GameState.DOTA_GAMERULES_STATE_PRE_GAME)) root.visible = false;
+	});
+}
+
 Object.defineProperties(Array.prototype, {
 	random: {
 		value: function () {

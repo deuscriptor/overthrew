@@ -57,6 +57,60 @@ class Panel {
 	SetImage(image) { this.image = image; }
 	SetSelected(value) { this.selected = value; }
 	IsSelected() { return !!this.selected; }
+	RemoveAndDeleteChildren() { this.children = []; }
+}
+
+{
+	const container = new Panel("CustomUIContainer_Hud");
+	const contextPanel = new Panel("TopBar", "Panel", container);
+	let data = {open: 1, players: {0: {hero: "npc_dota_hero_axe", busy: 0}, 1: {hero: "npc_dota_hero_lina", busy: 0}}, requests: {}};
+	let listener;
+	const events = {}, sent = [];
+	const dollar = {GetContextPanel: () => contextPanel, CreatePanel: (type, parent, id) => new Panel(id, type, parent), Localize: text => text};
+	const context = vm.createContext({$: dollar, Game: {
+		GetLocalPlayerID: () => 0, GetLocalPlayerInfo: () => null,
+		GetPlayerInfo: id => ({player_name: "Player " + id}),
+		GetMapInfo: () => ({map_display_name: "ot3_necropolis_ffa"}),
+		GameStateIsAfter: () => true,
+	}, GameEvents: {
+		NewProtectedFrame: () => ({SubscribeProtected: (name, fn) => {events[name] = fn;}}),
+		Subscribe: (name, fn) => {events[name] = fn;},
+		SendToServerEnsured: (name, payload) => sent.push({name, payload}),
+	}, DOTA_GameState: {DOTA_GAMERULES_STATE_PRE_GAME: 8}, CustomNetTables: {
+		GetTableValue: () => data,
+		SubscribeNetTableListener: (table, fn) => {listener = fn;},
+	}});
+	vm.runInContext(declarations + "\nCreateHeroSwapPanel();", context);
+	const root = container.FindChildTraverse("HeroSwaps");
+	assert.equal(root.parent, container, "Menu must avoid the clipped top-bar panel");
+	assert.ok(root.visible);
+	container.FindChildTraverse("RequestSwap_1").events.onactivate();
+	assert.equal(sent[0].name, "HeroSwaps:request");
+	assert.equal(sent[0].payload.target, 1);
+	data.requests = {5: {id: 5, from: 1, to: 0}};
+	listener("game_options", "hero_swaps", data);
+	assert.ok(container.FindChildTraverse("HeroSwapsBody").visible, "Incoming request opens menu");
+	container.FindChildTraverse("AcceptSwap_1").events.onactivate();
+	assert.equal(sent[1].name, "HeroSwaps:accept");
+	assert.equal(sent[1].payload.request_id, 5);
+	container.FindChildTraverse("DeclineSwap_1").events.onactivate();
+	assert.equal(sent[2].name, "HeroSwaps:decline");
+	data.requests = {6: {id: 6, from: 0, to: 1}};
+	listener("game_options", "hero_swaps", data);
+	container.FindChildTraverse("CancelSwap_1").events.onactivate();
+	assert.equal(sent[3].name, "HeroSwaps:cancel");
+	data.requests = {};
+	data.players[0].busy = 1;
+	listener("game_options", "hero_swaps", data);
+	assert.equal(container.FindChildTraverse("RequestSwap_1"), null, "Accepted swap blocks new requests");
+	data.open = 0;
+	listener("game_options", "hero_swaps", data);
+	assert.equal(root.visible, false);
+	data.open = 1;
+	delete data.players[0];
+	listener("game_options", "hero_swaps", data);
+	assert.equal(root.visible, false, "Spectators and unpicked players cannot send swaps");
+	console.log("PASS hero swap UI: requests, incoming consent, decline, cancellation, busy state, phase closure and spectators");
 }
 
 for (let draft = 0; draft < 2; draft++) for (let epic = 0; epic < 2; epic++) {

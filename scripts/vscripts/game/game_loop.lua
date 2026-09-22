@@ -397,6 +397,7 @@ function GameLoop:InitHero(hero)
 		player_id = player_id,
 		hero = hero
 	})
+	if HeroSwaps then HeroSwaps:CaptureBaseUpgrades(hero) end
 end
 
 

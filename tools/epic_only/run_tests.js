@@ -50,3 +50,13 @@ assert.match(result.stdout || '', /\d+ orb regression cases passed/);
 assert.match(result.stdout || '', /PASS host rules:.*one-time start\s*$/);
 assert.equal((result.stderr || '').trim(), '', 'Lua stderr');
 require('./panorama_test');
+const swaps = spawnSync(process.execPath, [
+  path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
+  'tools/epic_only/test_hero_swaps.lua',
+], { cwd: root, encoding: 'utf8' });
+if (swaps.stdout) process.stdout.write(swaps.stdout);
+if (swaps.stderr) process.stderr.write(swaps.stderr);
+assert.equal(swaps.error, undefined);
+assert.equal(swaps.status, 0);
+assert.equal((swaps.stderr || '').trim(), '');
+assert.match(swaps.stdout, /PASS hero swaps:/);

@@ -198,3 +198,24 @@ copy:   907E9809DCE86DD17797DF1179BB7A241E1596582C76D811AC88B07C09306D45
 After building, launch the addon with `ot3_ffa_epic` and verify
 the map loads, pathing/minimap work, and Lua reports the new map name. Also load
 `ot3_necropolis_ffa` separately to verify the existing map still works.
+# Cross-team hero swaps
+
+The configurable FFA exposes **Hero Swaps** at the upper right after choosing a
+hero. Players can request, accept, decline, or cancel swaps across teams in any
+pick mode, including heroes outside their original Single Draft offers. Requests
+expire after 30 seconds and require the recipient's consent. Accepted requests
+during selection or strategy are held until both hero entities spawn. Swaps close
+at match start; disconnects or changed selections invalidate pending requests.
+
+Teams, gold, inventory slots/items and remaining rerolls stay with each player.
+The actual hero entity, facet and learned abilities change owners. Orb upgrades
+are reset, including generic modifiers and their rune/stat effects. Consumed
+orbs are returned as upgrade choices of their original rarities to the player
+who used them; unspent choices remain queued. Refunds do not rerun lucky-trinket
+rolls or grant new starting rewards. Non-orb account bonuses stay with the player.
+
+The regression runner includes server request/consent tests and Panorama panel
+tests. `hero_swaps_smoke.lua` checks engine reassignment and refund behavior in a
+disposable local Tools session with a synthetic second player;
+`hero_swaps_ui_smoke.lua` checks acceptance through the actual client button.
+These checks do not replace an online multiplayer test.
