@@ -36,6 +36,7 @@ const additional_hints_config = {
 	},
 };
 let current_hint;
+let matchRulesPageChanged;
 let auto_hint_schedule;
 let players = {};
 
@@ -66,6 +67,7 @@ function SetHint(idx) {
 	const hint_name = hints[idx][0];
 	const settings = LOADING_HUD.CONTEXT.FindChildTraverse("MatchRulesPanel");
 	if (settings) settings.visible = hint_name === "settings";
+	if (hint_name === "settings" && matchRulesPageChanged) matchRulesPageChanged(idx);
 	const hint_config = additional_hints_config[hint_name];
 	const b_image = !!hint_config && hint_config.b_image;
 	const b_hide_desc = !!hint_config && hint_config.b_hide_desc;
@@ -238,27 +240,60 @@ function InitMatchRules() {
 		return p;
 	}
 	const controls = {};
-	let killGoal, goalDirty = false, syncingGoal = false, canEditRules = false;
+	let killGoal, killGoalFrame, killGoalMeasure, goalDirty = false, syncingGoal = false, canEditRules = false;
+	function alignKillGoal() {
+		if (!killGoal.IsValid() || !killGoalMeasure.IsValid()) return;
+		killGoalMeasure.text = killGoal.text;
+		// TextEntry ignores text-align in the current Dota client. Measure the
+		// actual font and right-anchor the editor inside a full-width clickable box.
+		$.Schedule(0.03, function() {
+			if (!killGoal.IsValid() || !killGoalMeasure.IsValid()) return;
+			const scale = killGoalMeasure.actualuiscale_x || 1;
+			const textWidth = killGoalMeasure.actuallayoutwidth / scale;
+			if (killGoal.text && textWidth === 0) {
+				$.Schedule(0.1, alignKillGoal);
+				return;
+			}
+			killGoal.style.width = Math.min(98, Math.max(22, textWidth + 18)) + "px";
+		});
+	}
 	function validKillGoal() {
 		return /^\d+$/.test(killGoal.text) && Number(killGoal.text) >= 1 && Number(killGoal.text) <= 2147483647;
 	}
-	const categories = [{ id: "core", options: ["epic_orbs", "turbo", "single_draft", "kill_goal"] }];
+	const categories = [
+		{ id: "core", options: ["epic_orbs", "turbo", "single_draft", "kill_goal"] },
+		{ id: "other", options: ["infinite_rerolls", "longer_wards"] },
+		{ id: "items", options: ["divine_rapier", "dagon"] },
+	];
 	const body = $.CreatePanel("Panel", panel, "MatchRulesCategories");
 	body.style.width = "100%";
 	body.style.height = "fill-parent-flow(1.0)";
 	body.style.flowChildren = "down";
 	body.style.overflow = "squish scroll";
-	categories.forEach(function(category) {
+	const groups = [];
+	const nextCaptions = [];
+	const visited = {};
+	categories.forEach(function(category, index) {
 		const group = $.CreatePanel("Panel", body, "MatchRules_" + category.id);
 		group.style.width = "100%";
 		group.style.flowChildren = "down";
 		group.style.marginBottom = "12px";
-		const heading = label(group, "#host_rules_category_" + category.id);
+		groups.push(group);
+		const header = $.CreatePanel("Panel", group, "MatchRulesHeader_" + category.id);
+		header.style.width = "100%";
+		header.style.height = "36px";
+		const heading = label(header, "#host_rules_category_" + category.id);
 		heading.style.color = "#d4bb86";
 		heading.style.fontSize = "20px";
 		heading.style.fontWeight = "semi-bold";
 		heading.style.letterSpacing = "1px";
-		heading.style.marginBottom = "12px";
+		heading.style.marginBottom = "0px";
+		const caption = label(header, "");
+		caption.style.horizontalAlign = "right";
+		caption.hittest = false;
+		caption.text = (index + 1) + " / " + categories.length;
+		caption.style.fontSize = "16px";
+		nextCaptions.push(caption);
 		category.options.forEach(function(name) {
 			const row = $.CreatePanel(name === "kill_goal" ? "Panel" : "ToggleButton", group, "Rule_" + name);
 			row.style.width = "100%";
@@ -271,18 +306,37 @@ function InitMatchRules() {
 			caption.style.marginBottom = "0px";
 			caption.style.verticalAlign = "center";
 			if (name === "kill_goal") {
-				killGoal = $.CreatePanel("TextEntry", row, "KillGoalInput");
+				killGoalFrame = $.CreatePanel("Panel", row, "KillGoalField");
+				killGoalFrame.style.horizontalAlign = "right";
+				killGoalFrame.style.verticalAlign = "center";
+				killGoalFrame.style.width = "100px";
+				killGoalFrame.style.height = "30px";
+				killGoalFrame.style.backgroundColor = "#0c141e";
+				killGoalFrame.style.border = "1px solid #607988";
+				killGoal = $.CreatePanel("TextEntry", killGoalFrame, "KillGoalInput");
 				killGoal.style.horizontalAlign = "right";
 				killGoal.style.verticalAlign = "center";
 				killGoal.style.width = "100px";
 				killGoal.style.height = "30px";
 				killGoal.style.fontSize = "18px";
-				killGoal.style.textAlign = "right";
+				killGoal.style.fontFamily = "Radiance";
+				killGoal.style.fontWeight = "normal";
+				killGoal.style.padding = "3px 6px";
 				killGoal.style.color = "#eeeeee";
-				killGoal.style.backgroundColor = "#0c141e";
-				killGoal.style.border = "1px solid #607988";
+				killGoal.style.backgroundColor = "transparent";
+				killGoal.style.border = "0px";
+				killGoalFrame.SetPanelEvent("onactivate", function() { if (canEditRules) killGoal.SetFocus(); });
 				killGoal.maxchars = 10;
 				killGoal.text = "30";
+				killGoalMeasure = $.CreatePanel("Label", row, "KillGoalTextMeasure");
+				killGoalMeasure.style.width = "fit-children";
+				killGoalMeasure.style.fontFamily = "Radiance";
+				killGoalMeasure.style.fontSize = "18px";
+				killGoalMeasure.style.fontWeight = "normal";
+				killGoalMeasure.style.padding = "0px";
+				killGoalMeasure.style.color = "#00000000";
+				killGoalMeasure.hittest = false;
+				alignKillGoal();
 				return;
 			}
 			controls[name] = row;
@@ -292,7 +346,7 @@ function InitMatchRules() {
 		});
 	});
 	const start = $.CreatePanel("Button", panel, "ApplyMatchRules");
-	start.style.horizontalAlign = "right";
+	start.style.horizontalAlign = "center";
 	start.style.marginTop = "16px";
 	start.style.backgroundColor = "gradient(linear, 0% 0%, 0% 100%, from(#527647), to(#344e30))";
 	start.style.border = "1px solid #789364";
@@ -305,10 +359,11 @@ function InitMatchRules() {
 		GameEvents.SendToServerEnsured("HostOptions:apply_rules", event);
 	});
 	killGoal.SetPanelEvent("ontextentrychange", function() {
+		alignKillGoal();
 		if (syncingGoal || !canEditRules) return;
 		goalDirty = true;
 		const valid = validKillGoal();
-		killGoal.style.border = valid ? "1px solid #607988" : "1px solid #d66b62";
+		killGoalFrame.style.border = valid ? "1px solid #607988" : "1px solid #d66b62";
 		start.enabled = valid;
 		if (valid) GameEvents.SendToServerEnsured("HostOptions:set_option_state", {name: "kill_goal", state: Number(killGoal.text)});
 	});
@@ -320,9 +375,10 @@ function InitMatchRules() {
 		if (!canEdit || !goalDirty) {
 			syncingGoal = true;
 			killGoal.text = String(rules.kill_goal === undefined ? 30 : rules.kill_goal);
+			alignKillGoal();
 			syncingGoal = false;
 			goalDirty = false;
-			killGoal.style.border = "1px solid #607988";
+			killGoalFrame.style.border = "1px solid #607988";
 		}
 		Object.keys(controls).forEach(function(name) {
 			controls[name].enabled = canEdit;
@@ -333,7 +389,18 @@ function InitMatchRules() {
 	}
 	CustomNetTables.SubscribeNetTableListener("game_options", function(table, key) { if (key === "match_rules") refresh(); });
 	refresh();
-	hints.splice(0, hints.length, ["settings", 0]);
+	matchRulesPageChanged = function(index) {
+		visited[index] = true;
+		groups.forEach(function(group, i) { group.visible = i === index; });
+		nextCaptions.forEach(function(caption, i) {
+			const unseen = !visited[(i + 1) % categories.length];
+			caption.style.color = unseen ? "#dfc58b" : "#8da6b5";
+			caption.style.textShadow = unseen ? "0px 0px 5px #c59a4855" : "none";
+		});
+	};
+	matchRulesPageChanged(0);
+	hints.splice(0, hints.length);
+	categories.forEach(function() { hints.push(["settings", 0]); });
 	InitHints();
 }
 

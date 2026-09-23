@@ -57,6 +57,7 @@ class Panel {
 	SetImage(image) { this.image = image; }
 	SetSelected(value) { this.selected = value; }
 	IsSelected() { return !!this.selected; }
+	IsValid() { return true; }
 	RemoveAndDeleteChildren() { this.children = []; }
 }
 
@@ -89,7 +90,18 @@ class Panel {
 	assert.equal(sent[0].payload.target, 1);
 	data.requests = {5: {id: 5, from: 1, to: 0}};
 	listener("game_options", "hero_swaps", data);
-	assert.ok(container.FindChildTraverse("HeroSwapsBody").visible, "Incoming request opens menu");
+	const swapBody = container.FindChildTraverse("HeroSwapsBody");
+	const swapToggle = container.FindChildTraverse("HeroSwapsToggle");
+	const swapBadge = container.FindChildTraverse("HeroSwapRequestBadge");
+	assert.equal(swapBody.visible, false, "Incoming request must not open the menu");
+	assert.equal(swapBadge.visible, true);
+	assert.equal(swapBadge.text, "1");
+	assert.ok(!swapBody.children.some(panel => panel.text === "#hero_swaps_hint"), "Explanatory description removed");
+	swapToggle.events.onactivate();
+	assert.equal(swapBody.visible, true, "Player can open request controls");
+	swapToggle.events.onactivate();
+	events["HeroSwaps:status"]({status: "accepted"});
+	assert.equal(swapBody.visible, false, "Status updates must not force the menu open");
 	container.FindChildTraverse("AcceptSwap_1").events.onactivate();
 	assert.equal(sent[1].name, "HeroSwaps:accept");
 	assert.equal(sent[1].payload.request_id, 5);
@@ -97,6 +109,7 @@ class Panel {
 	assert.equal(sent[2].name, "HeroSwaps:decline");
 	data.requests = {6: {id: 6, from: 0, to: 1}};
 	listener("game_options", "hero_swaps", data);
+	assert.equal(swapBadge.visible, false, "Clear badge when no incoming requests remain");
 	container.FindChildTraverse("CancelSwap_1").events.onactivate();
 	assert.equal(sent[3].name, "HeroSwaps:cancel");
 	data.requests = {};
@@ -139,7 +152,7 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	let listener;
 	const requests = [];
 	const context = vm.createContext({LOADING_HUD: {CONTEXT: root, MOVIE_CONTAINER: root}, hints: [], InitHints: () => {},
-		$: {CreatePanel: (type, parent, id) => new Panel(id, type, parent), Localize: value => value},
+		$: {CreatePanel: (type, parent, id) => new Panel(id, type, parent), Localize: value => value, Schedule: () => {}},
 		Game: {GetLocalPlayerID: () => 0},
 		GameEvents: {SendToServerEnsured: (name, args) => requests.push({name, args})},
 		CustomNetTables: {GetTableValue: () => data, SubscribeNetTableListener: (table, fn) => { listener = fn; }},
@@ -148,19 +161,26 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	assert.equal(root.children.length, 0, "wait for rules before constructing controls");
 	const logo = new Panel("Logo", "Image", root, ["LS_Tips_Logo"]);
 	const discord = new Panel("Discord", "Button", root, ["LS_DiscordButton"]);
-	data = {host_id: 0, locked: 0, single_draft: 1, epic_orbs: 0, turbo: 1};
+	data = {host_id: 0, locked: 0, single_draft: 1, epic_orbs: 0, turbo: 1, longer_wards: 1};
 	vm.runInContext("InitMatchRules(); InitMatchRules();", context);
 	assert.equal(root.children.length, 3, "initialize only once");
 	assert.equal(logo.visible, false);
 	assert.equal(discord.visible, false);
 	assert.equal(root.FindChildTraverse("Rule_flat_rerolls"), null);
 	assert.deepEqual(root.FindChildTraverse("MatchRules_core").children.filter(p => p.paneltype === "ToggleButton").map(p => p.id), ["Rule_epic_orbs", "Rule_turbo", "Rule_single_draft"]);
-	assert.equal(vm.runInContext("hints.length", context), 1, "only settings page remains");
+	assert.equal(vm.runInContext("hints.length", context), 3, "one settings page per category");
+	assert.equal(root.FindChildTraverse("MatchRules_core").visible, true);
+	assert.equal(root.FindChildTraverse("MatchRules_other").visible, false);
+	vm.runInContext("matchRulesPageChanged(1)", context);
+	assert.equal(root.FindChildTraverse("MatchRules_core").visible, false);
+	assert.equal(root.FindChildTraverse("MatchRules_other").visible, true);
+	vm.runInContext("matchRulesPageChanged(2)", context);
+	assert.equal(root.FindChildTraverse("MatchRules_items").visible, true);
 	assert.equal(vm.runInContext("hints[0][0]", context), "settings");
 	const start = root.FindChildTraverse("ApplyMatchRules");
 	assert.equal(start.enabled, true);
 	start.events.onactivate();
-	assert.deepEqual(JSON.parse(JSON.stringify(requests[0])), {name:"HostOptions:apply_rules", args:{single_draft:1,epic_orbs:0,turbo:1,kill_goal:30}});
+	assert.deepEqual(JSON.parse(JSON.stringify(requests[0])), {name:"HostOptions:apply_rules", args:{single_draft:1,epic_orbs:0,turbo:1,kill_goal:30,infinite_rerolls:0,longer_wards:1,divine_rapier:0,dagon:0}});
 	const goal = root.FindChildTraverse("KillGoalInput");
 	assert.equal(goal.text, "30");
 	goal.text = "";

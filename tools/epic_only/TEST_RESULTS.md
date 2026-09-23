@@ -157,3 +157,21 @@ requires a map reload; a running user game was not interrupted to test it.
   `HERO_SWAPS_CLOSE_PASS`. Smoke scripts use a synthetic local second player and
   temporarily simulate its connected flag; they do not test online networking.
   Multiplayer testing was skipped as requested.
+
+## Other / Items settings and category pages
+
+- Full Node/Fengari regression suite passed, including new flag defaults,
+  validation and locking, independent item toggles, 30/999 reroll allowances,
+  unchanged rarity prices, coalesced assembly scans, and ward/detection duration.
+- Compiled Panorama resources rebuilt and verified. UI tests check three pages,
+  category visibility, preserved controls and the complete Apply payload.
+- Local Dota Tools: all category pages visually inspected; the actual controls
+  enabled the new options and Apply locked all four values on the server.
+- `HOST_SETTINGS_ENGINE_PASS`: 999 rerolls; Observer lifetime about 1080 seconds;
+  Sentry lifetime and detection about 1260 seconds (accounting for spawn delay).
+- `HOST_ITEMS_ENGINE_PASS` in a fresh game: disabled Rapier/Dagon assemblies on
+  heroes and couriers returned all components/recipes with combine locks and no
+  gold change; enabled items assembled; Radiance still assembled with its shared
+  Sacred Relic component. Shop inspected after removing the native whitelist;
+  custom item entries are available again.
+- Multiplayer testing remains skipped as requested.

@@ -17,6 +17,7 @@ function Events:_OnNpcInitFinished(event, unit, unit_name)
 
 	local owner = unit:GetOwner()
 	local owner_player_id = unit:GetPlayerOwnerID()
+	HostItems:ExtendWardLifetime(unit, unit_name)
 
 	if owner and not owner:IsNull() then
 		local source = GameLoop.hero_by_player_id[unit:GetPlayerOwnerID()]

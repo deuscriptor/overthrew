@@ -219,3 +219,25 @@ tests. `hero_swaps_smoke.lua` checks engine reassignment and refund behavior in 
 disposable local Tools session with a synthetic second player;
 `hero_swaps_ui_smoke.lua` checks acceptance through the actual client button.
 These checks do not replace an online multiplayer test.
+
+## Other and Items settings
+
+The setup menu has one category per page: Core, Other, Items. Existing arrows and
+page indicators remain; the page counter highlights unseen pages. Apply & Start
+is available on every page, centered clear of the navigation arrows.
+
+Other contains Infinite Rerolls (999 instead of 30, default off) and Longer Wards
+(triple Observer/Sentry lifetime, including Sentry detection, default on). Reroll
+prices still follow the Epic-Only setting. Items contains Divine Rapier and Dagon
+(all levels), both default off. Settings remain host-only and lock before picking.
+
+Disabled item assemblies are disassembled by the engine into their components
+and recipe, with native combine locks to prevent an immediate rebuild. Components
+can be unlocked for other recipes. Inventory events and the inventory filter
+cover hero/courier assembly, stash and quick-buy paths. Purchase and item-use
+orders are also checked. No global item whitelist is used: it greys out custom
+replacement items. Other maps retain the Rapier/Dagon restrictions.
+
+`host_settings_smoke.lua` checks defaults/setup, rerolls and placed wards in a
+disposable local game. `host_items_smoke.lua` checks hero/courier assembly with
+options on/off, component preservation and an unrelated shared-component recipe.

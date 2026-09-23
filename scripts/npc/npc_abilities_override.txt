@@ -5,17 +5,7 @@
 	// Early purchase for aghs shard
 	"item_aghanims_shard"	{	"ItemInitialStockTime"	"120"	}
 
-	// Remove Dagon
-	"item_dagon"			{	"ItemPurchasable"	"0"	}
-	"item_dagon_1"			{	"ItemPurchasable"	"0"	}
-	"item_dagon_2"			{	"ItemPurchasable"	"0"	}
-	"item_dagon_3"			{	"ItemPurchasable"	"0"	}
-	"item_dagon_4"			{	"ItemPurchasable"	"0"	}
-	"item_dagon_5"			{	"ItemPurchasable"	"0"	}
-	"item_recipe_dagon"		{	"ItemPurchasable"	"0"	}
-
-	// Remove Rapier
-	"item_rapier"			{	"ItemPurchasable"	"0"	}
+	// Rapier and Dagon availability is controlled by game/host_items.lua.
 
 	// Remove items luafied
 	"item_recipe_hand_of_midas"				{	"ItemPurchasable"	"0"	}

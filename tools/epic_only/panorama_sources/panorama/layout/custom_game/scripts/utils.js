@@ -28,7 +28,7 @@ function CreateHeroSwapPanel() {
 	root.style.verticalAlign = "top";
 	root.style.marginTop = "130px";
 	root.style.marginRight = "24px";
-	root.style.width = "350px";
+	root.style.width = "fit-children";
 	root.style.flowChildren = "down";
 	root.style.zIndex = "100";
 	let expanded = false, signature = "";
@@ -56,17 +56,28 @@ function CreateHeroSwapPanel() {
 		body.visible = expanded;
 	});
 	toggle.style.horizontalAlign = "right";
+	toggle.style.flowChildren = "right";
+	toggle.style.padding = "4px 8px";
+	toggle.Children()[0].style.fontSize = "14px";
+	const badge = $.CreatePanel("Label", toggle, "HeroSwapRequestBadge");
+	badge.style.width = "18px";
+	badge.style.height = "18px";
+	badge.style.marginLeft = "6px";
+	badge.style.verticalAlign = "center";
+	badge.style.textAlign = "center";
+	badge.style.fontSize = "12px";
+	badge.style.fontWeight = "bold";
+	badge.style.color = "#101c29";
+	badge.style.backgroundColor = "#e7c58a";
+	badge.style.borderRadius = "9px";
+	badge.visible = false;
 	const body = $.CreatePanel("Panel", root, "HeroSwapsBody");
-	body.style.width = "100%";
+	body.style.width = "350px";
 	body.style.flowChildren = "down";
 	body.style.backgroundColor = "#101c29";
 	body.style.border = "1px solid #3c5268";
 	body.style.padding = "12px";
 	body.visible = false;
-	const hint = label(body, $.Localize("#hero_swaps_hint"));
-	hint.style.width = "100%";
-	hint.style.fontSize = "14px";
-	hint.style.marginBottom = "10px";
 	const status = label(body, "");
 	status.style.width = "100%";
 	status.style.color = "#e7c58a";
@@ -89,7 +100,8 @@ function CreateHeroSwapPanel() {
 		if (!root.visible) return;
 		const requests = Object.values(value.requests || {});
 		const incoming = requests.filter(request => request.to === localID);
-		if (incoming.length) { expanded = true; body.visible = true; }
+		badge.text = String(incoming.length);
+		badge.visible = incoming.length > 0;
 		if (me.busy !== 1 && requests.some(request => request.from === localID || request.to === localID)) status.text = "";
 		if (me.busy === 1) status.text = $.Localize("#hero_swaps_accepted");
 		let count = 0;
@@ -133,7 +145,6 @@ function CreateHeroSwapPanel() {
 	const protectedFrame = GameEvents.NewProtectedFrame($.GetContextPanel());
 	protectedFrame.SubscribeProtected("HeroSwaps:status", function(event) {
 		status.text = $.Localize("#hero_swaps_" + event.status);
-		if (event.status === "accepted") { expanded = true; body.visible = true; }
 	});
 	CustomNetTables.SubscribeNetTableListener("game_options", function(table, key, value) {
 		if (key === "hero_swaps") render(value);

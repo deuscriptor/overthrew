@@ -1,5 +1,7 @@
 HostOptions = HostOptions or {}
 
+local MATCH_FLAGS = {"single_draft", "epic_orbs", "turbo", "infinite_rerolls", "longer_wards", "divine_rapier", "dagon"}
+
 --- Known host option types
 ---@type table<string, string>
 HOST_OPTION = {
@@ -18,9 +20,9 @@ function HostOptions:Init()
 	if UsesHostRules() then
 		HostOptions.available_options.kill_goal = true
 		HostOptions.options.kill_goal = 30
-		for _, name in ipairs({"single_draft", "epic_orbs", "turbo"}) do
+		for _, name in ipairs(MATCH_FLAGS) do
 			HostOptions.available_options[name] = true
-			HostOptions.options[name] = false
+			HostOptions.options[name] = name == "longer_wards"
 		end
 	end
 	EventStream:Listen("HostOptions:apply_rules", function(event, user_id)
@@ -92,13 +94,12 @@ function HostOptions:PublishRules()
 			break
 		end
 	end
-	CustomNetTables:SetTableValue("game_options", "match_rules", {
+	local rules = {
 		host_id = host_id, locked = self.locked and 1 or 0,
-		single_draft = self:GetOption("single_draft") and 1 or 0,
-		epic_orbs = self:GetOption("epic_orbs") and 1 or 0,
-		turbo = self:GetOption("turbo") and 1 or 0,
 		kill_goal = self.options.kill_goal,
-	})
+	}
+	for _, name in ipairs(MATCH_FLAGS) do rules[name] = self:GetOption(name) and 1 or 0 end
+	CustomNetTables:SetTableValue("game_options", "match_rules", rules)
 end
 
 function HostOptions:HoldSetup()
@@ -119,7 +120,7 @@ function HostOptions:ApplyRules(event)
 	if not IsValidEntity(player) or not GameRules:PlayerHasCustomGameHostPrivileges(player) then return false end
 	if not self:IsValidKillGoal(event.kill_goal) then return false end
 	local rules = {}
-	for _, name in ipairs({"single_draft", "epic_orbs", "turbo"}) do
+	for _, name in ipairs(MATCH_FLAGS) do
 		local value = event[name]
 		if value ~= 0 and value ~= 1 and value ~= false and value ~= true then return false end
 		rules[name] = value == 1 or value == true
@@ -132,6 +133,7 @@ function HostOptions:ApplyRules(event)
 	GameRules:SetCustomGameBansPerTeam(IsSingleDraftMap() and 0 or TEAMS_LAYOUTS[GetMapName()].player_count)
 	SingleDraft:Init()
 	self.locked = true
+	HostItems:ApplyRules()
 	CustomNetTables:SetTableValue("game_options", "host_options", self.options)
 	self:PublishRules()
 	GameRules:FinishCustomGameSetup()

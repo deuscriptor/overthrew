@@ -60,3 +60,13 @@ assert.equal(swaps.error, undefined);
 assert.equal(swaps.status, 0);
 assert.equal((swaps.stderr || '').trim(), '');
 assert.match(swaps.stdout, /PASS hero swaps:/);
+const hostSettings = spawnSync(process.execPath, [
+  path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
+  'tools/epic_only/test_host_settings.lua',
+], { cwd: root, encoding: 'utf8' });
+if (hostSettings.stdout) process.stdout.write(hostSettings.stdout);
+if (hostSettings.stderr) process.stderr.write(hostSettings.stderr);
+assert.equal(hostSettings.error, undefined);
+assert.equal(hostSettings.status, 0);
+assert.equal((hostSettings.stderr || '').trim(), '');
+assert.match(hostSettings.stdout, /PASS host settings:/);

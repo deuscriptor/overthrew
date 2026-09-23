@@ -5,8 +5,6 @@
 
 "DOTAAbilities"
 {
-	"item_rapier"						"REMOVED"
-	"item_recipe_rapier"				"REMOVED"
 
 	// Gold coin pickup
 	"item_gold_coin"

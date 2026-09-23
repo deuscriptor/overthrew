@@ -18,13 +18,15 @@ EventStream = {Listen = function() end}
 EventDriver = {Listen = function() end}
 CustomNetTables = {SetTableValue = function() end}
 SingleDraft.Init = function() if IsSingleDraftMap() then initialized = initialized + 1 end end
+HostItems = {ApplyRules = function() end}
 dofile("scripts/vscripts/libraries/host_options.lua")
 GameLoop.current_layout = TEAMS_LAYOUTS.ot3_necropolis_ffa
 for draft = 0, 1 do for epic = 0, 1 do for turbo = 0, 1 do
     HostOptions:Init()
     assert(not HostOptions:GetOption("turbo"), "Turbo must default off")
+    assert(HostOptions:GetOption("longer_wards"), "Longer Wards must default on")
     assert(HostOptions.options.kill_goal == 30)
-    local event = {PlayerID = 1, single_draft = draft, epic_orbs = epic, turbo = turbo, kill_goal = 45}
+    local event = {PlayerID = 1, infinite_rerolls=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft = draft, epic_orbs = epic, turbo = turbo, kill_goal = 45}
     assert(not HostOptions:ApplyRules(event), "non-host accepted")
     event.PlayerID = 0
     event.epic_orbs = "true"
@@ -57,18 +59,33 @@ for draft = 0, 1 do for epic = 0, 1 do for turbo = 0, 1 do
     assert(IsEpicOnlyMap() == (epic == 1), "locked rule changed")
 end end end
 assert(initialized == 4)
+for _, name in ipairs({"infinite_rerolls", "longer_wards", "divine_rapier", "dagon"}) do
+    HostOptions:Init()
+    assert(HostOptions:GetOption(name) == (name == "longer_wards"))
+    local event = {PlayerID=0, single_draft=0, epic_orbs=0, turbo=0, kill_goal=30,
+        infinite_rerolls=1, longer_wards=0, divine_rapier=1, dagon=1}
+    local value = event[name]
+    event[name] = "true"
+    assert(not HostOptions:ApplyRules(event), "invalid new flag accepted")
+    assert(not HostOptions.locked)
+    event[name] = value
+    assert(HostOptions:ApplyRules(event))
+    assert(HostOptions:GetOption(name) == (value == 1))
+    HostOptions:SetOptionState(name, value == 0)
+    assert(HostOptions:GetOption(name) == (value == 1), "locked new flag changed")
+end
 HostOptions:Init()
 host = 1
-assert(not HostOptions:ApplyRules({PlayerID=0, single_draft=0, epic_orbs=0, turbo=0, kill_goal=30}))
+assert(not HostOptions:ApplyRules({PlayerID=0, infinite_rerolls=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, kill_goal=30}))
 for _, invalid in ipairs({0, -1, 1.5, "30", false, math.huge, 2147483648}) do
-    assert(not HostOptions:ApplyRules({PlayerID=1, single_draft=0, epic_orbs=0, turbo=0, kill_goal=invalid}))
+    assert(not HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, kill_goal=invalid}))
     HostOptions:SetOptionState("kill_goal", invalid)
     assert(HostOptions.options.kill_goal == 30)
 end
-assert(HostOptions:ApplyRules({PlayerID=1, single_draft=0, epic_orbs=0, turbo=0, kill_goal=30}))
+assert(HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, kill_goal=30}))
 HostOptions:Init()
 state = DOTA_GAMERULES_STATE_HERO_SELECTION
-assert(not HostOptions:ApplyRules({PlayerID=1, single_draft=1, epic_orbs=1, turbo=1, kill_goal=30}))
+assert(not HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=1, epic_orbs=1, turbo=1, kill_goal=30}))
 map = "ot3_gardens_duo"
 assert(not IsEpicOnlyMap() and not IsSingleDraftMap() and not IsFlatRerollMap())
 dofile("tools/epic_only/test_turbo.lua")

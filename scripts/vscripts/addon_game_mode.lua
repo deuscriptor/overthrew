@@ -12,6 +12,7 @@ require("events/init")
 require("game/init")
 require("game/single_draft")
 require("game/hero_swaps")
+require("game/host_items")
 require("modifiers/init")
 
 function Activate()
@@ -40,6 +41,7 @@ function GameMode:Init()
 
 	GameMode:SetTeams()
 	HeroSwaps:Init()
+	HostItems:ApplyRules()
 	if not UsesHostRules() then SingleDraft:Init() end
 	OrbDropManager:Init()
 	Filters:Init()
