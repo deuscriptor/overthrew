@@ -14,6 +14,30 @@ local restricted = {"item_rapier", "item_recipe_rapier", "item_dagon", "item_rec
 for level = 1, 5 do table.insert(restricted, "item_dagon_" .. level) end
 for _, name in ipairs(restricted) do KeyValues.ItemKV[name] = {} end
 dofile("scripts/vscripts/game/host_items.lua")
+local stockCalls = 0
+local stockReady = false
+GameRules.GetItemStockCount = function() return stockReady and 2 or 0 end
+GetMapName = function() return "ffa" end
+TEAMS_LAYOUTS = {ffa = {teamlist = {2, 3, 6, 7, 8, 9, 10, 11}}}
+GameRules.IncreaseItemStock = function(_, team, item, count, player)
+	assert(count == 2 and item == "item_ward_observer" and player == -1)
+	stockCalls = stockCalls + 1
+end
+HostOptions.options.longer_wards = false
+HostItems:InitializeWardStock()
+assert(stockCalls == 0)
+HostOptions.options.longer_wards = true
+HostOptions.locked = false
+HostItems:InitializeWardStock()
+assert(stockCalls == 0, "Do not initialize before rules lock")
+HostOptions.locked = true
+assert(HostItems:InitializeWardStock() == false, "Wait for native shop stock initialization")
+assert(stockCalls == 0)
+stockReady = true
+HostItems:InitializeWardStock()
+assert(stockCalls == 8, "Initialize every FFA team's stock")
+HostItems:InitializeWardStock()
+assert(stockCalls == 8, "Must not replenish stock on repeated calls")
 dofile("scripts/vscripts/game/upgrades/rerolls.lua")
 UpgradeRerolls:Init()
 for _, enabled in ipairs({false, true}) do
@@ -86,14 +110,41 @@ local function ward(name, enabled, duration)
 	return remaining
 end
 for _, name in ipairs({"npc_dota_observer_wards", "npc_dota_sentry_wards"}) do
-	assert(ward(name, true, 360) == 1079.9, "Triple once, preserving elapsed time")
+	assert(ward(name, true, 360) == 3599.9, "One hour once, preserving elapsed time")
+	assert(ward(name, true, 420) == 3599.9, "Observer and Sentry must have the same lifetime")
 	assert(ward(name, false, 360) == 359.9)
 end
 assert(ward("npc_dota_venomancer_plague_ward_1", true, 40) == 39.9)
+local protected = false
+local protectedUnit = {
+	HasModifier = function() return protected end,
+	AddNewModifier = function(_, _, _, name) assert(name == "modifier_host_invincible_ward"); protected = true end,
+}
+for _, enabled in ipairs({false, true}) do
+	HostOptions.options.invincible_wards = enabled
+	for _, name in ipairs({"npc_dota_observer_wards", "npc_dota_sentry_wards"}) do
+		protected = false
+		HostOptions.options.longer_wards = false
+		HostItems:ProtectWard(protectedUnit, name)
+		assert(protected == enabled, "Protection must be independent of Longer Wards")
+	end
+end
+protected = false
+HostItems:ProtectWard(protectedUnit, "npc_dota_venomancer_plague_ward_1")
+assert(not protected, "Do not protect summoned combat wards")
+HostOptions.locked = false
+HostItems:ProtectWard(protectedUnit, "npc_dota_observer_wards")
+assert(not protected, "Do not apply unlocked rules")
+HostOptions.locked = true
 map = false
+HostItems:ProtectWard(protectedUnit, "npc_dota_observer_wards")
+assert(not protected, "Do not protect wards on other maps")
+HostItems.ward_stock_initialized = false
+HostItems:InitializeWardStock()
+assert(stockCalls == 8, "Other maps must keep default stock")
 HostItems:ApplyRules()
 for _, name in ipairs(restricted) do assert(HostItems:IsDisabled(name), "Other maps must keep bans") end
 UpgradeRerolls:PreparePlayer(0)
 assert(UpgradeRerolls.current_free_rerolls[0] == 30)
 assert(ward("npc_dota_observer_wards", true, 360) == 359.9)
-print("PASS host settings: item toggles independent, component restoration scheduled once, other maps restricted, 999 allowance, rarity costs preserved, ward lifetime tripled once")
+print("PASS host settings: item toggles independent, component restoration scheduled once, other maps restricted, 999 allowance, rarity costs preserved, 60-minute ward lifetime set once")

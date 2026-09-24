@@ -70,3 +70,13 @@ assert.equal(hostSettings.error, undefined);
 assert.equal(hostSettings.status, 0);
 assert.equal((hostSettings.stderr || '').trim(), '');
 assert.match(hostSettings.stdout, /PASS host settings:/);
+const freeCollection = spawnSync(process.execPath, [
+  path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
+  'tools/epic_only/test_free_collection.lua',
+], { cwd: root, encoding: 'utf8' });
+if (freeCollection.stdout) process.stdout.write(freeCollection.stdout);
+if (freeCollection.stderr) process.stderr.write(freeCollection.stderr);
+assert.equal(freeCollection.error, undefined);
+assert.equal(freeCollection.status, 0);
+assert.equal((freeCollection.stderr || '').trim(), '');
+assert.match(freeCollection.stdout, /PASS free collection:/);

@@ -151,8 +151,10 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	let data;
 	let listener;
 	const requests = [];
+	const waitingFrames = [];
 	const context = vm.createContext({LOADING_HUD: {CONTEXT: root, MOVIE_CONTAINER: root}, hints: [], InitHints: () => {},
-		$: {CreatePanel: (type, parent, id) => new Panel(id, type, parent), Localize: value => value, Schedule: () => {}},
+		$: {CreatePanel: (type, parent, id) => new Panel(id, type, parent), Localize: value => value,
+			Schedule: (delay, callback) => { if (delay === 0.6) waitingFrames.push(callback); }},
 		Game: {GetLocalPlayerID: () => 0},
 		GameEvents: {SendToServerEnsured: (name, args) => requests.push({name, args})},
 		CustomNetTables: {GetTableValue: () => data, SubscribeNetTableListener: (table, fn) => { listener = fn; }},
@@ -167,10 +169,11 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	assert.equal(logo.visible, false);
 	assert.equal(discord.visible, false);
 	assert.equal(root.FindChildTraverse("Rule_flat_rerolls"), null);
-	assert.deepEqual(root.FindChildTraverse("MatchRules_core").children.filter(p => p.paneltype === "ToggleButton").map(p => p.id), ["Rule_epic_orbs", "Rule_turbo", "Rule_single_draft"]);
+	assert.deepEqual(root.FindChildTraverse("MatchRules_core").children.filter(p => p.paneltype === "ToggleButton").map(p => p.id), ["Rule_single_draft", "Rule_turbo", "Rule_epic_orbs"]);
 	assert.equal(vm.runInContext("hints.length", context), 3, "one settings page per category");
 	assert.equal(root.FindChildTraverse("MatchRules_core").visible, true);
 	assert.equal(root.FindChildTraverse("MatchRules_other").visible, false);
+	assert.deepEqual(root.FindChildTraverse("MatchRules_other").children.filter(p => p.paneltype === "ToggleButton").map(p => p.id), ["Rule_infinite_rerolls", "Rule_longer_wards", "Rule_invincible_wards", "Rule_all_vision"]);
 	vm.runInContext("matchRulesPageChanged(1)", context);
 	assert.equal(root.FindChildTraverse("MatchRules_core").visible, false);
 	assert.equal(root.FindChildTraverse("MatchRules_other").visible, true);
@@ -178,11 +181,13 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	assert.equal(root.FindChildTraverse("MatchRules_items").visible, true);
 	assert.equal(vm.runInContext("hints[0][0]", context), "settings");
 	const start = root.FindChildTraverse("ApplyMatchRules");
+	const waiting = root.FindChildTraverse("WaitingForHost");
+	assert.equal(waiting.visible, false);
 	assert.equal(start.enabled, true);
 	start.events.onactivate();
-	assert.deepEqual(JSON.parse(JSON.stringify(requests[0])), {name:"HostOptions:apply_rules", args:{single_draft:1,epic_orbs:0,turbo:1,kill_goal:30,infinite_rerolls:0,longer_wards:1,divine_rapier:0,dagon:0}});
+	assert.deepEqual(JSON.parse(JSON.stringify(requests[0])), {name:"HostOptions:apply_rules", args:{single_draft:1,epic_orbs:0,turbo:1,kill_goal:50,infinite_rerolls:0,all_vision:0,invincible_wards:0,longer_wards:1,divine_rapier:0,dagon:0}});
 	const goal = root.FindChildTraverse("KillGoalInput");
-	assert.equal(goal.text, "30");
+	assert.equal(goal.text, "50");
 	goal.text = "";
 	goal.events.ontextentrychange();
 	listener("game_options", "match_rules");
@@ -195,12 +200,19 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	data.host_id = 1;
 	listener("game_options", "match_rules");
 	assert.equal(start.visible, false, "non-host cannot start");
+	assert.equal(waiting.visible, true);
+	assert.equal(waiting.text, "#host_rules_waiting.");
+	for (const dots of ["..", "...", "."]) {
+		waitingFrames.shift()();
+		assert.equal(waiting.text, "#host_rules_waiting" + dots);
+	}
 	assert.equal(root.FindChildTraverse("Rule_single_draft").enabled, false);
 	assert.equal(goal.enabled, false);
 	data.host_id = 0;
 	data.locked = 1;
 	listener("game_options", "match_rules");
 	assert.equal(start.enabled, false, "locked settings cannot be edited");
+	assert.equal(waiting.visible, false, "no waiting message after start");
 }
 console.log("PASS: independent rule flags, delayed settings arrival, host controls and atomic Apply payload");
 

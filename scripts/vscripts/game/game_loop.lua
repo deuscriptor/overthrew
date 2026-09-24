@@ -210,7 +210,7 @@ function GameLoop:OnUnitKilled(event)
 	print("[GameLoop] registered kill by", event.killer:GetUnitName(), "of", killed:GetUnitName())
 	DeepPrintTable(GameLoop.current_kills_count)
 
-	killer:QueueMadstones(1)
+	killer:QueueMadstones(IsTurboMode() and 2 or 1)
 
 	local kill_difference = GameLoop.current_kills_count[killed_team] - current_kills_count
 	local team_gold_reward = LEADER_KILL_GOLD_REWARD_PER_DIFFERENCE * math.floor(kill_difference / LEADER_KILLS_TO_DIFFERENCE)

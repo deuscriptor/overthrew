@@ -13,6 +13,7 @@ PAYMENT_MODES = {
 function WebPayments:Init()
 	WebPayments.pending_requests = {}
 	WebPayments.known_customer_portal_links = {}
+	if LOCAL_FREE_COLLECTION then return end
 
 	EventStream:Listen("WebPayments:get_customer_portal_url", WebPayments.RequestCustomerPortalUrl, WebPayments)
 	EventStream:Listen("WebPayments:get_subscription_upgrade_url", WebPayments.RequestSubscriptionUpgradeUrl, WebPayments)

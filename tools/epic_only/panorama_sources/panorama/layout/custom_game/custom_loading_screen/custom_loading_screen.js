@@ -261,8 +261,8 @@ function InitMatchRules() {
 		return /^\d+$/.test(killGoal.text) && Number(killGoal.text) >= 1 && Number(killGoal.text) <= 2147483647;
 	}
 	const categories = [
-		{ id: "core", options: ["epic_orbs", "turbo", "single_draft", "kill_goal"] },
-		{ id: "other", options: ["infinite_rerolls", "longer_wards"] },
+		{ id: "core", options: ["single_draft", "turbo", "epic_orbs", "kill_goal"] },
+		{ id: "other", options: ["infinite_rerolls", "longer_wards", "invincible_wards", "all_vision"] },
 		{ id: "items", options: ["divine_rapier", "dagon"] },
 	];
 	const body = $.CreatePanel("Panel", panel, "MatchRulesCategories");
@@ -327,7 +327,7 @@ function InitMatchRules() {
 				killGoal.style.border = "0px";
 				killGoalFrame.SetPanelEvent("onactivate", function() { if (canEditRules) killGoal.SetFocus(); });
 				killGoal.maxchars = 10;
-				killGoal.text = "30";
+				killGoal.text = "50";
 				killGoalMeasure = $.CreatePanel("Label", row, "KillGoalTextMeasure");
 				killGoalMeasure.style.width = "fit-children";
 				killGoalMeasure.style.fontFamily = "Radiance";
@@ -352,6 +352,25 @@ function InitMatchRules() {
 	start.style.border = "1px solid #789364";
 	start.style.padding = "10px 26px";
 	label(start, "#host_rules_start").style.marginBottom = "0px";
+	const waiting = $.CreatePanel("Label", panel, "WaitingForHost");
+	waiting.style.horizontalAlign = "center";
+	waiting.style.marginTop = "16px";
+	waiting.style.padding = "10px 26px";
+	waiting.style.fontFamily = "Radiance";
+	waiting.style.fontSize = "18px";
+	waiting.style.color = "#f0f2f5cc";
+	waiting.style.textShadow = "0px 1px 3px #00000066";
+	waiting.style.width = "240px";
+	waiting.style.textAlign = "center";
+	waiting.hittest = false;
+	let waitingDots = 0;
+	function animateWaiting() {
+		if (!waiting.IsValid()) return;
+		waitingDots = waitingDots % 3 + 1;
+		waiting.text = $.Localize("#host_rules_waiting") + ".".repeat(waitingDots);
+		$.Schedule(0.6, animateWaiting);
+	}
+	animateWaiting();
 	start.SetPanelEvent("onactivate", function() {
 		if (!canEditRules || !validKillGoal()) return;
 		const event = {kill_goal: Number(killGoal.text)};
@@ -374,7 +393,7 @@ function InitMatchRules() {
 		killGoal.enabled = canEdit;
 		if (!canEdit || !goalDirty) {
 			syncingGoal = true;
-			killGoal.text = String(rules.kill_goal === undefined ? 30 : rules.kill_goal);
+			killGoal.text = String(rules.kill_goal === undefined ? 50 : rules.kill_goal);
 			alignKillGoal();
 			syncingGoal = false;
 			goalDirty = false;
@@ -386,6 +405,7 @@ function InitMatchRules() {
 		});
 		start.enabled = canEdit && validKillGoal();
 		start.visible = canEdit;
+		waiting.visible = !canEdit && rules.locked !== 1;
 	}
 	CustomNetTables.SubscribeNetTableListener("game_options", function(table, key) { if (key === "match_rules") refresh(); });
 	refresh();

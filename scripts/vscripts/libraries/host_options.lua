@@ -1,6 +1,6 @@
 HostOptions = HostOptions or {}
 
-local MATCH_FLAGS = {"single_draft", "epic_orbs", "turbo", "infinite_rerolls", "longer_wards", "divine_rapier", "dagon"}
+local MATCH_FLAGS = {"single_draft", "epic_orbs", "turbo", "infinite_rerolls", "all_vision", "invincible_wards", "longer_wards", "divine_rapier", "dagon"}
 
 --- Known host option types
 ---@type table<string, string>
@@ -19,10 +19,10 @@ function HostOptions:Init()
 	HostOptions.locked = false
 	if UsesHostRules() then
 		HostOptions.available_options.kill_goal = true
-		HostOptions.options.kill_goal = 30
+		HostOptions.options.kill_goal = 50
 		for _, name in ipairs(MATCH_FLAGS) do
 			HostOptions.available_options[name] = true
-			HostOptions.options[name] = name == "longer_wards"
+			HostOptions.options[name] = name == "longer_wards" or name == "invincible_wards"
 		end
 	end
 	EventStream:Listen("HostOptions:apply_rules", function(event, user_id)
@@ -38,7 +38,7 @@ function HostOptions:Init()
 		if not player_id or not PlayerResource:IsValidPlayerID(player_id) then return end
 
 		local player = PlayerResource:GetPlayer(player_id)
-		if not IsValidEntity(player) or not GameRules:PlayerHasCustomGameHostPrivileges(player) then return end
+		if not HostOptions:IsHost(player) then return end
 
 		HostOptions:SetOptionState(event.name, event.name == "kill_goal" and event.state or toboolean(event.state))
 	end)
@@ -84,16 +84,30 @@ function HostOptions:SetOptionState(option_name, state)
 	if UsesHostRules() then self:PublishRules() end
 end
 
-function HostOptions:PublishRules()
-	local host_id = -1
+function HostOptions:ResolveHost()
+	-- Local Host privileges can be assigned to the first client that loads.
+	-- Use the actual server owner, and wait if their player is not ready yet.
+	if not IsDedicatedServer() then
+		local pawn = GetListenServerHost()
+		local player = IsValidEntity(pawn) and pawn:GetController() or nil
+		if IsValidEntity(player) and PlayerResource:IsValidPlayerID(player:GetPlayerID()) then return player end
+		return nil
+	end
 	for id = 0, DOTA_MAX_TEAM_PLAYERS - 1 do
 		local player = PlayerResource:GetPlayer(id)
 		if IsValidEntity(player) and GameRules:PlayerHasCustomGameHostPrivileges(player) then
-			host_id = id
-			self.host = player
-			break
+			return player
 		end
 	end
+end
+
+function HostOptions:IsHost(player)
+	return IsValidEntity(player) and player == self:ResolveHost()
+end
+
+function HostOptions:PublishRules()
+	self.host = self:ResolveHost()
+	local host_id = IsValidEntity(self.host) and self.host:GetPlayerID() or -1
 	local rules = {
 		host_id = host_id, locked = self.locked and 1 or 0,
 		kill_goal = self.options.kill_goal,
@@ -117,7 +131,7 @@ function HostOptions:ApplyRules(event)
 	local id = event.PlayerID
 	if type(id) ~= "number" or not PlayerResource:IsValidPlayerID(id) then return false end
 	local player = PlayerResource:GetPlayer(id)
-	if not IsValidEntity(player) or not GameRules:PlayerHasCustomGameHostPrivileges(player) then return false end
+	if not self:IsHost(player) then return false end
 	if not self:IsValidKillGoal(event.kill_goal) then return false end
 	local rules = {}
 	for _, name in ipairs(MATCH_FLAGS) do
@@ -128,11 +142,13 @@ function HostOptions:ApplyRules(event)
 	for name, value in pairs(rules) do self.options[name] = value end
 	self.options.kill_goal = event.kill_goal
 	GameLoop.target_kill_goal = event.kill_goal
+	GameLoop.current_layout.game_base_duration = DEFAULT_MATCH_LENGTH * (event.kill_goal / 30)
 	GameLoop:UpdateScoreGoal()
 	-- Configure selection before allowing the engine to leave setup.
 	GameRules:SetCustomGameBansPerTeam(IsSingleDraftMap() and 0 or TEAMS_LAYOUTS[GetMapName()].player_count)
 	SingleDraft:Init()
 	self.locked = true
+	GameRules:GetGameModeEntity():SetFogOfWarDisabled(self:GetOption("all_vision"))
 	HostItems:ApplyRules()
 	CustomNetTables:SetTableValue("game_options", "host_options", self.options)
 	self:PublishRules()
@@ -163,14 +179,11 @@ end
 
 
 function HostOptions:UpdateHostPlayer()
-	for i = 0, DOTA_MAX_TEAM_PLAYERS - 1 do
-		local player = PlayerResource:GetPlayer(i)
-		if player and GameRules:PlayerHasCustomGameHostPrivileges(player) then
-			HostOptions.host = player
-			CustomGameEventManager:Send_ServerToPlayer(player, "HostOptions:show", {
-				available_options = HostOptions.available_options,
-			})
-		end
+	self.host = self:ResolveHost()
+	if IsValidEntity(self.host) then
+		CustomGameEventManager:Send_ServerToPlayer(self.host, "HostOptions:show", {
+			available_options = self.available_options,
+		})
 	end
 end
 

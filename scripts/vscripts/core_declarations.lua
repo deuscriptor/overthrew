@@ -1,3 +1,5 @@
+DEFAULT_MATCH_LENGTH = 1200
+
 TEAM_COLORS = {
 	[DOTA_TEAM_GOODGUYS] = { 61, 210, 150 },
 	[DOTA_TEAM_BADGUYS]  = { 243, 201, 9 },
@@ -84,7 +86,7 @@ TEAMS_LAYOUTS = {
 		abandon_kill_goal_reduction = 2,
 		kills_by_vote = 1,
 		time_by_vote = 30,
-		game_base_duration = 1200,
+		game_base_duration = DEFAULT_MATCH_LENGTH,
 		respawn_time = {
 			11, 10, 9, 8, 7, 6, 5, 4
 		},

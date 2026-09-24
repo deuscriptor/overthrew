@@ -41,7 +41,7 @@ function GameMode:Init()
 
 	GameMode:SetTeams()
 	HeroSwaps:Init()
-	HostItems:ApplyRules()
+	HostItems:Init()
 	if not UsesHostRules() then SingleDraft:Init() end
 	OrbDropManager:Init()
 	Filters:Init()

@@ -1,10 +1,10 @@
 # Configurable FFA
 
 Select **Ffa** (`ot3_necropolis_ffa`) in the lobby. Before hero selection, the
-host can enable Epic-Only, Turbo, and Single Draft independently in the **Core**
+host can enable Turbo, Single Draft, and Epic-Only independently in the **Core**
 category, in that order. Epic-Only also makes
 every reroll cost 1; there is no separate reroll option.
-**Kill Goal** is a numeric input at the bottom of Core, prefilled with 30. The
+**Kill Goal** is a numeric input at the bottom of Core, prefilled with 50. The
 host can enter a positive whole number. Apply locks this as the match's fixed
 kill cap and updates the scoreboard; disconnects and goal-increase events no
 longer alter it on configurable FFA. Existing match-time adjustments still apply.
@@ -12,8 +12,22 @@ All are off by default. Settings replace the guides/videos as the only first pag
 on configurable FFA; page indicators and navigation remain for future settings
 pages. The menu shows category headings, options, and the apply button; it omits
 explanatory paragraphs. **Apply & Start** freezes the settings and begins hero
-selection. Everyone sees the host's current settings; only the current host can
+selection. Local Host games resolve the host from the listen-server player's
+controller, rather than the first loader's native custom-game privileges. Until
+that controller is available, nobody receives settings access. Dedicated servers
+continue using native custom-game host privileges.
+Everyone sees the host's current settings; only the current host can
 change them. The server rejects changes after setup and duplicate start requests.
+Non-host players see a soft white **Waiting for host...** message in place of
+Apply & Start, with dots cycling every 0.6 seconds.
+
+**Invincible Wards**, below Longer Wards on the Other page, defaults on. It
+protects placed Observer and Sentry wards from attacks and damage without
+changing their expiry or requiring Longer Wards. `invincible_wards_smoke.lua`
+checks native attacks, damage and expiry in a disposable tools match.
+
+**All Vision**, below Invincible Wards, defaults off. It disables fog of war for
+all teams without granting True Sight; invisible enemies still require detection.
 
 Turbo doubles earned gold and experience, including passive and central-ring
 income, kills, creeps, objectives, and custom ability rewards. Starting gold stays
@@ -227,7 +241,8 @@ page indicators remain; the page counter highlights unseen pages. Apply & Start
 is available on every page, centered clear of the navigation arrows.
 
 Other contains Infinite Rerolls (999 instead of 30, default off) and Longer Wards
-(triple Observer/Sentry lifetime, including Sentry detection, default on). Reroll
+(60-minute Observer/Sentry lifetime, including Sentry detection, and initial
+Observer shop stock of four per team; default on). Reroll
 prices still follow the Epic-Only setting. Items contains Divine Rapier and Dagon
 (all levels), both default off. Settings remain host-only and lock before picking.
 
@@ -241,3 +256,21 @@ replacement items. Other maps retain the Rapier/Dagon restrictions.
 `host_settings_smoke.lua` checks defaults/setup, rerolls and placed wards in a
 disposable local game. `host_items_smoke.lua` checks hero/courier assembly with
 options on/off, component preservation and an unrelated shared-component recipe.
+
+Kill Goal scales the starting match limit as DEFAULT_MATCH_LENGTH * (Kill Goal / 30).
+DEFAULT_MATCH_LENGTH is 1200 seconds: 30 kills gives 20 minutes, 60 gives 40 minutes.
+The same limit is used by the server and published to the HUD.
+
+## Free local collection
+
+Premium benefits (tier 2) and all 269 bundled collection items are available in
+this addon without purchases or currency. Vanity items can be equipped directly;
+consumable collection items have a reusable local supply. The shop displays
+"Premium & Vanity - Free" and omits currency, subscription and gift-code purchase
+controls. Host-configured orb reroll allowances are unchanged.
+
+Unlocks and equipment selections are local to the running match. Account
+subscription data and balances are not rewritten. Equipment sync, payments,
+inventory writes and match reward submissions to the original backend are blocked.
+`test_free_collection.lua` checks local entitlements, item use and backend-write
+isolation; `free_collection_smoke.lua` checks native access and equipping.

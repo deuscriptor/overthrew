@@ -11,7 +11,7 @@ function WebTreasure:RollTreasureItem(player_id, pool)
 
 		if rarity < TREASURE_DUPLICATE_THRESHOLD then
 			-- items with rarity below threshold cannot be duplicated
-			if not WebInventory:HasItem(player_id, item_name) then
+			if LOCAL_FREE_COLLECTION or not WebInventory:HasItem(player_id, item_name) then
 				weight_pool[item_name] = weight
 				total_weight = total_weight + weight
 			end
@@ -53,7 +53,9 @@ function WebTreasure:OnTreasureUsed(player_id, item_name, item_data, definition)
 
 	local rolled_duplicate = false
 	local currency = 0
-	if WebInventory:HasItem(player_id, rolled_item) then
+	if LOCAL_FREE_COLLECTION then
+		currency = nil
+	elseif WebInventory:HasItem(player_id, rolled_item) then
 		-- add glory instead
 		rolled_duplicate = true
 		-- get currency value from item rarity
