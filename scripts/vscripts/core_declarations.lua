@@ -394,7 +394,7 @@ REROLL_PRICES = {
 	[UPGRADE_RARITY_EPIC] = 4
 }
 
-RANDOM_BONUS_ITEMS = { "item_faerie_fire", "item_enchanted_mango", "item_infused_raindrop" }
+RANDOM_BONUS_ITEMS = { "item_faerie_fire", "item_enchanted_mango" }
 
 MAX_NEUTRAL_ITEMS_PER_PLAYER = 1
 
