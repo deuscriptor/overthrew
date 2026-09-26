@@ -14,6 +14,8 @@ HOST_OPTION = {
 	BOTS = "fill_with_bots"
 }
 
+local HOST_CLAIM_FALLBACK_DELAY = 10
+local HOST_CLAIM_MAX_FAILURES = 5
 
 function HostOptions:Init()
 	HostOptions.options = {}
@@ -22,6 +24,7 @@ function HostOptions:Init()
 	}
 	HostOptions.host = nil
 	HostOptions.locked = false
+	HostOptions:InitHostClaim()
 	if UsesHostRules() then
 		HostOptions.available_options.kill_goal = true
 		HostOptions.options.kill_goal = 50
@@ -51,6 +54,7 @@ function HostOptions:Init()
 	EventDriver:Listen("Events:state_changed", function(event)
 		if event.state == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
 			HostOptions:UpdateHostPlayer()
+			HostOptions:ScheduleClaimFallback()
 		end
 
 		if event.state == DOTA_GAMERULES_STATE_HERO_SELECTION then
@@ -89,15 +93,65 @@ function HostOptions:SetOptionState(option_name, state)
 	if UsesHostRules() then self:PublishRules() end
 end
 
-function HostOptions:ResolveHost()
-	-- Local Host privileges can be assigned to the first client that loads.
-	-- Use the actual server owner, and wait if their player is not ready yet.
-	if not IsDedicatedServer() then
-		local pawn = GetListenServerHost()
-		local player = IsValidEntity(pawn) and pawn:GetController() or nil
-		if IsValidEntity(player) and PlayerResource:IsValidPlayerID(player:GetPlayerID()) then return player end
-		return nil
+-- Scripts cannot see the lobby owner, and on Local Host both native host privileges
+-- and GetListenServerHost() follow client connection order (the first client to load).
+-- The lobby owner's client runs inside the server process and shares its convars, so
+-- only its client VM can read this random token and claim host (libraries/host_claim).
+function HostOptions:InitHostClaim()
+	-- Keep an accepted claim across script reloads; the owner's client claims only once.
+	if IsDedicatedServer() or self.claim_token then return end
+	if Convars:GetStr(HOST_CLAIM_CONVAR) == nil then
+		Convars:RegisterConvar(HOST_CLAIM_CONVAR, "0", "Local Host owner verification token", 0)
 	end
+	if not self.claim_command_registered then
+		self.claim_command_registered = true
+		Convars:RegisterCommand(HOST_CLAIM_COMMAND, function(_, token)
+			local pawn = Convars:GetCommandClient()
+			local player = IsValidEntity(pawn) and pawn:GetController() or nil
+			if IsValidEntity(player) then HostOptions:ClaimHost(player, tonumber(token)) end
+		end, "Local Host owner verification", 0)
+	end
+	self.claim_token = RandomInt(1, 0x3FFFFFFF)
+	self.claim_failures = {}
+	self.claim_fallback = false
+	self.owner_id = nil
+	Convars:SetInt(HOST_CLAIM_CONVAR, self.claim_token)
+end
+
+function HostOptions:ClaimHost(player, token)
+	if not self.claim_token or self.owner_id or self.locked then return false end
+	local id = player:GetPlayerID()
+	if not PlayerResource:IsValidPlayerID(id) then return false end
+	local failures = self.claim_failures[id] or 0
+	if failures >= HOST_CLAIM_MAX_FAILURES then return false end
+	if token ~= self.claim_token then
+		self.claim_failures[id] = failures + 1
+		return false
+	end
+	self.owner_id = id
+	self:UpdateHostPlayer()
+	if UsesHostRules() then self:PublishRules() end
+	return true
+end
+
+function HostOptions:ScheduleClaimFallback()
+	if not self.claim_token or self.owner_id then return end
+	Timers:CreateTimer({useGameTime = false, endTime = HOST_CLAIM_FALLBACK_DELAY, callback = function()
+		if self.owner_id or self.locked then return end
+		-- Never leave setup without a host if the owner's client could not claim.
+		print("[Host Options] no Local Host owner claim received, using native host privileges")
+		self.claim_fallback = true
+		self:UpdateHostPlayer()
+	end})
+end
+
+function HostOptions:ResolveHost()
+	if self.owner_id then
+		local player = PlayerResource:GetPlayer(self.owner_id)
+		return IsValidEntity(player) and player or nil
+	end
+	-- Wait for the Local Host owner's claim instead of trusting connection order.
+	if self.claim_token and not self.claim_fallback then return nil end
 	for id = 0, DOTA_MAX_TEAM_PLAYERS - 1 do
 		local player = PlayerResource:GetPlayer(id)
 		if IsValidEntity(player) and GameRules:PlayerHasCustomGameHostPrivileges(player) then

@@ -3,6 +3,7 @@ if not IsClient() then return end
 require("utils/init")
 require("extensions/client_init")
 require("core_declarations")
+require("libraries/host_claim")
 
 require("game/upgrades/declarations")
 require("game/upgrades/shared")

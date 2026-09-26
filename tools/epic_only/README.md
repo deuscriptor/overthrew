@@ -18,11 +18,20 @@ Single Draft and Turbo are on by default; Epic-Only is off. Settings replace
 the guides/videos as the only first page on configurable FFA; page indicators
 and navigation remain for future settings pages. The menu shows category
 headings, options, and the apply button; it omits explanatory paragraphs.
-**Apply & Start** freezes the settings and begins hero selection. Local Host
-games resolve the host from the listen-server player's controller, rather than
-the first loader's native custom-game privileges. Until that controller is
-available, nobody receives settings access. Dedicated servers continue using
-native custom-game host privileges.
+**Apply & Start** freezes the settings and begins hero selection. On Local Host,
+native custom-game privileges and `GetListenServerHost()` both follow connection
+order (the first client to load), and scripts cannot see the lobby owner. The
+server therefore publishes a random token in the non-replicated convar
+`overthrew_host_claim`. Only the lobby owner's client runs inside the server
+process, so only its client Lua VM can read the token
+(`libraries/host_claim.lua`). When setup begins, that VM sends the token back
+with the console command `overthrew_claim_host`. The engine attributes the
+command to the issuing player. Panorama cannot read Lua-registered convars, so
+the claim goes through the client VM. The first valid claim is final. Each
+player gets five wrong guesses. Until a claim arrives, nobody receives settings access. If no
+claim arrives within 10 seconds of setup starting, native privileges are used so
+that setup cannot stall. Dedicated servers continue using native custom-game host
+privileges.
 Everyone sees the host's current settings; only the current host can
 change them. The server rejects changes after setup and duplicate start requests.
 Non-host players see a soft white **Waiting for host...** message in place of
