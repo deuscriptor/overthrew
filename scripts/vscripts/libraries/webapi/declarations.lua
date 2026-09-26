@@ -1,6 +1,9 @@
 -- default player rating in case for some reason backend haven't supplied any
 DEFAULT_RATING = 1500
 
+-- This addon provides its collection locally; no paid account entitlement is changed.
+LOCAL_FREE_COLLECTION = true
+
 -- Poll match events from backend every 240 seconds by default, every 10 seconds when polling is active
 -- (i.e. when payment was initiated and we expect purchase result)
 -- is always at 10 seconds in tools
@@ -148,4 +151,3 @@ SUBSCRIPTION_DURATION_MIN = 1
 SUBSCRIPTION_DURATION_MAX = 30
 SUBSCRIPTION_STEP = 0.9
 SUBSCRIPTION_MAX_MULTIPLIER = 1.5
-

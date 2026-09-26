@@ -228,6 +228,7 @@ function CreateTeams() {
 }
 
 (function () {
+	CreateHeroSwapPanel();
 	if ($.GetContextPanel().GetParent().id == "CustomUIContainer_HeroSelection") {
 		OverrideBackground();
 		OverrideStrategyMap();

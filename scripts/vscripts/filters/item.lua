@@ -8,6 +8,8 @@ function Filters:ItemAddedToInventoryFilter(event)
 	local item = EntIndexToHScript(event.item_entindex_const)
 
 	if IsValidEntity(item) and IsValidEntity(inventory_parent) then
+		HostItems:CheckAssembly(item, inventory_parent)
+		HostItems:QueueInventoryCheck(inventory_parent)
 		local purchaser = item:GetPurchaser()
 
 		if purchaser then

@@ -1,4 +1,81 @@
-# Epic-only FFA
+# Configurable FFA
+
+Select **Ffa** (`ot3_necropolis_ffa`) in the lobby. Before hero selection, the
+host can enable Single Draft, Turbo, and Epic-Only independently in the **Core**
+category, in that order. Epic-Only also makes
+every reroll cost 1; there is no separate reroll option.
+Turbo doubles kill Madstones. Timed Madstone grants use the original schedule
+for both modes: 2:01, 4:31, 7:01, 9:31 and 15:01. The experimental Turbo
+config and accelerated grant schedule have been removed. Native neutral
+crafting timings and recraft costs remain unchanged.
+Aghanim's Shard becomes available at 1:00 in Turbo, versus 2:00 otherwise.
+Gift-orb buttons and their popovers are removed from the minimap overlay.
+**Kill Goal** is a numeric input at the bottom of Core, prefilled with 50. The
+host can enter a positive whole number. Apply locks this as the match's fixed
+kill cap and updates the scoreboard; disconnects and goal-increase events no
+longer alter it on configurable FFA. Existing match-time adjustments still apply.
+All are off by default. Settings replace the guides/videos as the only first page
+on configurable FFA; page indicators and navigation remain for future settings
+pages. The menu shows category headings, options, and the apply button; it omits
+explanatory paragraphs. **Apply & Start** freezes the settings and begins hero
+selection. Local Host games resolve the host from the listen-server player's
+controller, rather than the first loader's native custom-game privileges. Until
+that controller is available, nobody receives settings access. Dedicated servers
+continue using native custom-game host privileges.
+Everyone sees the host's current settings; only the current host can
+change them. The server rejects changes after setup and duplicate start requests.
+Non-host players see a soft white **Waiting for host...** message in place of
+Apply & Start, with dots cycling every 0.6 seconds.
+
+**Invincible Wards**, below Longer Wards on the Other page, defaults on. It
+protects placed Observer and Sentry wards from attacks and damage without
+changing their expiry or requiring Longer Wards. `invincible_wards_smoke.lua`
+checks native attacks, damage and expiry in a disposable tools match.
+
+**All Vision**, below Invincible Wards, defaults off. It disables fog of war for
+all teams without granting True Sight; invisible enemies still require detection.
+
+Turbo doubles earned gold and experience, including passive and central-ring
+income, kills, creeps, objectives, and custom ability rewards. Starting gold stays
+700. Sales, refunds, redistributed gold, and spending retain their original
+amounts. Turbo defaults off and does not change any other Turbo-mode mechanics.
+
+Single Draft disables bans and offers each player four heroes, one per attribute,
+without shared offers. Epic mode converts all existing orb rewards, including
+shop purchases, while retaining prices and source-specific triggers. The shop
+uses its original item names/icons; rewards follow the selected rule. Rerolls
+start at 30 and cost their original 1/2/4 with normal orbs, or always 1 with
+Epic Orbs. Other original maps retain their behavior.
+
+Only the original FFA map is registered now. The three older variant VPKs have
+been removed; the configurable mode uses the original VPK and overview.
+Historical build tools remain available.
+
+Validation: `test_host_rules.lua` covers all eight rule combinations, host changes,
+invalid values, locking, and repeated Apply. `panorama_test.js` covers delayed
+settings arrival, read-only controls, the Apply payload, Epic-linked reroll costs,
+and removal of the separate reroll toggle and overlapping logos.
+`test_turbo.lua` checks earning multipliers and excluded transactions through the
+production filters. `turbo_smoke.lua` exercises the actual engine gold/XP calls
+in a disposable local tools session. Its live checks passed: starting gold 700,
+scripted grants doubled exactly once, a native creep kill awarded 202 gold/XP
+from a 101 bounty, and sales/refunds/redistribution/spending stayed unchanged.
+The smoke script suppresses demo gold and single-player auto-victory only inside
+the disposable test session. Scripted grants use `game/turbo_rewards.lua` because
+the native Lua grant methods can bypass the engine filters; its suppression
+guard prevents duplicate multiplication when an engine callback also runs.
+Run these with the existing Node/Fengari runtime. Multiplayer testing is skipped
+at the user's request. Local in-game checks passed through the actual settings
+controls for All Pick + Epic orbs + 1-point rerolls, and Single Draft + normal
+orbs + normal reroll costs. The latter produced four native hero offers. The
+settings page was visually checked in the original guide panel, with one page
+indicator and no guides/videos. `script_reload_code host_rules_smoke` validates
+the locked rules in a tools-mode FFA session without changing them.
+
+## Historical variant implementation
+
+The following records the earlier separate-map implementation and its tooling;
+its lobby-registration and launch instructions have been superseded above.
 
 `ot3_ffa_epic` is a separately selectable copy of Necropolis FFA.
 The English label is `Ffa Epic Only`; existing UI styles apply their usual casing.
@@ -141,3 +218,65 @@ copy:   907E9809DCE86DD17797DF1179BB7A241E1596582C76D811AC88B07C09306D45
 After building, launch the addon with `ot3_ffa_epic` and verify
 the map loads, pathing/minimap work, and Lua reports the new map name. Also load
 `ot3_necropolis_ffa` separately to verify the existing map still works.
+# Cross-team hero swaps
+
+The configurable FFA exposes **Hero Swaps** at the upper right after choosing a
+hero. Players can request, accept, decline, or cancel swaps across teams in any
+pick mode, including heroes outside their original Single Draft offers. Requests
+expire after 30 seconds and require the recipient's consent. Accepted requests
+during selection or strategy are held until both hero entities spawn. Swaps close
+at match start; disconnects or changed selections invalidate pending requests.
+
+Teams, gold, inventory slots/items and remaining rerolls stay with each player.
+The actual hero entity, facet and learned abilities change owners. Orb upgrades
+are reset, including generic modifiers and their rune/stat effects. Consumed
+orbs are returned as upgrade choices of their original rarities to the player
+who used them; unspent choices remain queued. Refunds do not rerun lucky-trinket
+rolls or grant new starting rewards. Non-orb account bonuses stay with the player.
+
+The regression runner includes server request/consent tests and Panorama panel
+tests. `hero_swaps_smoke.lua` checks engine reassignment and refund behavior in a
+disposable local Tools session with a synthetic second player;
+`hero_swaps_ui_smoke.lua` checks acceptance through the actual client button.
+These checks do not replace an online multiplayer test.
+
+## Other and Items settings
+
+The setup menu has one category per page: Core, Other, Items. Existing arrows and
+page indicators remain; the page counter highlights unseen pages. Apply & Start
+is available on every page, centered clear of the navigation arrows.
+
+Other contains Infinite Rerolls (999 instead of 30, default off) and Longer Wards
+(60-minute Observer/Sentry lifetime, including Sentry detection, and initial
+Observer shop stock of four per team; default on). Reroll
+prices still follow the Epic-Only setting. Items contains Divine Rapier and Dagon
+(all levels), both default off. Settings remain host-only and lock before picking.
+
+Disabled item assemblies are disassembled by the engine into their components
+and recipe, with native combine locks to prevent an immediate rebuild. Components
+can be unlocked for other recipes. Inventory events and the inventory filter
+cover hero/courier assembly, stash and quick-buy paths. Purchase and item-use
+orders are also checked. No global item whitelist is used: it greys out custom
+replacement items. Other maps retain the Rapier/Dagon restrictions.
+
+`host_settings_smoke.lua` checks defaults/setup, rerolls and placed wards in a
+disposable local game. `host_items_smoke.lua` checks hero/courier assembly with
+options on/off, component preservation and an unrelated shared-component recipe.
+
+Kill Goal scales the starting match limit as DEFAULT_MATCH_LENGTH * (Kill Goal / 30).
+DEFAULT_MATCH_LENGTH is 1200 seconds: 30 kills gives 20 minutes, 60 gives 40 minutes.
+The same limit is used by the server and published to the HUD.
+
+## Free local collection
+
+Premium benefits (tier 2) and all 269 bundled collection items are available in
+this addon without purchases or currency. Vanity items can be equipped directly;
+consumable collection items have a reusable local supply. The shop displays
+"Premium & Vanity - Free" and omits currency, subscription and gift-code purchase
+controls. Host-configured orb reroll allowances are unchanged.
+
+Unlocks and equipment selections are local to the running match. Account
+subscription data and balances are not rewritten. Equipment sync, payments,
+inventory writes and match reward submissions to the original backend are blocked.
+`test_free_collection.lua` checks local entitlements, item use and backend-write
+isolation; `free_collection_smoke.lua` checks native access and equipping.

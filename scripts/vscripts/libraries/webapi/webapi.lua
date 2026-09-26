@@ -20,6 +20,10 @@ end
 
 
 function WebApi:Send(path, data, on_success_callback, on_error_callback, retry_while)
+	if LOCAL_FREE_COLLECTION and (path:find("^api/lua/inventory/") or path:find("^api/lua/payments/") or path == "api/lua/match/after" or path == "api/lua/match/add_currency" or path == "api/lua/match/spend_currency") then
+		if on_error_callback then on_error_callback({detail = "Collection is local to this addon"}) end
+		return
+	end
 	local request = CreateHTTPRequest("POST", WebApi.server_url .. path)
 	if not request then return end
 	request:SetHTTPRequestHeaderValue("Dedicated-Server-Key", WebApi.dedicated_key)

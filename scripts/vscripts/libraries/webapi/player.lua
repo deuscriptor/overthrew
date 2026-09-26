@@ -49,6 +49,7 @@ end
 ---@param player_id number
 ---@return table
 function WebPlayer:GetSubscriptionData(player_id)
+	if LOCAL_FREE_COLLECTION then return {tier = 2, type = "local", metadata = {}} end
 	return (WebPlayer.players_data[player_id] or {}).subscription or {}
 end
 
@@ -113,6 +114,7 @@ end
 ---@param player_id number
 ---@param value number
 function WebPlayer:AddBackendCurrency(player_id, value)
+	if LOCAL_FREE_COLLECTION then return end
 	local steam_id = tostring(PlayerResource:GetSteamID(player_id))
 
 	WebApi:Send(
@@ -213,8 +215,16 @@ function WebPlayer:UpdateClient(player_id)
 	-- print("[WebPlayer] update client")
 	-- DeepPrintTable(WebPlayer.players_data)
 
+	local data = WebPlayer.players_data[player_id] or {}
+	if LOCAL_FREE_COLLECTION then
+		local copy = {}
+		for key, value in pairs(data) do copy[key] = value end
+		copy.subscription = self:GetSubscriptionData(player_id)
+		copy.local_free_collection = true
+		data = copy
+	end
 	CustomGameEventManager:Send_ServerToPlayer(player, "WebPlayer:update", {
-		player_data = WebPlayer.players_data[player_id]
+		player_data = data
 	})
 end
 
@@ -223,6 +233,10 @@ end
 -- spends currency on backend, calls callback on success
 -- validates and updates internal state by itself
 function WebPlayer:UseCurrency(player_id, amount_to_spend, on_spent_callback, on_fail_callback)
+	if LOCAL_FREE_COLLECTION then
+		if on_spent_callback then on_spent_callback({new_currency = self:GetCurrency(player_id)}) end
+		return
+	end
 	local steam_id = tostring(PlayerResource:GetSteamID(player_id))
 
 	WebApi:Send(

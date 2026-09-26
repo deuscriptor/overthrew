@@ -63,8 +63,12 @@ function NeutralItemDrop:Activate()
 	end
 
 	for i = 1, 5 do
-		Timers:CreateTimer(self.drop_period[GetBaseMapName()][i] + 1, function() return self:Drop(i) end)
+		Timers:CreateTimer(self:GetTierTime(i) + 1, function() return self:Drop(i) end)
 	end
+end
+
+function NeutralItemDrop:GetTierTime(tier)
+	return self.drop_period[GetBaseMapName()][tier]
 end
 
 function NeutralItemDrop:Drop(tier)

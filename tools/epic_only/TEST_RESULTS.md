@@ -135,3 +135,85 @@ the map builder generate/verify overviews. The regression runner checks every
 registered FFA variant's overview and the referenced compiled material.
 Prior in-engine smoke checks did not visually inspect the minimap. The fix
 requires a map reload; a running user game was not interrupted to test it.
+# Hero swaps validation — 2026-09-23
+
+- Automated regression suite passed, including request authentication, recipient
+  consent, cross-team eligibility, all pre-match phases, expiration, cancellation,
+  disconnects, changed heroes, competing requests, deferred execution, exact
+  rarity refunds, and prevention of duplicate refunds on a second swap.
+- Panorama tests passed for requesting, accepting, declining, cancelling, busy
+  players, spectators, and match-start closure. All 23 script resources rebuilt
+  with syntax, DATA, block bounds and CRC verification.
+- Disposable local Dota Tools session: real hero entities swapped across teams;
+  player teams, gold, items/slots and remaining rerolls stayed with their players.
+  Hero facets and selected-hero references remained correct. A spent rare ability
+  orb, epic auto-rune orb and rare stat-boost orb were refunded as 2/4/2 choices.
+  Old upgrade counts and residual rune/stat buffs were cleared. Reassignment also
+  passed with native hero availability restricted to each player's original hero.
+- Actual client **Accept** button completed the authenticated swap. The panel was
+  visually checked in strategy and preparation. Forcing match start closed the
+  server's swap window and published `open = 0` to the UI.
+- Runtime markers: `HERO_SWAPS_SMOKE_PASS`, `HERO_SWAPS_UI_PASS`, and
+  `HERO_SWAPS_CLOSE_PASS`. Smoke scripts use a synthetic local second player and
+  temporarily simulate its connected flag; they do not test online networking.
+  Multiplayer testing was skipped as requested.
+
+## Other / Items settings and category pages
+
+- Full Node/Fengari regression suite passed, including new flag defaults,
+  validation and locking, independent item toggles, 30/999 reroll allowances,
+  unchanged rarity prices, coalesced assembly scans, and ward/detection duration.
+- Compiled Panorama resources rebuilt and verified. UI tests check three pages,
+  category visibility, preserved controls and the complete Apply payload.
+- Local Dota Tools: all category pages visually inspected; the actual controls
+  enabled the new options and Apply locked all four values on the server.
+- `HOST_SETTINGS_ENGINE_PASS`: 999 rerolls; Observer lifetime about 1080 seconds;
+  Sentry lifetime and detection about 1260 seconds (accounting for spawn delay).
+- `HOST_ITEMS_ENGINE_PASS` in a fresh game: disabled Rapier/Dagon assemblies on
+  heroes and couriers returned all components/recipes with combine locks and no
+  gold change; enabled items assembled; Radiance still assembled with its shared
+  Sacred Relic component. Shop inspected after removing the native whitelist;
+  custom item entries are available again.
+- Multiplayer testing remains skipped as requested.
+
+## 2026-09-24: Longer Wards and Kill Goal duration
+
+- Longer Wards now sets both ward lifetimes and Sentry detection to 3600 seconds
+  from placement. The enabled option initializes Observer stock to four on each
+  FFA team after native shop stock becomes available; it does not refill on respawn.
+- Node/Fengari suite passed for option-off and other-map behavior, initialization
+  readiness, one-time stock adjustment, both native ward durations and Sentry sight.
+- Kill Goals 1, 15, 30, 45, 60 and 90 pass the formula
+  `DEFAULT_MATCH_LENGTH * (kill_goal / 30)` with server/HUD agreement.
+- Fresh local Tools match: all eight teams reported Observer stock four; Kill Goal
+  60 published a 2400-second match limit. Placed Observer/Sentry lifetime and Sentry
+  detection measured approximately 3600 seconds, accounting for spawn delay.
+
+## 2026-09-24: waiting indicator and Invincible Wards
+
+- Non-host settings footer: soft white waiting label; automated Panorama check verifies dot cycle `.`, `..`, `...`, `.`, host visibility and hiding after rules lock.
+- Invincible Wards: default off, above Longer Wards on Other page; server validates and publishes the flag. Tests cover independent lifetime/protection toggles, other maps, unlocked rules and excluding combat summons.
+- Native local engine: `invincible_wards_smoke.lua` placed Observer and Sentry wards with Longer Wards disabled. Both resisted a hero attack and 10,000 pure damage, then expired after shortening their native lifetime modifier. Output: `INVINCIBLE_WARDS_DAMAGE_PASS` and both `INVINCIBLE_WARDS_EXPIRY_PASS` markers.
+- Host authorization regression uses two simulated players with first-loader privileges assigned to a different player from the listen-server owner; edits, forged sender IDs and start requests are checked.
+- Actual multiplayer load-order testing remains unverified: no second player/client is available. These simulated-player checks are not a multiplayer test.
+
+## 2026-09-24: All Vision and settings order
+
+- Core order: Turbo, Single Draft, Epic-Only, Kill Goal. Other order: Infinite Rerolls, Longer Wards, Invincible Wards, All Vision.
+- Invincible Wards now defaults on. All Vision defaults off and configures the native game-mode fog setting when the host applies rules.
+- UI build and regression suite passed, including ordering, defaults, validation, lock enforcement and enabled/disabled fog calls.
+- Native tools check `all_vision_smoke.lua` passed: all seven opposing FFA teams saw an enemy across the map, then could not see that enemy with `modifier_invisible`. Fog state was restored after the check. Output: `ALL_VISION_PASS distant enemy visible to all opposing teams; invisible enemy hidden`.
+
+## 2026-09-24: free local premium and vanity
+
+- Full regression suite passed, including free-collection checks for local tier 2, zero cost, inventory refresh, reusable consumables, preserving stored account data and preventing backend purchase/equipment/currency writes.
+- Native engine: `FREE_COLLECTION_ACCESS_PASS 269 items; premium tier 2; no equipment backend timer` and `FREE_COLLECTION_EQUIP_PASS high_five_bronze`.
+- Panorama collection source extracted with preserved container metadata and rebuilt. Purchase tabs/buttons removed, vanity action buttons use equip/use directly, local consumable actions enabled. No multiplayer test performed.
+
+## 2026-09-24: Turbo Madstones and Shard availability
+
+- Core order is Single Draft, Turbo, Epic-Only, Kill Goal.
+- Turbo doubles kill Madstones and halves scheduled grant times; craft costs and native tier unlock times remain unchanged. User explicitly chose to preserve native crafting after investigating runtime tier timing.
+- Turbo schedules one initial Shard stock addition for each FFA team at half its configured initial stock time (120 / 2 = 60 seconds). Non-Turbo uses the native 120-second unlock.
+- `test_turbo_items.lua` covers all five grant times, normal mode unchanged, and the Shard timer/stock addition for all eight teams. Full regression suite and Panorama build passed.
+- Native local test verified `IncreaseItemStock` changes Shard stock from 0 to 1 before its normal unlock on all eight FFA teams. No multiplayer test was performed.

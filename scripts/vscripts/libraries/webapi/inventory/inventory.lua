@@ -32,6 +32,7 @@ end
 
 
 function WebInventory:AddBackendItem(player_id, item_name, count)
+	if LOCAL_FREE_COLLECTION then self:UpdateClient(player_id); return end
 	local steam_id = tostring(PlayerResource:GetSteamID(player_id))
 
 	WebApi:Send(
@@ -142,6 +143,7 @@ end
 
 function WebInventory:HasItem(player_id, item_name)
 	local definition = WebInventory:GetItemDefinition(item_name)
+	if LOCAL_FREE_COLLECTION then return definition ~= nil end
 
 	-- check optional ways to unlock item usage
 	-- aka "ephemeral" items
@@ -158,6 +160,9 @@ end
 
 
 function WebInventory:GetItem(player_id, item_name)
+	if LOCAL_FREE_COLLECTION and ITEM_DEFINITIONS[item_name] then
+		return {count = ITEM_DEFINITIONS[item_name].type == ITEM_TYPES.CONSUMABLE and 999 or 1}
+	end
 	if not WebInventory.players_items[player_id] then return end
 	return WebInventory.players_items[player_id][item_name]
 end
@@ -200,6 +205,12 @@ end
 -- performs request to backend to reduce item count by `item_count` or 1 (with all appropriate validations)
 -- calls passed callback when request succeeds
 function WebInventory:ConsumeItem(player_id, item_name, item_count, on_item_used)
+	if LOCAL_FREE_COLLECTION then
+		if not ITEM_DEFINITIONS[item_name] then return end
+		if on_item_used then on_item_used({name = item_name, new_count = self:GetItemCount(player_id, item_name)}) end
+		self:UpdateClient(player_id)
+		return
+	end
 	local steam_id = tostring(PlayerResource:GetSteamID(player_id))
 	if not WebInventory.players_items[player_id] or not WebInventory.players_items[player_id][item_name] then return end
 
@@ -234,6 +245,7 @@ end
 
 
 function WebInventory:PurchaseItem(player_id, item_name, total_cost, count)
+	if LOCAL_FREE_COLLECTION then self:UpdateClient(player_id); return end
 	if WebPlayer:GetCurrency(player_id) < total_cost then
 		DisplayError(player_id, "#web_inventory_not_enough_currency_to_purchase")
 		return
@@ -265,6 +277,7 @@ end
 
 
 function WebInventory:ModifyBackendItemCount(player_id, item_name, item_count_change)
+	if LOCAL_FREE_COLLECTION then self:UpdateClient(player_id); return end
 	local steam_id = tostring(PlayerResource:GetSteamID(player_id))
 
 	WebApi:Send(
@@ -308,6 +321,7 @@ end
 
 
 function WebInventory:GetItemCost(item_name)
+	if LOCAL_FREE_COLLECTION then return 0 end
 	local definition = WebInventory:GetItemDefinition(item_name)
 	if not definition.unlocked_with then return 0 end
 	return definition.unlocked_with.currency or 0
@@ -398,8 +412,13 @@ function WebInventory:UpdateClient(player_id)
 	local player = PlayerResource:GetPlayer(player_id)
 	if not IsValidEntity(player) then return end
 
+	local items = WebInventory.players_items[player_id] or {}
+	if LOCAL_FREE_COLLECTION then
+		items = {}
+		for name in pairs(ITEM_DEFINITIONS) do items[name] = self:GetItem(player_id, name) end
+	end
 	CustomGameEventManager:Send_ServerToPlayer(player, "WebInventory:update", {
-		items = WebInventory.players_items[player_id] or {}
+		items = items
 	})
 
 	EventDriver:Dispatch("WebInventory:update", {

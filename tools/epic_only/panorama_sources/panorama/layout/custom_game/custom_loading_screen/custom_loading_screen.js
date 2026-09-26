@@ -25,6 +25,7 @@ const hints = [
 	["collection", 11],
 ];
 const additional_hints_config = {
+	settings: { b_image: true, b_hide_desc: true, b_ignore_hover: true },
 	tournament: {
 		b_image: true,
 		b_hide_desc: true,
@@ -35,6 +36,7 @@ const additional_hints_config = {
 	},
 };
 let current_hint;
+let matchRulesPageChanged;
 let auto_hint_schedule;
 let players = {};
 
@@ -63,6 +65,9 @@ function SetHint(idx) {
 	idx = Math.clamp(idx, 0, hints.length - 1);
 
 	const hint_name = hints[idx][0];
+	const settings = LOADING_HUD.CONTEXT.FindChildTraverse("MatchRulesPanel");
+	if (settings) settings.visible = hint_name === "settings";
+	if (hint_name === "settings" && matchRulesPageChanged) matchRulesPageChanged(idx);
 	const hint_config = additional_hints_config[hint_name];
 	const b_image = !!hint_config && hint_config.b_image;
 	const b_hide_desc = !!hint_config && hint_config.b_hide_desc;
@@ -95,6 +100,8 @@ function SetHint(idx) {
 
 	current_hint = idx;
 	CheckCurrentHint();
+	// Settings pages never advance automatically while the host is editing.
+	if (hint_name === "settings") return;
 	auto_hint_schedule = $.Schedule(hints[idx][1], () => {
 		auto_hint_schedule = undefined;
 		if (idx < hints.length - 1) NextHint();
@@ -207,6 +214,216 @@ function UpdateChatStyle() {
 	LOADING_HUD.CHAT.style.horizontalAlign = "right";
 }
 
+function InitMatchRules() {
+	// Loading panels can initialize before map information and net tables arrive.
+	if (!CustomNetTables.GetTableValue("game_options", "match_rules")) return;
+	if (LOADING_HUD.CONTEXT.FindChildTraverse("MatchRulesPanel")) return;
+	["LS_Tips_Logo", "LS_DiscordButton"].forEach(function(className) {
+		LOADING_HUD.CONTEXT.FindChildrenWithClassTraverse(className).forEach(function(element) { element.visible = false; });
+	});
+	const panel = $.CreatePanel("Panel", LOADING_HUD.MOVIE_CONTAINER, "MatchRulesPanel");
+	panel.style.width = "100%";
+	panel.style.height = "100%";
+	panel.style.flowChildren = "down";
+	panel.style.horizontalAlign = "center";
+	panel.style.verticalAlign = "top";
+	panel.style.backgroundColor = "gradient(linear, 0% 0%, 100% 100%, from(#172330), to(#0c141e))";
+	panel.style.padding = "20px 30px";
+	panel.style.border = "1px solid #415465";
+	panel.style.zIndex = "100";
+	function label(parent, text) {
+		const p = $.CreatePanel("Label", parent, "");
+		p.text = $.Localize(text);
+		p.style.color = "#eeeeee";
+		p.style.fontSize = "18px";
+		p.style.marginBottom = "4px";
+		return p;
+	}
+	const controls = {};
+	let killGoal, killGoalFrame, killGoalMeasure, goalDirty = false, syncingGoal = false, canEditRules = false;
+	function alignKillGoal() {
+		if (!killGoal.IsValid() || !killGoalMeasure.IsValid()) return;
+		killGoalMeasure.text = killGoal.text;
+		// TextEntry ignores text-align in the current Dota client. Measure the
+		// actual font and right-anchor the editor inside a full-width clickable box.
+		$.Schedule(0.03, function() {
+			if (!killGoal.IsValid() || !killGoalMeasure.IsValid()) return;
+			const scale = killGoalMeasure.actualuiscale_x || 1;
+			const textWidth = killGoalMeasure.actuallayoutwidth / scale;
+			if (killGoal.text && textWidth === 0) {
+				$.Schedule(0.1, alignKillGoal);
+				return;
+			}
+			killGoal.style.width = Math.min(98, Math.max(22, textWidth + 18)) + "px";
+		});
+	}
+	function validKillGoal() {
+		return /^\d+$/.test(killGoal.text) && Number(killGoal.text) >= 1 && Number(killGoal.text) <= 2147483647;
+	}
+	const categories = [
+		{ id: "core", options: ["single_draft", "turbo", "epic_orbs", "kill_goal"] },
+		{ id: "other", options: ["infinite_rerolls", "longer_wards", "invincible_wards", "all_vision"] },
+		{ id: "items", options: ["divine_rapier", "dagon"] },
+	];
+	const body = $.CreatePanel("Panel", panel, "MatchRulesCategories");
+	body.style.width = "100%";
+	body.style.height = "fill-parent-flow(1.0)";
+	body.style.flowChildren = "down";
+	body.style.overflow = "squish scroll";
+	const groups = [];
+	const nextCaptions = [];
+	const visited = {};
+	categories.forEach(function(category, index) {
+		const group = $.CreatePanel("Panel", body, "MatchRules_" + category.id);
+		group.style.width = "100%";
+		group.style.flowChildren = "down";
+		group.style.marginBottom = "12px";
+		groups.push(group);
+		const header = $.CreatePanel("Panel", group, "MatchRulesHeader_" + category.id);
+		header.style.width = "100%";
+		header.style.height = "36px";
+		const heading = label(header, "#host_rules_category_" + category.id);
+		heading.style.color = "#d4bb86";
+		heading.style.fontSize = "20px";
+		heading.style.fontWeight = "semi-bold";
+		heading.style.letterSpacing = "1px";
+		heading.style.marginBottom = "0px";
+		const caption = label(header, "");
+		caption.style.horizontalAlign = "right";
+		caption.hittest = false;
+		caption.text = (index + 1) + " / " + categories.length;
+		caption.style.fontSize = "16px";
+		nextCaptions.push(caption);
+		category.options.forEach(function(name) {
+			const row = $.CreatePanel(name === "kill_goal" ? "Panel" : "ToggleButton", group, "Rule_" + name);
+			row.style.width = "100%";
+			row.style.height = "42px";
+			row.style.padding = "6px 14px";
+			row.style.marginBottom = "4px";
+			row.style.backgroundColor = "#1b2b3b";
+			row.style.border = "1px solid #304456";
+			const caption = label(row, "#host_rules_" + name);
+			caption.style.marginBottom = "0px";
+			caption.style.verticalAlign = "center";
+			if (name === "kill_goal") {
+				killGoalFrame = $.CreatePanel("Panel", row, "KillGoalField");
+				killGoalFrame.style.horizontalAlign = "right";
+				killGoalFrame.style.verticalAlign = "center";
+				killGoalFrame.style.width = "100px";
+				killGoalFrame.style.height = "30px";
+				killGoalFrame.style.backgroundColor = "#0c141e";
+				killGoalFrame.style.border = "1px solid #607988";
+				killGoal = $.CreatePanel("TextEntry", killGoalFrame, "KillGoalInput");
+				killGoal.style.horizontalAlign = "right";
+				killGoal.style.verticalAlign = "center";
+				killGoal.style.width = "100px";
+				killGoal.style.height = "30px";
+				killGoal.style.fontSize = "18px";
+				killGoal.style.fontFamily = "Radiance";
+				killGoal.style.fontWeight = "normal";
+				killGoal.style.padding = "3px 6px";
+				killGoal.style.color = "#eeeeee";
+				killGoal.style.backgroundColor = "transparent";
+				killGoal.style.border = "0px";
+				killGoalFrame.SetPanelEvent("onactivate", function() { if (canEditRules) killGoal.SetFocus(); });
+				killGoal.maxchars = 10;
+				killGoal.text = "50";
+				killGoalMeasure = $.CreatePanel("Label", row, "KillGoalTextMeasure");
+				killGoalMeasure.style.width = "fit-children";
+				killGoalMeasure.style.fontFamily = "Radiance";
+				killGoalMeasure.style.fontSize = "18px";
+				killGoalMeasure.style.fontWeight = "normal";
+				killGoalMeasure.style.padding = "0px";
+				killGoalMeasure.style.color = "#00000000";
+				killGoalMeasure.hittest = false;
+				alignKillGoal();
+				return;
+			}
+			controls[name] = row;
+			row.SetPanelEvent("onactivate", function() {
+				GameEvents.SendToServerEnsured("HostOptions:set_option_state", {name: name, state: row.IsSelected()});
+			});
+		});
+	});
+	const start = $.CreatePanel("Button", panel, "ApplyMatchRules");
+	start.style.horizontalAlign = "center";
+	start.style.marginTop = "16px";
+	start.style.backgroundColor = "gradient(linear, 0% 0%, 0% 100%, from(#527647), to(#344e30))";
+	start.style.border = "1px solid #789364";
+	start.style.padding = "10px 26px";
+	label(start, "#host_rules_start").style.marginBottom = "0px";
+	const waiting = $.CreatePanel("Label", panel, "WaitingForHost");
+	waiting.style.horizontalAlign = "center";
+	waiting.style.marginTop = "16px";
+	waiting.style.padding = "10px 26px";
+	waiting.style.fontFamily = "Radiance";
+	waiting.style.fontSize = "18px";
+	waiting.style.color = "#f0f2f5cc";
+	waiting.style.textShadow = "0px 1px 3px #00000066";
+	waiting.style.width = "240px";
+	waiting.style.textAlign = "center";
+	waiting.hittest = false;
+	let waitingDots = 0;
+	function animateWaiting() {
+		if (!waiting.IsValid()) return;
+		waitingDots = waitingDots % 3 + 1;
+		waiting.text = $.Localize("#host_rules_waiting") + ".".repeat(waitingDots);
+		$.Schedule(0.6, animateWaiting);
+	}
+	animateWaiting();
+	start.SetPanelEvent("onactivate", function() {
+		if (!canEditRules || !validKillGoal()) return;
+		const event = {kill_goal: Number(killGoal.text)};
+		Object.keys(controls).forEach(function(name) { event[name] = controls[name].IsSelected() ? 1 : 0; });
+		GameEvents.SendToServerEnsured("HostOptions:apply_rules", event);
+	});
+	killGoal.SetPanelEvent("ontextentrychange", function() {
+		alignKillGoal();
+		if (syncingGoal || !canEditRules) return;
+		goalDirty = true;
+		const valid = validKillGoal();
+		killGoalFrame.style.border = valid ? "1px solid #607988" : "1px solid #d66b62";
+		start.enabled = valid;
+		if (valid) GameEvents.SendToServerEnsured("HostOptions:set_option_state", {name: "kill_goal", state: Number(killGoal.text)});
+	});
+	function refresh() {
+		const rules = CustomNetTables.GetTableValue("game_options", "match_rules") || {};
+		const canEdit = rules.host_id === Game.GetLocalPlayerID() && rules.locked === 0;
+		canEditRules = canEdit;
+		killGoal.enabled = canEdit;
+		if (!canEdit || !goalDirty) {
+			syncingGoal = true;
+			killGoal.text = String(rules.kill_goal === undefined ? 50 : rules.kill_goal);
+			alignKillGoal();
+			syncingGoal = false;
+			goalDirty = false;
+			killGoalFrame.style.border = "1px solid #607988";
+		}
+		Object.keys(controls).forEach(function(name) {
+			controls[name].enabled = canEdit;
+			controls[name].SetSelected(rules[name] === 1);
+		});
+		start.enabled = canEdit && validKillGoal();
+		start.visible = canEdit;
+		waiting.visible = !canEdit && rules.locked !== 1;
+	}
+	CustomNetTables.SubscribeNetTableListener("game_options", function(table, key) { if (key === "match_rules") refresh(); });
+	refresh();
+	matchRulesPageChanged = function(index) {
+		visited[index] = true;
+		groups.forEach(function(group, i) { group.visible = i === index; });
+		nextCaptions.forEach(function(caption, i) {
+			const unseen = !visited[(i + 1) % categories.length];
+			caption.style.color = unseen ? "#dfc58b" : "#8da6b5";
+			caption.style.textShadow = unseen ? "0px 0px 5px #c59a4855" : "none";
+		});
+	};
+	matchRulesPageChanged(0);
+	hints.splice(0, hints.length);
+	categories.forEach(function() { hints.push(["settings", 0]); });
+	InitHints();
+}
+
 function ToggleHostOption(name) {
 	if (!host_options_enabled) return;
 
@@ -273,4 +490,8 @@ function UpdateTournamentDates() {
 	FindDotaHudElementInLS("SidebarAndBattleCupLayoutContainer").visible = false;
 
 	GameEvents.Subscribe("HostOptions:show", ShowHostOptions);
+	CustomNetTables.SubscribeNetTableListener("game_options", function(table, key) {
+		if (key === "match_rules") InitMatchRules();
+	});
+	InitMatchRules();
 })();

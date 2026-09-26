@@ -55,7 +55,166 @@ class Panel {
 	SetPanelEvent(name, handler) { this.events[name] = handler; }
 	SetDialogVariable(name, value) { this.vars[name] = value; }
 	SetImage(image) { this.image = image; }
+	SetSelected(value) { this.selected = value; }
+	IsSelected() { return !!this.selected; }
+	IsValid() { return true; }
+	RemoveAndDeleteChildren() { this.children = []; }
 }
+
+{
+	const container = new Panel("CustomUIContainer_Hud");
+	const contextPanel = new Panel("TopBar", "Panel", container);
+	let data = {open: 1, players: {0: {hero: "npc_dota_hero_axe", busy: 0}, 1: {hero: "npc_dota_hero_lina", busy: 0}}, requests: {}};
+	let listener;
+	const events = {}, sent = [];
+	const dollar = {GetContextPanel: () => contextPanel, CreatePanel: (type, parent, id) => new Panel(id, type, parent), Localize: text => text};
+	const context = vm.createContext({$: dollar, Game: {
+		GetLocalPlayerID: () => 0, GetLocalPlayerInfo: () => null,
+		GetPlayerInfo: id => ({player_name: "Player " + id}),
+		GetMapInfo: () => ({map_display_name: "ot3_necropolis_ffa"}),
+		GameStateIsAfter: () => true,
+	}, GameEvents: {
+		NewProtectedFrame: () => ({SubscribeProtected: (name, fn) => {events[name] = fn;}}),
+		Subscribe: (name, fn) => {events[name] = fn;},
+		SendToServerEnsured: (name, payload) => sent.push({name, payload}),
+	}, DOTA_GameState: {DOTA_GAMERULES_STATE_PRE_GAME: 8}, CustomNetTables: {
+		GetTableValue: () => data,
+		SubscribeNetTableListener: (table, fn) => {listener = fn;},
+	}});
+	vm.runInContext(declarations + "\nCreateHeroSwapPanel();", context);
+	const root = container.FindChildTraverse("HeroSwaps");
+	assert.equal(root.parent, container, "Menu must avoid the clipped top-bar panel");
+	assert.ok(root.visible);
+	container.FindChildTraverse("RequestSwap_1").events.onactivate();
+	assert.equal(sent[0].name, "HeroSwaps:request");
+	assert.equal(sent[0].payload.target, 1);
+	data.requests = {5: {id: 5, from: 1, to: 0}};
+	listener("game_options", "hero_swaps", data);
+	const swapBody = container.FindChildTraverse("HeroSwapsBody");
+	const swapToggle = container.FindChildTraverse("HeroSwapsToggle");
+	const swapBadge = container.FindChildTraverse("HeroSwapRequestBadge");
+	assert.equal(swapBody.visible, false, "Incoming request must not open the menu");
+	assert.equal(swapBadge.visible, true);
+	assert.equal(swapBadge.text, "1");
+	assert.ok(!swapBody.children.some(panel => panel.text === "#hero_swaps_hint"), "Explanatory description removed");
+	swapToggle.events.onactivate();
+	assert.equal(swapBody.visible, true, "Player can open request controls");
+	swapToggle.events.onactivate();
+	events["HeroSwaps:status"]({status: "accepted"});
+	assert.equal(swapBody.visible, false, "Status updates must not force the menu open");
+	container.FindChildTraverse("AcceptSwap_1").events.onactivate();
+	assert.equal(sent[1].name, "HeroSwaps:accept");
+	assert.equal(sent[1].payload.request_id, 5);
+	container.FindChildTraverse("DeclineSwap_1").events.onactivate();
+	assert.equal(sent[2].name, "HeroSwaps:decline");
+	data.requests = {6: {id: 6, from: 0, to: 1}};
+	listener("game_options", "hero_swaps", data);
+	assert.equal(swapBadge.visible, false, "Clear badge when no incoming requests remain");
+	container.FindChildTraverse("CancelSwap_1").events.onactivate();
+	assert.equal(sent[3].name, "HeroSwaps:cancel");
+	data.requests = {};
+	data.players[0].busy = 1;
+	listener("game_options", "hero_swaps", data);
+	assert.equal(container.FindChildTraverse("RequestSwap_1"), null, "Accepted swap blocks new requests");
+	data.open = 0;
+	listener("game_options", "hero_swaps", data);
+	assert.equal(root.visible, false);
+	data.open = 1;
+	delete data.players[0];
+	listener("game_options", "hero_swaps", data);
+	assert.equal(root.visible, false, "Spectators and unpicked players cannot send swaps");
+	console.log("PASS hero swap UI: requests, incoming consent, decline, cancellation, busy state, phase closure and spectators");
+}
+
+for (let draft = 0; draft < 2; draft++) for (let epic = 0; epic < 2; epic++) {
+	let data;
+	let listener;
+	const context = vm.createContext({Game: {
+		GetLocalPlayerID: () => 0, GetLocalPlayerInfo: () => null,
+		GetMapInfo: () => ({map_display_name: "ot3_necropolis_ffa"}),
+	}, CustomNetTables: {
+		GetTableValue: () => data,
+		SubscribeNetTableListener: (table, fn) => {listener = fn;},
+	}});
+	vm.runInContext(declarations, context);
+	data = {single_draft: draft, epic_orbs: epic};
+	listener("game_options", "match_rules");
+	assert.equal(vm.runInContext("IS_SINGLE_DRAFT_MAP", context), !!draft);
+	assert.equal(vm.runInContext("IS_EPIC_ONLY_MAP", context), !!epic);
+	assert.equal(vm.runInContext("IS_FLAT_REROLL_MAP", context), !!epic);
+}
+
+const loading = fs.readFileSync(path.join(scripts, "custom_loading_screen/custom_loading_screen.js"), "utf8");
+const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), loading.indexOf("function ToggleHostOption"));
+{
+	const root = new Panel("Loading");
+	let data;
+	let listener;
+	const requests = [];
+	const waitingFrames = [];
+	const context = vm.createContext({LOADING_HUD: {CONTEXT: root, MOVIE_CONTAINER: root}, hints: [], InitHints: () => {},
+		$: {CreatePanel: (type, parent, id) => new Panel(id, type, parent), Localize: value => value,
+			Schedule: (delay, callback) => { if (delay === 0.6) waitingFrames.push(callback); }},
+		Game: {GetLocalPlayerID: () => 0},
+		GameEvents: {SendToServerEnsured: (name, args) => requests.push({name, args})},
+		CustomNetTables: {GetTableValue: () => data, SubscribeNetTableListener: (table, fn) => { listener = fn; }},
+	});
+	vm.runInContext(initRules + "InitMatchRules();", context);
+	assert.equal(root.children.length, 0, "wait for rules before constructing controls");
+	const logo = new Panel("Logo", "Image", root, ["LS_Tips_Logo"]);
+	const discord = new Panel("Discord", "Button", root, ["LS_DiscordButton"]);
+	data = {host_id: 0, locked: 0, single_draft: 1, epic_orbs: 0, turbo: 1, longer_wards: 1};
+	vm.runInContext("InitMatchRules(); InitMatchRules();", context);
+	assert.equal(root.children.length, 3, "initialize only once");
+	assert.equal(logo.visible, false);
+	assert.equal(discord.visible, false);
+	assert.equal(root.FindChildTraverse("Rule_flat_rerolls"), null);
+	assert.deepEqual(root.FindChildTraverse("MatchRules_core").children.filter(p => p.paneltype === "ToggleButton").map(p => p.id), ["Rule_single_draft", "Rule_turbo", "Rule_epic_orbs"]);
+	assert.equal(vm.runInContext("hints.length", context), 3, "one settings page per category");
+	assert.equal(root.FindChildTraverse("MatchRules_core").visible, true);
+	assert.equal(root.FindChildTraverse("MatchRules_other").visible, false);
+	assert.deepEqual(root.FindChildTraverse("MatchRules_other").children.filter(p => p.paneltype === "ToggleButton").map(p => p.id), ["Rule_infinite_rerolls", "Rule_longer_wards", "Rule_invincible_wards", "Rule_all_vision"]);
+	vm.runInContext("matchRulesPageChanged(1)", context);
+	assert.equal(root.FindChildTraverse("MatchRules_core").visible, false);
+	assert.equal(root.FindChildTraverse("MatchRules_other").visible, true);
+	vm.runInContext("matchRulesPageChanged(2)", context);
+	assert.equal(root.FindChildTraverse("MatchRules_items").visible, true);
+	assert.equal(vm.runInContext("hints[0][0]", context), "settings");
+	const start = root.FindChildTraverse("ApplyMatchRules");
+	const waiting = root.FindChildTraverse("WaitingForHost");
+	assert.equal(waiting.visible, false);
+	assert.equal(start.enabled, true);
+	start.events.onactivate();
+	assert.deepEqual(JSON.parse(JSON.stringify(requests[0])), {name:"HostOptions:apply_rules", args:{single_draft:1,epic_orbs:0,turbo:1,kill_goal:50,infinite_rerolls:0,all_vision:0,invincible_wards:0,longer_wards:1,divine_rapier:0,dagon:0}});
+	const goal = root.FindChildTraverse("KillGoalInput");
+	assert.equal(goal.text, "50");
+	goal.text = "";
+	goal.events.ontextentrychange();
+	listener("game_options", "match_rules");
+	assert.equal(goal.text, "", "refresh overwrote active edit");
+	assert.equal(start.enabled, false);
+	goal.text = "45";
+	goal.events.ontextentrychange();
+	start.events.onactivate();
+	assert.equal(requests[requests.length - 1].args.kill_goal, 45);
+	data.host_id = 1;
+	listener("game_options", "match_rules");
+	assert.equal(start.visible, false, "non-host cannot start");
+	assert.equal(waiting.visible, true);
+	assert.equal(waiting.text, "#host_rules_waiting.");
+	for (const dots of ["..", "...", "."]) {
+		waitingFrames.shift()();
+		assert.equal(waiting.text, "#host_rules_waiting" + dots);
+	}
+	assert.equal(root.FindChildTraverse("Rule_single_draft").enabled, false);
+	assert.equal(goal.enabled, false);
+	data.host_id = 0;
+	data.locked = 1;
+	listener("game_options", "match_rules");
+	assert.equal(start.enabled, false, "locked settings cannot be edited");
+	assert.equal(waiting.visible, false, "no waiting message after start");
+}
+console.log("PASS: independent rule flags, delayed settings arrival, host controls and atomic Apply payload");
 
 const source = fs.readFileSync(path.join(scripts, "top_bar/orbs_progress.js"), "utf8");
 for (const epic of [false, true]) {
@@ -133,7 +292,7 @@ for (const epic of [false, true]) {
 	dollar.Schedule = () => {};
 	dollar.DispatchEvent = (...args) => events.push(args);
 	const context = vm.createContext({
-		$: dollar, IS_EPIC_ONLY_MAP: epic,
+		$: dollar, IS_EPIC_ONLY_MAP: epic, IS_FLAT_REROLL_MAP: epic,
 		FindDotaHudElement: panel,
 		Game: { EmitSound() {} },
 		GameEvents: { SendToServerEnsured: name => requests.push(name) },

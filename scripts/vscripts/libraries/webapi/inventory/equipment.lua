@@ -449,6 +449,7 @@ end
 
 
 function Equipment:StartBackendUpdateTimer()
+	if LOCAL_FREE_COLLECTION then return end
 	-- send request to backend on interval to update equipped items
 	-- but only if there's any scheduled changed
 	-- this request batches all players with any changes detected

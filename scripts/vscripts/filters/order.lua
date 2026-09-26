@@ -18,6 +18,11 @@ function Filters:ExecuteOrderFilter(event)
 
 	if ability and not ability.GetAbilityName then ability = nil end
 	local ability_name = ability and ability:GetAbilityName() or nil
+	if ability_name and HostItems:IsDisabled(ability_name) then return false end
+	if order_type == DOTA_UNIT_ORDER_PURCHASE_ITEM and HostItems:IsDisabled(event.shop_item_name) then
+		DisplayError(player_id, "#host_rules_item_disabled")
+		return false
+	end
 
 	local unit
 	if event.units and event.units["0"] then

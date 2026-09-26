@@ -157,8 +157,9 @@ function MakeAbilityUpgradePanel(upgrade_panel, upgrade_info, data) {
 			GameUI.Collection.OpenSpecificTab("subscription");
 			GameUI.Subscriptions.OpenAllSubscriptionBonuses();
 		} else {
+			const selection_id = current_selection_id;
 			ToggleShow(false, true);
-			GameEvents.SendToServerEnsured("Upgrades:choose_upgrade", upgrade_info);
+			GameEvents.SendToServerEnsured("Upgrades:choose_upgrade", Object.assign({}, upgrade_info, {selection_id: selection_id}));
 
 			HandleToast();
 		}
@@ -280,7 +281,7 @@ function Reroll() {
 	if (current_reroll_count >= current_reroll_price) {
 		if (!HUD.ROOT.BHasClass("BRerollRequestSent")) {
 			HUD.ROOT.SetHasClass("BRerollRequestSent", true);
-			GameEvents.SendToServerEnsured("Upgrades:reroll", {});
+			GameEvents.SendToServerEnsured("Upgrades:reroll", {selection_id: current_selection_id});
 		}
 	} else {
 		GameUI.Collection.Show();
@@ -312,7 +313,7 @@ function UpdateRerollButton() {
 	let reroll_tooltip = "reroll_tooltip";
 	if (no_rerolls) reroll_tooltip = "reroll_buy_in_shop_hint";
 	else if (is_using_consumable_rerolls) reroll_tooltip = "reroll_tooltip_consumable";
-	if (IS_EPIC_ONLY_MAP && !no_rerolls) reroll_tooltip = "reroll_tooltip_epic_only";
+	if (IS_FLAT_REROLL_MAP && !no_rerolls) reroll_tooltip = "reroll_tooltip_epic_only";
 
 	HUD.REROLL_BUTTON.SetPanelEvent("onmouseover", () => {
 		$.DispatchEvent("DOTAShowTextTooltip", HUD.REROLL_BUTTON, `#${reroll_tooltip}`);
@@ -411,6 +412,14 @@ function AutoSelectUpgrade(skip_re_animation) {
 	const frame = GameEvents.NewProtectedFrame($.GetContextPanel());
 
 	frame.SubscribeProtected("Upgrades:show_upgrades", ShowUpgrades);
+	frame.SubscribeProtected("HeroSwaps:reset_upgrades", function() {
+		current_selection_id = "";
+		if (auto_select_fav_schedule !== undefined) $.CancelScheduled(auto_select_fav_schedule);
+		auto_select_fav_schedule = undefined;
+		HUD.UPGRADES_CONTAINER.RemoveAndDeleteChildren();
+		HUD.ROOT.SetDialogVariableInt("upgrades_count", 0);
+		ToggleShow(false);
+	});
 	frame.SubscribeProtected("Upgrades:update_pending_count", (data) => {
 		HUD.ROOT.SetDialogVariableInt("upgrades_count", data.upgrades_count || 0);
 		GameEvents.SendToServerEnsured("Upgrades:get_upgrades", {});

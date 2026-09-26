@@ -1,3 +1,5 @@
+DEFAULT_MATCH_LENGTH = 1200
+
 TEAM_COLORS = {
 	[DOTA_TEAM_GOODGUYS] = { 61, 210, 150 },
 	[DOTA_TEAM_BADGUYS]  = { 243, 201, 9 },
@@ -84,7 +86,7 @@ TEAMS_LAYOUTS = {
 		abandon_kill_goal_reduction = 2,
 		kills_by_vote = 1,
 		time_by_vote = 30,
-		game_base_duration = 1200,
+		game_base_duration = DEFAULT_MATCH_LENGTH,
 		respawn_time = {
 			11, 10, 9, 8, 7, 6, 5, 4
 		},
@@ -317,12 +319,26 @@ TEAMS_LAYOUTS[SINGLE_DRAFT_MAP_NAME] = copy_map_settings(TEAMS_LAYOUTS.ot3_necro
 TEAMS_LAYOUTS[SINGLE_DRAFT_MAP_NAME].base_map = "ot3_necropolis_ffa"
 TEAMS_LAYOUTS[SINGLE_DRAFT_MAP_NAME].single_draft = true
 
+function UsesHostRules()
+	return GetMapName() == "ot3_necropolis_ffa"
+end
+
+function IsFlatRerollMap()
+	return IsEpicOnlyMap()
+end
+
+function IsTurboMode()
+	return UsesHostRules() and HostOptions ~= nil and HostOptions.locked == true and HostOptions:GetOption("turbo")
+end
+
 function IsEpicOnlyMap()
+	if UsesHostRules() then return HostOptions ~= nil and HostOptions:GetOption("epic_orbs") end
 	local layout = TEAMS_LAYOUTS[GetMapName()]
 	return layout ~= nil and layout.orb_rarity_override == UPGRADE_RARITY_EPIC
 end
 
 function IsSingleDraftMap()
+	if UsesHostRules() then return HostOptions ~= nil and HostOptions:GetOption("single_draft") end
 	local layout = TEAMS_LAYOUTS[GetMapName()]
 	return layout ~= nil and layout.single_draft == true
 end
@@ -335,6 +351,7 @@ function GetBaseMapName(map_name)
 end
 
 function ResolveOrbRarity(rarity)
+	if UsesHostRules() then return IsEpicOnlyMap() and UPGRADE_RARITY_EPIC or rarity end
 	local layout = TEAMS_LAYOUTS[GetMapName()]
 	return layout and layout.orb_rarity_override or rarity
 end

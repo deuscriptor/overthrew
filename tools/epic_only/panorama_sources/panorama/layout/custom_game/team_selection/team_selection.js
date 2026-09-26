@@ -108,6 +108,7 @@ function ShuffleTeams() {
 	Game.ShufflePlayerTeamAssignments();
 }
 function LockAndStart() {
+	if (CustomNetTables.GetTableValue("game_options", "match_rules")) return;
 	if (Game.GetUnassignedPlayerIDs().length > 0) return;
 	Game.SetTeamSelectionLocked(true);
 	Game.SetRemainingSetupTime(4);
@@ -143,7 +144,7 @@ function CheckPrivileges() {
 	if (!player_info) return;
 	HUD.CONTEXT.SetHasClass("BShowUnassigned", IsShowLobbyTools());
 	HUD.CONTEXT.SetHasClass("BShowHostElements", player_info.player_has_host_privileges);
-	HUD.CONTEXT.SetHasClass("BShowUnlock", player_info.player_has_host_privileges && IsShowLobbyTools());
+	HUD.CONTEXT.SetHasClass("BShowUnlock", player_info.player_has_host_privileges && IsShowLobbyTools() && !CustomNetTables.GetTableValue("game_options", "match_rules"));
 }
 function UpdateSchedule() {
 	HUD.CONTEXT.SetHasClass("BTeamsLocked", Game.GetTeamSelectionLocked());
@@ -162,6 +163,7 @@ function UpdateSchedule() {
 	OnTeamPlayerListChanged();
 	CheckAutoAssign();
 	CheckPrivileges();
+	CustomNetTables.SubscribeNetTableListener("game_options", function(table, key) { if (key === "match_rules") CheckPrivileges(); });
 	UpdateSchedule();
 
 	$.RegisterForUnhandledEvent("DOTAGame_TeamPlayerListChanged", OnTeamPlayerListChanged);

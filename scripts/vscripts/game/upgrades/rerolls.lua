@@ -12,7 +12,7 @@ end
 
 
 function UpgradeRerolls:PreparePlayer(player_id)
-	UpgradeRerolls.current_free_rerolls[player_id] = 30 -- WebPlayer:GetSubscriptionTier(player_id) * 4
+	UpgradeRerolls.current_free_rerolls[player_id] = (UsesHostRules() and HostOptions.locked and HostOptions:GetOption("infinite_rerolls")) and 999 or 30
 	local current_consumable_rerolls = 0 -- WebInventory:GetItemCount(player_id, "bp_reroll")
 
 	if UpgradeRerolls.free_rerolls then

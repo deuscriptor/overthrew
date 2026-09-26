@@ -7,9 +7,12 @@ require("extensions/init")
 require("utils/init")
 require("libraries/init")
 require("filters/init")
+require("game/turbo_rewards")
 require("events/init")
 require("game/init")
 require("game/single_draft")
+require("game/hero_swaps")
+require("game/host_items")
 require("modifiers/init")
 
 function Activate()
@@ -37,7 +40,9 @@ function GameMode:Init()
 	Events:Init()
 
 	GameMode:SetTeams()
-	SingleDraft:Init()
+	HeroSwaps:Init()
+	HostItems:Init()
+	if not UsesHostRules() then SingleDraft:Init() end
 	OrbDropManager:Init()
 	Filters:Init()
 	CustomChat:Init()
@@ -78,6 +83,7 @@ function GameMode:Init()
 	GameRules:SetTimeOfDay(0.251)
 
 	if IsInToolsMode() or GetMapName() == "ot3_demo" then OT3Demo:Init(game_mode_entity) end
+	if UsesHostRules() then HostOptions:HoldSetup() end
 
 	EventDriver:Dispatch("GameMode:init_finished", {})
 

@@ -1,3 +1,5 @@
+dofile("scripts/vscripts/game/host_items.lua")
+HostItems.QueueInventoryCheck = function() end -- Covered by test_host_settings.lua.
 -- Run from the addon root: lua tools/epic_only/test_orbs.lua
 -- Executes production Lua; only engine/services and the upgrade rendering boundary
 -- are mocked. This does not replace a Dota playtest of particles or compiled maps.

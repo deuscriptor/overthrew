@@ -228,7 +228,7 @@ end
 
 
 function Upgrades:GetRerollPrice(rarity)
-	if IsEpicOnlyMap() then return 1 end
+	if IsFlatRerollMap() then return 1 end
 	return REROLL_PRICES[rarity]
 end
 
@@ -240,6 +240,7 @@ function Upgrades:Reroll(event)
 
 	local pending = Upgrades.pending_selection[player_id]
 	if not pending then return end
+	if UsesHostRules() and event.selection_id ~= pending.selection_id then return end
 
 	local price = Upgrades:GetRerollPrice(pending.upgrade_rarity)
 
@@ -299,6 +300,8 @@ function Upgrades:ShowSelection(hero, rarity, player_id, is_reroll, is_lucky_tri
 	if not IsValidEntity(player) then return end
 
 	Timers:CreateTimer(0, function()
+		-- A swap or reroll may have replaced this offer before its deferred send.
+		if not Upgrades.pending_selection[player_id] or Upgrades.pending_selection[player_id].selection_id ~= selection_id then return end
 		CustomGameEventManager:Send_ServerToPlayer(player, "Upgrades:show_upgrades", {
 			upgrades = {
 				upgrade_rarity = rarity,
@@ -436,6 +439,7 @@ function Upgrades:UpgradeSelected(event)
 
 	local pending_selection = Upgrades.pending_selection[player_id]
 	if not pending_selection then print("no pending upgrades") return end
+	if UsesHostRules() and event.selection_id ~= pending_selection.selection_id then return end
 
 	local hero = PlayerResource:GetSelectedHeroEntity(player_id)
 	local subscription_tier = WebPlayer:GetSubscriptionTier(player_id)
@@ -472,6 +476,7 @@ function Upgrades:UpgradeSelected(event)
 		return
 	end
 
+	if HeroSwaps then HeroSwaps:RecordOrbSelection(hero, pending_selection) end
 	if upgrade_data.type == UPGRADE_TYPE.ABILITY then
 		Upgrades:AddAbilityUpgrade(
 			hero,

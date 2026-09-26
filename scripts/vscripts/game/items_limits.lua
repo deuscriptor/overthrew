@@ -73,7 +73,7 @@ end
 -------------------------------------------------------------------------
 
 function CDOTA_BaseNPC:RefundItem(item)
-	self:ModifyGold(item:GetCost(), false, 0)
+	self:ModifyGold(item:GetCost(), false, DOTA_ModifyGold_PurchaseItem)
 	UTIL_Remove(item)
 end
 

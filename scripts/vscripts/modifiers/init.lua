@@ -1,4 +1,5 @@
 local modifiers = {
+	"modifier_host_invincible_ward",
 	"modifier_invulnerable_custom",
 	"modifier_event_proxy",
 	"modifier_hidden_caster_dummy",

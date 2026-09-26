@@ -29,8 +29,6 @@ function UpdateMinimapOverlay() {
 }
 
 function CreateMapBPItems() {
-	SetOrbsCount("rare", Math.max(0, GameUI.Inventory.GetItemCount("bp_legendary_lagresse")));
-	SetOrbsCount("epic", Math.max(0, GameUI.Inventory.GetItemCount("bp_breathtaking_benefaction")));
 
 	if (CONTEXT.BHasClass("BItemsHiddenManually")) return;
 
@@ -76,34 +74,6 @@ function IsGameStarted() {
 
 function HideMapBPItems() {
 	CONTEXT.AddClass("BItemsHiddenManually");
-}
-
-function SetOrbsCount(type, count) {
-	const b_has_orbs = count > 0;
-	CONTEXT.SetHasClass(`BHasOrbs_${type}`, b_has_orbs);
-	CONTEXT.SetDialogVariable(`${type}_orbs_count`, count);
-	CONTEXT.SetDialogVariableLocString(
-		`map_orb_${type}_action_button_text`,
-		b_has_orbs ? "map_orb_gift_to_teams" : "map_bp_open_bp",
-	);
-}
-function GiftOrbToTeams(type) {
-	if (!CONTEXT.BHasClass(`BHasOrbs_${type}`)) {
-		GameUI.Collection.OpenSpecificTab("battle_pass");
-	} else {
-		if (type == "rare") GameUI.Inventory.ConsumeItem("bp_legendary_lagresse");
-		else if (type == "epic") GameUI.Inventory.ConsumeItem("bp_breathtaking_benefaction");
-	}
-}
-
-function HideMapOrbs() {
-	CONTEXT.SwitchClass("map_bp_orbs", "");
-}
-
-function ToggleMapOrbs(type) {
-	const class_name = `BShowMapOrbs_${type}`;
-	if (CONTEXT.BHasClass(class_name)) HideMapOrbs();
-	else CONTEXT.SwitchClass("map_bp_orbs", class_name);
 }
 
 function OpenCollection() {
@@ -162,11 +132,14 @@ function UpdatePlayerSubState(player_data) {
 }
 
 (() => {
-	if (IS_EPIC_ONLY_MAP) {
-		$("#BP_OrbConsumable_Rare").style.backgroundImage = "url('file://{images}/custom_game/map_orb_epic.png')";
-		for (const panel of CONTEXT.FindChildrenWithClassTraverse("BP_Orb_Rare")) {
-			for (const description of panel.FindChildrenWithClassTraverse("BP_Orb_C_Desc"))
-				description.text = $.Localize("#map_orb_desc_epic");
+	for (const id of ["BP_OrbConsumable_Rare", "BP_OrbConsumable_Epic"]) {
+		const button = CONTEXT.FindChildTraverse(id);
+		if (button) { button.visible = false; button.DeleteAsync(0); }
+	}
+	for (const className of ["BP_Orb_Rare", "BP_Orb_Epic"]) {
+		for (const panel of CONTEXT.FindChildrenWithClassTraverse(className)) {
+			panel.visible = false;
+			panel.DeleteAsync(0);
 		}
 	}
 	CONTEXT.AddClass("BItemsHiddenManually");
@@ -195,12 +168,6 @@ function UpdatePlayerSubState(player_data) {
 			if (IsGameStarted()) HideMapBPItems();
 		});
 
-		$.RegisterForUnhandledEvent("Cancelled", () => {
-			HideMapOrbs();
-		});
-		GameUI.SetMouseCallback((event_name, arg) => {
-			if (event_name == "pressed" && arg == 0) HideMapOrbs();
-		});
 	}
 
 	const ability_hud_skin = FindDotaHudElement("HUDSkinAbilityContainerBG");
