@@ -12,11 +12,21 @@ GameRules.GetGameModeEntity = function() return {
 } end
 local players = {{id = 0}, {id = 1}}
 for _, player in ipairs(players) do player.GetPlayerID = function(self) return self.id end end
-local dedicated, listenHost = true, nil
+local dedicated = true
 IsDedicatedServer = function() return dedicated end
-GetListenServerHost = function()
-    return listenHost and {GetController = function() return listenHost end} or nil
-end
+-- Connection-order signals must not decide the host.
+GetListenServerHost = function() return {GetController = function() return players[1] end} end
+local convars, commands, commandClient = {}, {}, nil
+Convars = {
+    GetStr = function(_, name) return convars[name] end,
+    RegisterConvar = function(_, name, value) convars[name] = value end,
+    SetInt = function(_, name, value) convars[name] = tostring(value) end,
+    RegisterCommand = function(_, name, callback) commands[name] = callback end,
+    GetCommandClient = function() return commandClient end,
+}
+RandomInt = function() return 123456 end
+local fallback
+Timers = {CreateTimer = function(_, args) fallback = args end}
 PlayerResource.IsValidPlayerID = function(_, id) return id == 0 or id == 1 end
 PlayerResource.GetPlayer = function(_, id) return players[id + 1] end
 IsValidEntity = function(p) return p ~= nil end
@@ -37,6 +47,8 @@ SingleDraft.Init = function() if IsSingleDraftMap() then initialized = initializ
 HostItems = {ApplyRules = function() end}
 local backpackApplied = 0
 BackpackItems = {ApplyRules = function() backpackApplied = backpackApplied + 1 end}
+IsClient = function() return false end
+dofile("scripts/vscripts/libraries/host_claim.lua")
 dofile("scripts/vscripts/libraries/host_options.lua")
 GameLoop.current_layout = TEAMS_LAYOUTS.ot3_necropolis_ffa
 for draft = 0, 1 do for epic = 0, 1 do for turbo = 0, 1 do
@@ -119,16 +131,31 @@ assert(HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, all_vision=0, inv
 HostOptions:Init()
 state = DOTA_GAMERULES_STATE_HERO_SELECTION
 assert(not HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=1, epic_orbs=1, turbo=1, backpack_items=0, kill_goal=30}))
--- First loader owns native privileges, but only the listen-server owner may edit/start.
+-- First loader owns native privileges and the listen-server slot, but only the client
+-- that reads the server's convar token (the Local Host lobby owner) may edit/start.
 state = DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP
 dedicated, host = false, 0
 HostOptions:Init()
+assert(convars[HOST_CLAIM_CONVAR] == "123456", "claim token must be published in a server convar")
 HostOptions:PublishRules()
 assert(publishedRules.host_id == -1, "must wait for local owner, not fall back to first loader")
 assert(not HostOptions:IsHost(players[1]))
-listenHost = players[2]
+-- The engine attributes the claim command to the issuing client's pawn.
+local function claim(id, token)
+    commandClient = {GetController = function() return players[id + 1] end}
+    commands[HOST_CLAIM_COMMAND](HOST_CLAIM_COMMAND, tostring(token))
+end
+claim(0, 1)
+commandClient = nil
+commands[HOST_CLAIM_COMMAND](HOST_CLAIM_COMMAND, "123456")
+assert(publishedRules.host_id == -1, "wrong or unattributed claim accepted")
+claim(1, 123456)
+assert(publishedRules.host_id == 1 and HostOptions.host == players[2])
+claim(0, 123456)
+assert(publishedRules.host_id == 1, "owner claim must survive later failed claims")
+HostOptions:Init()
 HostOptions:PublishRules()
-assert(publishedRules.host_id == 1 and HostOptions.host == listenHost)
+assert(publishedRules.host_id == 1, "script reload lost the owner claim")
 local edits = listeners["HostOptions:set_option_state"]
 edits({PlayerID=0, name="kill_goal", state=70}, 0)
 edits({PlayerID=1, name="kill_goal", state=70}, 0)
@@ -144,11 +171,59 @@ apply(event, 0)
 assert(not HostOptions.locked, "forged owner started match")
 apply(event, 1)
 assert(HostOptions.locked, "actual local owner could not start match")
-listenHost = nil
+local owner = players[2]
+players[2] = nil
 HostOptions:PublishRules()
 assert(publishedRules.host_id == -1 and HostOptions.host == nil, "stale owner retained")
+players[2] = owner
+-- Guessing is capped per player.
+HostOptions.claim_token = nil
+HostOptions:Init()
+for token = 1, 5 do claim(0, token) end
+claim(0, 123456)
+HostOptions:PublishRules()
+assert(publishedRules.host_id == -1, "claim accepted after repeated wrong tokens")
+-- Without any claim, setup falls back to native privileges instead of stalling.
+HostOptions.claim_token = nil
+HostOptions:Init()
+fallback = nil
+HostOptions:ScheduleClaimFallback()
+assert(fallback and fallback.useGameTime == false and fallback.endTime > 0)
+HostOptions:PublishRules()
+assert(publishedRules.host_id == -1)
+fallback.callback()
+HostOptions:PublishRules()
+assert(publishedRules.host_id == 0, "fallback must use native host privileges")
+claim(1, 123456)
+assert(publishedRules.host_id == 1, "late owner claim must replace the fallback host")
 dedicated = true
 map = "ot3_gardens_duo"
 assert(not IsEpicOnlyMap() and not IsSingleDraftMap() and not IsFlatRerollMap())
+-- Client VM: only a client that can read the server's token convar sends the claim.
+local sent, stateListener = {}, nil
+IsClient = function() return true end
+-- The real client VM lacks the DOTA_GAMERULES_STATE_* constants.
+local setupState = DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP
+DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP = nil
+SendToConsole = function(command) table.insert(sent, command) end
+ListenToGameEvent = function(name, callback) if name == "game_rules_state_change" then stateListener = callback end end
+convars[HOST_CLAIM_CONVAR] = nil
+state = setupState
+dofile("scripts/vscripts/libraries/host_claim.lua")
+assert(#sent == 0, "remote clients cannot read the server token")
+convars[HOST_CLAIM_CONVAR] = "0"
+stateListener()
+assert(#sent == 0, "unset token claimed")
+convars[HOST_CLAIM_CONVAR] = "123456"
+state = setupState + 1
+stateListener()
+assert(#sent == 0, "claim sent outside setup")
+state = setupState
+stateListener()
+assert(sent[1] == HOST_CLAIM_COMMAND .. " 123456", "setup did not trigger the claim")
+dofile("scripts/vscripts/libraries/host_claim.lua")
+assert(sent[2] == HOST_CLAIM_COMMAND .. " 123456", "client VM loaded during setup did not claim")
+DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP = setupState
+IsClient = function() return false end
 dofile("tools/epic_only/test_turbo.lua")
 output("PASS host rules: all eight combinations, Epic-linked rerolls, host authorization, migration, validation, locking and one-time start")
