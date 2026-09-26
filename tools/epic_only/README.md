@@ -10,6 +10,10 @@ config and accelerated grant schedule have been removed. Native neutral
 crafting timings and recraft costs remain unchanged.
 Aghanim's Shard becomes available at 1:00 in Turbo, versus 2:00 otherwise.
 Gift-orb buttons and their popovers are removed from the minimap overlay.
+The top-left menu keeps Dashboard, Dota Settings, Scoreboard and Collection; the
+In-Game Settings, Inbox, Leaderboard, Feedback and Promo Events buttons (and the
+new-mail banner) are hidden on every map. Randomed heroes receive Faerie Fire and
+Enchanted Mango; Infused Raindrop is no longer included.
 **Kill Goal** is a numeric input at the bottom of Core, prefilled with 50. The
 host can enter a positive whole number. Apply locks this as the match's fixed
 kill cap and updates the scoreboard; disconnects and goal-increase events no
@@ -17,7 +21,9 @@ longer alter it on configurable FFA. Existing match-time adjustments still apply
 Single Draft and Turbo are on by default; Epic-Only is off. Settings replace
 the guides/videos as the only first page on configurable FFA; page indicators
 and navigation remain for future settings pages. The menu shows category
-headings, options, and the apply button; it omits explanatory paragraphs.
+tabs, options, and the apply button; it omits explanatory paragraphs. Each option
+row shows an on/off switch and a one-line hover tooltip (`host_rules_<name>_tip`),
+and Kill Goal shows the resulting base time limit (40 seconds per kill).
 **Apply & Start** freezes the settings and begins hero selection. On Local Host,
 native custom-game privileges and `GetListenServerHost()` both follow connection
 order (the first client to load), and scripts cannot see the lobby owner. The
@@ -29,7 +35,7 @@ with the console command `overthrew_claim_host`. The engine attributes the
 command to the issuing player. Panorama cannot read Lua-registered convars, so
 the claim goes through the client VM. The first valid claim is final. Each
 player gets five wrong guesses. Until a claim arrives, nobody receives settings access. If no
-claim arrives within 10 seconds of setup starting, native privileges are used so
+claim arrives within 30 seconds of setup starting, native privileges are used so
 that setup cannot stall. Dedicated servers continue using native custom-game host
 privileges.
 Everyone sees the host's current settings; only the current host can
@@ -253,7 +259,8 @@ These checks do not replace an online multiplayer test.
 ## Other and Items settings
 
 The setup menu has one category per page: Core, Other, Items. Existing arrows and
-page indicators remain; the page counter highlights unseen pages. Apply & Start
+page indicators remain; clickable Core/Other/Items tabs also switch pages, and
+unvisited tabs glow gold. Apply & Start
 is available on every page, centered clear of the navigation arrows.
 
 Other lists All Vision, Infinite Rerolls, Longer Wards and Invincible Wards in that

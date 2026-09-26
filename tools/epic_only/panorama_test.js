@@ -152,7 +152,9 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	let listener;
 	const requests = [];
 	const waitingFrames = [];
+	const pagesRequested = [];
 	const context = vm.createContext({LOADING_HUD: {CONTEXT: root, MOVIE_CONTAINER: root}, hints: [], InitHints: () => {},
+		SetHint: index => pagesRequested.push(index),
 		$: {CreatePanel: (type, parent, id) => new Panel(id, type, parent), Localize: value => value,
 			Schedule: (delay, callback) => { if (delay === 0.6) waitingFrames.push(callback); }},
 		Game: {GetLocalPlayerID: () => 0},
@@ -174,7 +176,18 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	assert.equal(root.FindChildTraverse("MatchRules_core").visible, true);
 	assert.equal(root.FindChildTraverse("MatchRules_other").visible, false);
 	assert.deepEqual(root.FindChildTraverse("MatchRules_other").children.filter(p => p.paneltype === "ToggleButton").map(p => p.id), ["Rule_all_vision", "Rule_infinite_rerolls", "Rule_longer_wards", "Rule_invincible_wards"]);
+	const tabs = ["core", "other", "items"].map(id => root.FindChildTraverse("MatchRulesTab_" + id));
+	assert.equal(tabs[1].caption.style.color, "#dfc58b", "unvisited tab glows");
+	tabs[1].events.onactivate();
+	assert.deepEqual(pagesRequested, [1], "tabs open their settings page");
+	const knob = name => root.FindChildTraverse("Rule_" + name).children[2].children[0].children[0];
+	assert.match(knob("single_draft").style.transform, /18px/, "enabled option shows switch on");
+	assert.match(knob("epic_orbs").style.transform, /\(0px/, "disabled option shows switch off");
+	assert.equal(root.FindChildTraverse("KillGoalTime").text, "#host_rules_time_limit 33:20");
 	vm.runInContext("matchRulesPageChanged(1)", context);
+	assert.equal(tabs[1].caption.style.color, "#f3dfae", "active tab highlighted");
+	assert.equal(tabs[0].caption.style.color, "#7f95a6", "visited tab no longer glows");
+	assert.equal(tabs[2].caption.style.color, "#dfc58b");
 	assert.equal(root.FindChildTraverse("MatchRules_core").visible, false);
 	assert.equal(root.FindChildTraverse("MatchRules_other").visible, true);
 	vm.runInContext("matchRulesPageChanged(2)", context);
@@ -197,6 +210,7 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	goal.events.ontextentrychange();
 	start.events.onactivate();
 	assert.equal(requests[requests.length - 1].args.kill_goal, 45);
+	assert.equal(root.FindChildTraverse("KillGoalTime").text, "#host_rules_time_limit 30:00");
 	data.host_id = 1;
 	listener("game_options", "match_rules");
 	assert.equal(start.visible, false, "non-host cannot start");
