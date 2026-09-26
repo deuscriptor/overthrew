@@ -4,7 +4,7 @@ if GameRules:State_Get() == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
 	GameRules:SetPreGameTime(600)
 	PlayerDC.CheckEndGame = function() end
 	assert(HostOptions:ApplyRules({PlayerID=HostOptions:ResolveHost():GetPlayerID(),
-		epic_orbs=0, single_draft=0, turbo=0, kill_goal=50, infinite_rerolls=0,
+		epic_orbs=0, single_draft=0, turbo=0, backpack_items=0, kill_goal=50, infinite_rerolls=0,
 		all_vision=0, invincible_wards=1, longer_wards=0, divine_rapier=0, dagon=0}))
 	print("INVINCIBLE_WARDS_SETUP_PASS")
 	return

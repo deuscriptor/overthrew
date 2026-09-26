@@ -233,3 +233,110 @@ requires a map reload; a running user game was not interrupted to test it.
   by the official builder; the builder output is byte-identical to the hand patch.
 - Non-English localization removed (`resource/addon_russian.txt`, `addon_schinese.txt`);
   only `addon_english.txt` remains. Full offline suite re-run and passing afterward.
+
+## 2026-09-26: Backpack Items
+
+- New Core option **Backpack Items** (below Epic-Only, default off). Engine probes
+  in a tools match established the approach: `item:OnEquip()` activates a backpack
+  item's native modifiers in place (idempotent, survives swaps, death and respawn,
+  cleaned up on removal or drop); the engine rejects backpack casts, while
+  `OnSpellStart` plus `UseResources` works for no-target, point, unit-target and
+  charge-consuming items, and still respects enemy Linken's Spheres. Toggle
+  (Armlet) and channelled items do not work this way and are refused.
+- Offline: full `run_tests.js` passes, including the new `test_backpack_items.lua`;
+  `panorama_test.js` and `panorama_resources.js build`/`verify` pass.
+- Native tools check `backpack_items_smoke.lua`: 19/19 on a freshly launched client,
+  covering swap/cooldown rules, unique backpack equip, BKB passive and active from
+  the backpack, main-slot/backpack interplay, inert Linken's Sphere and Aeon Disk,
+  and a Scythe of Vyse cast from 1400 units (walks in, hexes, starts cooldown).
+- Client: a temporary HUD hook fired `Activated` on the native backpack
+  `AbilityButton`s: BKB in slot 6 cast from the backpack, and Blink in slot 7 opened
+  native targeting. Screenshot check: the settings page fits five Core rows without
+  scrolling, and Kill Goal stays right-aligned.
+- Not yet checked: physical mouse clicks and drag-and-drop on backpack slots, the
+  6-second swap delay in a real match (the delay is not observable through the
+  item API), and multiplayer.
+
+## 2026-09-26: Backpack Items without lapses when switching
+
+- Reported: switching items quickly between main slots and the backpack briefly
+  dropped their stats and passives. A probe showed `SwapItems` across the boundary
+  unequips both items, and the engine re-equips the main slot one only later; the
+  reconcile loop then restored backpack items up to 0.1s late.
+- Fix: the order filter now performs main/backpack moves itself and re-equips both
+  items in the same server step; the reconcile loop runs every server tick for
+  other inventory changes. Health and mana keep their percentages (verified at
+  full health: 1638 → 758 → 1638 within one step, nothing lost).
+- `test_backpack_items.lua` gained a mock matching the engine's unequip behaviour;
+  the new move tests fail without the fix and pass with it. Full `run_tests.js`
+  passes.
+- Native tools check `backpack_items_smoke.lua`: 23/23. A per-tick watcher sampled
+  11 server ticks while Heart and Butterfly switched 10 times between main slots
+  and the backpack, displacing Ogre Axe and Blade of Alacrity: 0 ticks with a
+  missing effect or reduced strength, agility or max health.
+
+## 2026-09-26: Backpack Items swap cooldown for Linken's Sphere / Aeon Disk
+
+- Swapping Linken's Sphere or Aeon Disk between main slots and the backpack, in
+  either direction, puts both swapped items on a 6 second cooldown (only the moved
+  item when the target slot is empty); longer running cooldowns are kept. Ordinary
+  swaps, moves within one area and a disabled option are unaffected.
+- `test_backpack_items.lua` covers both items, both directions, empty slots,
+  longer cooldowns, ordinary swaps and native moves. Full `run_tests.js` passes.
+- Native tools check `backpack_items_smoke.lua`: all checks pass. After real move
+  orders, Linken's Sphere, Aeon Disk and both swapped partners had 5–6 s of
+  cooldown; an enemy hex was not blocked by the freshly swapped Linken's Sphere,
+  and was blocked once the sphere's cooldown was reset (control).
+
+## 2026-09-26: Backpack Items simulated multiplayer, native backpack casts
+
+Player 0 (Sven) plus three bot players (`GameRules:AddBotPlayerWithEntityScript`:
+Lina, Axe, Arc Warden) on separate FFA teams, in a local tools session. Script:
+`backpack_items_multiplayer_smoke.lua` (`backpack_items_multiplayer_off_smoke.lua`
+for the option off).
+
+Bugs found:
+- Backpack casts were refused under fountain protection and Puck's Phase Shift,
+  while native item casts work there and end the state.
+- Backpack casts did not break Shadow Blade invisibility or trigger other cast
+  events, because the spell effect ran without a native cast.
+- A queued out-of-range backpack cast survived a hero swap.
+- `MoveItem` treated swaps the engine refuses (Rapier/Gem into the backpack) as
+  done, so a Linken's Sphere swapped against a Gem was put on cooldown. Refused
+  swaps are now left to the engine.
+
+Redesign: active backpack items get `SetCanBeUsedOutOfInventory(true)` and the
+engine casts them natively (validation, range approach, turning, cast events). The
+custom cast pipeline was removed, which fixes the first three bugs. Probes before
+the change: native casts from the backpack worked for no-target, unit-target,
+point-target and channelled items (Meteor Hammer), broke invisibility and walked
+into range; items without the flag, illusions and stash items could not be cast;
+Armlet toggled in the backpack without its Unholy Strength effect (so toggles stay
+refused); shift-queued backpack casts are dropped by the engine (main slot ones
+work).
+
+Results: `run_tests.js` passes. Multiplayer smoke: 64 checks, 0 failures —
+per-hero uniqueness, casts between players, same-tick mutual hex, Linken's /
+Aeon across players, casts dropped by target invisibility or a third-party kill,
+refused Rapier/Gem swaps, hero swap with equipped backpack items (no leftover
+effects, uniqueness recomputed), fountain protection, invisibility break, Lotus
+Orb reflection, Blink/Clarity/Dagon with all main slots full (0 lapses), Meteor
+Hammer channel, Armlet refusal, flag cleared in the stash, Manta illusions unable
+to cast, Tempest Double casts. `backpack_items_smoke.lua`: 28 checks, 0 failures.
+
+Option off (`backpack_items_multiplayer_off_smoke.lua`): 15 checks, 0 failures — no
+player's backpack items work or can be cast, no cooldown is spent, and the native
+backpack swap delay stays.
+
+Real client orders (a temporary Panorama hook, removed afterwards; the rebuilt HUD
+script is byte-identical to before): 18 checks, 0 failures. Player 0's client cast
+reaches the order filter with issuer 0 and the backpack hex lands; an inactive copy
+is refused with the error sent to player 0; orders naming the bot's hero or item
+cannot cast or move the bot's backpack items (the engine substitutes the player's
+own hero, which does not hold the item); a dispatched click on the own backpack
+slot casts BKB; 40 rapid client moves arrived with 0 lapses in 74 ticks. Limits of
+the local session: `net_fakelag 150` does not delay the host's own loopback client
+(33 ms round trip either way), and `GameUI.SelectUnit` cannot select an enemy hero,
+so a click while viewing an enemy portrait was not exercised (the click handler
+requires a controllable portrait unit). Physical mouse clicks and real remote
+clients remain manual checks.

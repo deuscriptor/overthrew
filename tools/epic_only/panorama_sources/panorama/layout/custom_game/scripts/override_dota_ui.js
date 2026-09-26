@@ -44,6 +44,26 @@ function UpdateSidePanelPos() {
 	if (side_stats) side_stats.style.marginTop = "28px";
 }
 
+function CastBackpackItem(slot) {
+	const unit = Players.GetLocalPlayerPortraitUnit();
+	if (!Entities.IsControllableByPlayer(unit, Players.GetLocalPlayer())) return;
+	const item = Entities.GetItemInSlot(unit, slot);
+	// Starts native targeting; the server performs the cast from the backpack.
+	if (item !== -1) Abilities.ExecuteAbility(item, unit, false);
+}
+
+function SetupBackpackItems() {
+	const rules = CustomNetTables.GetTableValue("game_options", "match_rules");
+	if (!rules || rules.locked !== 1) return void $.Schedule(0.5, SetupBackpackItems);
+	if (rules.backpack_items !== 1) return;
+	for (let slot = 6; slot <= 8; slot++) {
+		const panel = FindDotaHudElement(`inventory_slot_${slot}`);
+		if (!panel) return void $.Schedule(0.5, SetupBackpackItems);
+		const button = panel.FindChildTraverse("AbilityButton") || panel;
+		button.SetPanelEvent("onactivate", () => CastBackpackItem(slot));
+	}
+}
+
 (function () {
 	// OverrideDotaNeutralItemsShop();
 	RemoveOT3Background();
@@ -51,4 +71,5 @@ function UpdateSidePanelPos() {
 	MoveMorphlingBar();
 	UpdateFightRecap();
 	UpdateSidePanelPos();
+	SetupBackpackItems();
 })();

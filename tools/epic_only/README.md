@@ -282,3 +282,54 @@ subscription data and balances are not rewritten. Equipment sync, payments,
 inventory writes and match reward submissions to the original backend are blocked.
 `test_free_collection.lua` checks local entitlements, item use and backend-write
 isolation; `free_collection_smoke.lua` checks native access and equipping.
+
+## Backpack Items
+
+**Backpack Items**, below Epic-Only in Core, defaults off. When on, items in a
+hero's three backpack slots keep working:
+
+- Passive items, stat bonuses and the passives of active items apply as in main
+  slots. Only the first copy of each item name in the backpack works; duplicates
+  stay inactive. A copy in a main slot does not deactivate one in the backpack.
+- Linken's Sphere, Aeon Disk, neutral items and recipes stay fully inert.
+- Swapping Linken's Sphere or Aeon Disk between main slots and the backpack (either
+  way) puts both swapped items on a 6 second cooldown; a longer cooldown already
+  running is kept. A freshly swapped Linken's Sphere therefore cannot block.
+- Clicking a backpack item uses it: no-target items cast at once, targeted items
+  start the normal targeting cursor. Backpack slots still have no hotkeys.
+- Moving items from the backpack into main slots has no reactivation delay, and
+  backpack cooldowns recover at the normal rate.
+- Moving items between main slots and the backpack never interrupts their stats
+  or passives, however quickly they are switched.
+
+The server equips backpack items with the engine's own `OnEquip`, so each item's
+native modifiers apply without being moved. It also marks each active backpack
+item with `SetCanBeUsedOutOfInventory(true)`, so the engine casts it natively like
+a main slot item: validation and error messages, walking into cast range, turning,
+and every cast event (invisibility and fountain protection break, Linken's Sphere
+and Lotus Orb react). The flag is cleared again when an item leaves the backpack
+or stops being active (a duplicate, or moved to the stash); illusions never get it.
+`BackpackItems:FilterOrder` only refuses casts of inactive copies and toggles,
+with an error.
+
+The engine unequips both items whenever a swap crosses between main slots and
+the backpack, and re-equips the main slot one only later. The order filter
+therefore performs those moves itself (`BackpackItems:MoveItem`) and re-equips
+both items in the same server step; health and mana keep their percentages.
+Moves within main slots, within the backpack or to the stash stay native. Other
+inventory changes are reconciled every server tick.
+
+Limits: toggle items (Armlet) are refused: the engine toggles them in the
+backpack, but their toggled effect needs a main slot. Channelled items (Meteor
+Hammer) work. The engine drops shift-queued backpack casts. An item entering the
+backpack becomes castable on the next server tick. Illusions get the passives but,
+as usual, cannot use items; Tempest Double can. Apart from the Linken's Sphere /
+Aeon Disk rule, there is no swap delay.
+
+`test_backpack_items.lua` covers the rules, uniqueness, exclusions, the cast flag
+and order checks. `backpack_items_smoke.lua` checks them in a disposable tools
+match, including a Scythe of Vyse cast from out of range.
+`backpack_items_multiplayer_smoke.lua` simulates a match with three bot players on
+separate FFA teams: casts between players, Linken's Sphere / Aeon Disk / Lotus Orb,
+invisibility and fountain protection, hero swaps, illusions and Tempest Double
+(`backpack_items_multiplayer_off_smoke.lua` runs it with the option off).

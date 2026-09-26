@@ -90,3 +90,13 @@ assert.equal(turboItems.error, undefined);
 assert.equal(turboItems.status, 0);
 assert.equal((turboItems.stderr || '').trim(), '');
 assert.match(turboItems.stdout, /PASS Turbo items:/);
+const backpackItems = spawnSync(process.execPath, [
+  path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
+  'tools/epic_only/test_backpack_items.lua',
+], { cwd: root, encoding: 'utf8' });
+if (backpackItems.stdout) process.stdout.write(backpackItems.stdout);
+if (backpackItems.stderr) process.stderr.write(backpackItems.stderr);
+assert.equal(backpackItems.error, undefined);
+assert.equal(backpackItems.status, 0);
+assert.equal((backpackItems.stderr || '').trim(), '');
+assert.match(backpackItems.stdout, /PASS backpack items:/);

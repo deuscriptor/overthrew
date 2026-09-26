@@ -10,7 +10,7 @@ if GameRules:State_Get() == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
 	end
 	GameRules:SetPreGameTime(600)
 	PlayerDC.CheckEndGame = function() end
-	assert(HostOptions:ApplyRules({PlayerID=0, epic_orbs=0, single_draft=0, turbo=0, kill_goal=60,
+	assert(HostOptions:ApplyRules({PlayerID=0, epic_orbs=0, single_draft=0, turbo=0, backpack_items=0, kill_goal=60,
 		infinite_rerolls=1, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=1, dagon=1}))
 	assert(GameLoop.current_layout.game_base_duration == DEFAULT_MATCH_LENGTH * 2)
 	assert(CustomNetTables:GetTableValue("game_options", "score_goal").limit == DEFAULT_MATCH_LENGTH * 2)

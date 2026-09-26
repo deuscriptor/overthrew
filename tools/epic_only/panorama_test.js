@@ -169,7 +169,7 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	assert.equal(logo.visible, false);
 	assert.equal(discord.visible, false);
 	assert.equal(root.FindChildTraverse("Rule_flat_rerolls"), null);
-	assert.deepEqual(root.FindChildTraverse("MatchRules_core").children.filter(p => p.paneltype === "ToggleButton").map(p => p.id), ["Rule_single_draft", "Rule_turbo", "Rule_epic_orbs"]);
+	assert.deepEqual(root.FindChildTraverse("MatchRules_core").children.filter(p => p.paneltype === "ToggleButton").map(p => p.id), ["Rule_single_draft", "Rule_turbo", "Rule_epic_orbs", "Rule_backpack_items"]);
 	assert.equal(vm.runInContext("hints.length", context), 3, "one settings page per category");
 	assert.equal(root.FindChildTraverse("MatchRules_core").visible, true);
 	assert.equal(root.FindChildTraverse("MatchRules_other").visible, false);
@@ -185,7 +185,7 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	assert.equal(waiting.visible, false);
 	assert.equal(start.enabled, true);
 	start.events.onactivate();
-	assert.deepEqual(JSON.parse(JSON.stringify(requests[0])), {name:"HostOptions:apply_rules", args:{single_draft:1,epic_orbs:0,turbo:1,kill_goal:50,infinite_rerolls:0,all_vision:0,invincible_wards:0,longer_wards:1,divine_rapier:0,dagon:0}});
+	assert.deepEqual(JSON.parse(JSON.stringify(requests[0])), {name:"HostOptions:apply_rules", args:{single_draft:1,epic_orbs:0,turbo:1,backpack_items:0,kill_goal:50,infinite_rerolls:0,all_vision:0,invincible_wards:0,longer_wards:1,divine_rapier:0,dagon:0}});
 	const goal = root.FindChildTraverse("KillGoalInput");
 	assert.equal(goal.text, "50");
 	goal.text = "";
