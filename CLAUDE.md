@@ -1,0 +1,54 @@
+# CLAUDE.md
+
+See also AGENTS.md (workflow rules). Development-only file; exclude from Workshop publishing.
+
+## What this is
+
+Dota 2 custom game addon `overthrew`, a fork of Overthrow 3.0. Work branch `map-config`, main `main`.
+
+- **Entry point:** `ot3_necropolis_ffa` (DefaultMap in `addoninfo.txt`, 8 players, min 1). Other registered maps (gardens_duo, jungle_quintet, desert_octet, ot3_demo) keep original behavior.
+- Earlier separate-map variants (`ot3_ffa_epic`, `ot3_ffa_draft`, `ot3_ffa_epic_draft`) were removed; `tools/epic_only/Build-Map.ps1` is historical. No Hammer map source exists — VPKs are compiled only.
+
+**Host settings** (lobby host only, before hero pick; shown instead of guides/videos; **Apply & Start** locks them and begins picking):
+- Core: Single Draft (on), Turbo (on; 2x earned gold/XP), Epic-Only orbs (off; rerolls cost 1), Kill Goal (default 50; match time = 1200s × goal/30)
+- Other, in menu order: All Vision (on), Infinite Rerolls (on; 999), Longer Wards (on), Invincible Wards (on)
+- Items: Divine Rapier (on), Dagon (on); off = item disabled/disassembled
+- Also: cross-team Hero Swaps; free local premium/collection (backend writes blocked).
+
+## Key code
+
+- `scripts/vscripts/libraries/host_options.lua` — option state, `MATCH_FLAGS`, net table `game_options` (`host_options`, `match_rules`), events `HostOptions:apply_rules` / `HostOptions:set_option_state`
+- `scripts/vscripts/core_declarations.lua` — `UsesHostRules()`, `IsSingleDraftMap()`, `IsEpicOnlyMap()`, `IsFlatRerollMap()`
+- `scripts/vscripts/game/` — `single_draft.lua`, `turbo_rewards.lua`, `hero_swaps.lua`, `host_items.lua`, `game_loop.lua`, `neutral_item_drop.lua`
+- **Panorama:** runtime uses compiled `.vjs_c`. Editable JS lives in `tools/epic_only/panorama_sources/` and must be rebuilt (below). Originals in `tools/epic_only/panorama_backups/`. XML/CSS containers are not modified.
+- **Docs:** `tools/epic_only/README.md` (authoritative feature spec), `panorama_README.md`, `TEST_RESULTS.md`, `PUBLISHING_CHECK.md`, `NEUTRAL_TIMINGS_INVESTIGATION.md`.
+- **Localization:** English only — `resource/addon_english.txt`. Non-English files were removed; non-English clients fall back to English.
+
+### Adding a host option (a boolean match flag)
+
+One toggle touches five places — keep them in sync:
+1. `host_options.lua` — add the name to `MATCH_FLAGS`; add it to `DEFAULT_ON_FLAGS` only if it should start checked (absent = default off). `ApplyRules` validates every flag as 0/1/false/true and publishes through the `match_rules` net table.
+2. Panorama source `tools/epic_only/panorama_sources/.../custom_loading_screen/custom_loading_screen.js` — add `"<name>"` to the right category in the `categories` array (`core`/`other`/`items`); array position = on-screen order. Then rebuild (see Testing).
+3. Localization — add `"host_rules_<name>" "<Label>"` to `resource/addon_english.txt`. Category headings are `host_rules_category_<id>`.
+4. Consumer code — read the flag where its effect applies, via `HostOptions:GetOption("<name>")`, guarded by `HostOptions.locked` / `UsesHostRules()`. Existing consumers: `core_declarations.lua` (single_draft, epic_orbs, turbo), `host_items.lua` (divine_rapier, dagon), `game/upgrades/rerolls.lua` (infinite_rerolls), `host_options.lua` (all_vision → fog).
+5. Tests — update `tools/epic_only/test_host_rules.lua` (defaults + apply payloads list every flag) and `panorama_test.js` (category order assertions).
+
+## Testing
+
+Environment (verified 2026-09-26): Node.js v24 at `C:\Program Files\nodejs` (on the **PowerShell** PATH; **not** on the Git-Bash PATH — in Bash first run `export PATH="/c/Program Files/nodejs:$PATH"`). Dota Workshop Tools binaries present under `game/bin/win64` (resourcecompiler, resourceinfo, vconsole2). All offline suites currently pass.
+
+**1. Offline (Node.js, from addon root)** — run first, cheapest:
+- `node tools/epic_only/run_tests.js` — Lua tests (`tools/epic_only/test_*.lua`) run production code on Fengari with a mocked engine
+- `node tools/epic_only/panorama_test.js` — Panorama logic with mocked panels
+- `node tools/epic_only/panorama_resources.js build` then `... verify` — after editing JS in `panorama_sources/`
+- Restore runner deps if missing: `npm ci --prefix tools/epic_only/runtime --ignore-scripts --no-audit --no-fund`
+- Record results in `tools/epic_only/TEST_RESULTS.md`.
+
+**2. In-game (Dota 2 Workshop Tools):**
+- Launch Dota with `-tools`, pick addon `overthrew`, then console: `dota_launch_custom_game overthrew ot3_necropolis_ffa` (Local Host lobby; host settings appear pre-pick).
+- Smoke scripts `scripts/vscripts/*_smoke.lua` run in a disposable tools session via `script_reload_code <name>` (e.g. `host_rules_smoke`, `turbo_smoke`, `host_settings_smoke`, `host_items_smoke`, `hero_swaps_smoke`, `hero_swaps_ui_smoke`, `invincible_wards_smoke`, `all_vision_smoke`, `free_collection_smoke`, `single_draft_smoke`). They print `..._PASS` markers or assert. Some mutate state — use fresh sessions.
+- Send console commands from a terminal via VConsole (port 29000): `node tools/epic_only/vconsole.js 'script_reload_code host_rules_smoke'` (options `--port --wait-ms --listen-ms`).
+- Lua reloads live with `script_reload`; Panorama needs rebuild + client reload. UI appearance still needs a human check in the client.
+- Multiplayer testing is skipped by user request; smoke tests don't replace it.
+
+**3. Publishing:** see `tools/epic_only/PUBLISHING_CHECK.md`. Publish via Workshop Tools; exclude `.git`, `tools/`, AGENTS.md, CLAUDE.md, editor caches, `panorama_debugger.cfg`. Players need no launch flags.

@@ -262,7 +262,7 @@ function InitMatchRules() {
 	}
 	const categories = [
 		{ id: "core", options: ["single_draft", "turbo", "epic_orbs", "kill_goal"] },
-		{ id: "other", options: ["infinite_rerolls", "longer_wards", "invincible_wards", "all_vision"] },
+		{ id: "other", options: ["all_vision", "infinite_rerolls", "longer_wards", "invincible_wards"] },
 		{ id: "items", options: ["divine_rapier", "dagon"] },
 	];
 	const body = $.CreatePanel("Panel", panel, "MatchRulesCategories");

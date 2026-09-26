@@ -14,31 +14,32 @@ Gift-orb buttons and their popovers are removed from the minimap overlay.
 host can enter a positive whole number. Apply locks this as the match's fixed
 kill cap and updates the scoreboard; disconnects and goal-increase events no
 longer alter it on configurable FFA. Existing match-time adjustments still apply.
-All are off by default. Settings replace the guides/videos as the only first page
-on configurable FFA; page indicators and navigation remain for future settings
-pages. The menu shows category headings, options, and the apply button; it omits
-explanatory paragraphs. **Apply & Start** freezes the settings and begins hero
-selection. Local Host games resolve the host from the listen-server player's
-controller, rather than the first loader's native custom-game privileges. Until
-that controller is available, nobody receives settings access. Dedicated servers
-continue using native custom-game host privileges.
+Single Draft and Turbo are on by default; Epic-Only is off. Settings replace
+the guides/videos as the only first page on configurable FFA; page indicators
+and navigation remain for future settings pages. The menu shows category
+headings, options, and the apply button; it omits explanatory paragraphs.
+**Apply & Start** freezes the settings and begins hero selection. Local Host
+games resolve the host from the listen-server player's controller, rather than
+the first loader's native custom-game privileges. Until that controller is
+available, nobody receives settings access. Dedicated servers continue using
+native custom-game host privileges.
 Everyone sees the host's current settings; only the current host can
 change them. The server rejects changes after setup and duplicate start requests.
 Non-host players see a soft white **Waiting for host...** message in place of
 Apply & Start, with dots cycling every 0.6 seconds.
 
-**Invincible Wards**, below Longer Wards on the Other page, defaults on. It
+**Invincible Wards**, last on the Other page, defaults on. It
 protects placed Observer and Sentry wards from attacks and damage without
 changing their expiry or requiring Longer Wards. `invincible_wards_smoke.lua`
 checks native attacks, damage and expiry in a disposable tools match.
 
-**All Vision**, below Invincible Wards, defaults off. It disables fog of war for
+**All Vision**, first on the Other page, defaults on. It disables fog of war for
 all teams without granting True Sight; invisible enemies still require detection.
 
 Turbo doubles earned gold and experience, including passive and central-ring
 income, kills, creeps, objectives, and custom ability rewards. Starting gold stays
 700. Sales, refunds, redistributed gold, and spending retain their original
-amounts. Turbo defaults off and does not change any other Turbo-mode mechanics.
+amounts. Turbo defaults on and does not change any other Turbo-mode mechanics.
 
 Single Draft disables bans and offers each player four heroes, one per attribute,
 without shared offers. Epic mode converts all existing orb rewards, including
@@ -246,11 +247,12 @@ The setup menu has one category per page: Core, Other, Items. Existing arrows an
 page indicators remain; the page counter highlights unseen pages. Apply & Start
 is available on every page, centered clear of the navigation arrows.
 
-Other contains Infinite Rerolls (999 instead of 30, default off) and Longer Wards
+Other lists All Vision, Infinite Rerolls, Longer Wards and Invincible Wards in that
+order. Infinite Rerolls (999 instead of 30) defaults on, as does Longer Wards
 (60-minute Observer/Sentry lifetime, including Sentry detection, and initial
-Observer shop stock of four per team; default on). Reroll
+Observer shop stock of four per team). Reroll
 prices still follow the Epic-Only setting. Items contains Divine Rapier and Dagon
-(all levels), both default off. Settings remain host-only and lock before picking.
+(all levels), both default on. Settings remain host-only and lock before picking.
 
 Disabled item assemblies are disassembled by the engine into their components
 and recipe, with native combine locks to prevent an immediate rebuild. Components

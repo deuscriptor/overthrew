@@ -217,3 +217,19 @@ requires a map reload; a running user game was not interrupted to test it.
 - Turbo schedules one initial Shard stock addition for each FFA team at half its configured initial stock time (120 / 2 = 60 seconds). Non-Turbo uses the native 120-second unlock.
 - `test_turbo_items.lua` covers all five grant times, normal mode unchanged, and the Shard timer/stock addition for all eight teams. Full regression suite and Panorama build passed.
 - Native local test verified `IncreaseItemStock` changes Shard stock from 0 to 1 before its normal unlock on all eight FFA teams. No multiplayer test was performed.
+
+## 2026-09-26: default-on options and Other page order
+
+- Defaults changed: Single Draft, Turbo, All Vision, Infinite Rerolls, Divine Rapier
+  and Dagon now start enabled in the Host Options menu, joining Longer Wards and
+  Invincible Wards. Epic-Only is the only match flag still defaulting off. Defaults
+  are declared in `DEFAULT_ON_FLAGS` in `scripts/vscripts/libraries/host_options.lua`.
+- New Other page order: All Vision, Infinite Rerolls, Longer Wards, Invincible Wards.
+- Verified 2026-09-26 after Node.js v24 was installed: `run_tests.js` (all Lua
+  suites incl. host rules), `panorama_test.js`, and `panorama_resources.js
+  build`/`verify` (27 scripts + shop-image alias) all pass with the new defaults
+  and Other-page order.
+- `custom_loading_screen.vjs_c` was first hand-patched in place, then regenerated
+  by the official builder; the builder output is byte-identical to the hand patch.
+- Non-English localization removed (`resource/addon_russian.txt`, `addon_schinese.txt`);
+  only `addon_english.txt` remains. Full offline suite re-run and passing afterward.

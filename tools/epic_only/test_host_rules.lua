@@ -39,10 +39,11 @@ dofile("scripts/vscripts/libraries/host_options.lua")
 GameLoop.current_layout = TEAMS_LAYOUTS.ot3_necropolis_ffa
 for draft = 0, 1 do for epic = 0, 1 do for turbo = 0, 1 do
     HostOptions:Init()
-    assert(not HostOptions:GetOption("turbo"), "Turbo must default off")
-    assert(HostOptions:GetOption("longer_wards"), "Longer Wards must default on")
-    assert(HostOptions:GetOption("invincible_wards"), "Invincible Wards must default on")
-    assert(not HostOptions:GetOption("all_vision"), "All Vision must default off")
+    assert(not HostOptions:GetOption("epic_orbs"), "Epic Orbs must default off")
+    for _, on in ipairs({"single_draft", "turbo", "infinite_rerolls", "all_vision",
+        "invincible_wards", "longer_wards", "divine_rapier", "dagon"}) do
+        assert(HostOptions:GetOption(on), on .. " must default on")
+    end
     assert(HostOptions.options.kill_goal == 50)
     local event = {PlayerID = 1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft = draft, epic_orbs = epic, turbo = turbo, kill_goal = 45}
     assert(not HostOptions:ApplyRules(event), "non-host accepted")
@@ -88,7 +89,7 @@ for _, goal in ipairs({1, 15, 30, 45, 60, 90}) do
 end
 for _, name in ipairs({"infinite_rerolls", "all_vision", "invincible_wards", "longer_wards", "divine_rapier", "dagon"}) do
     HostOptions:Init()
-    assert(HostOptions:GetOption(name) == (name == "longer_wards" or name == "invincible_wards"))
+    assert(HostOptions:GetOption(name), name .. " must default on")
     local event = {PlayerID=0, single_draft=0, epic_orbs=0, turbo=0, kill_goal=30,
         infinite_rerolls=1, all_vision=1, invincible_wards=1, longer_wards=0, divine_rapier=1, dagon=1}
     local value = event[name]

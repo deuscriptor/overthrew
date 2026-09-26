@@ -173,7 +173,7 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	assert.equal(vm.runInContext("hints.length", context), 3, "one settings page per category");
 	assert.equal(root.FindChildTraverse("MatchRules_core").visible, true);
 	assert.equal(root.FindChildTraverse("MatchRules_other").visible, false);
-	assert.deepEqual(root.FindChildTraverse("MatchRules_other").children.filter(p => p.paneltype === "ToggleButton").map(p => p.id), ["Rule_infinite_rerolls", "Rule_longer_wards", "Rule_invincible_wards", "Rule_all_vision"]);
+	assert.deepEqual(root.FindChildTraverse("MatchRules_other").children.filter(p => p.paneltype === "ToggleButton").map(p => p.id), ["Rule_all_vision", "Rule_infinite_rerolls", "Rule_longer_wards", "Rule_invincible_wards"]);
 	vm.runInContext("matchRulesPageChanged(1)", context);
 	assert.equal(root.FindChildTraverse("MatchRules_core").visible, false);
 	assert.equal(root.FindChildTraverse("MatchRules_other").visible, true);

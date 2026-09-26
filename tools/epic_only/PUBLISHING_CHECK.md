@@ -37,7 +37,7 @@ Reference: https://developer.valvesoftware.com/wiki/Dota_2_Workshop_Tools/Addon_
 
 - Keep runtime files: `addoninfo.txt`, maps, scripts, resource, Panorama, materials,
   models, particles and soundevents. Do not include development folders `.git`
-  (about 163 MiB) or `tools`, AGENTS.md, editor thumbnail/asset caches or
+  (about 163 MiB) or `tools`, AGENTS.md, CLAUDE.md, editor thumbnail/asset caches or
   `panorama_debugger.cfg`. Inspect the publisher's file list; this check did not
   run the publisher or assume it excludes these automatically.
 - The other original maps remain advertised. Their map-specific limits are 10,
