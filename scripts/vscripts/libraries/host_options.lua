@@ -14,7 +14,7 @@ HOST_OPTION = {
 	BOTS = "fill_with_bots"
 }
 
-local HOST_CLAIM_FALLBACK_DELAY = 10
+local HOST_CLAIM_FALLBACK_DELAY = 30
 local HOST_CLAIM_MAX_FAILURES = 5
 
 function HostOptions:Init()

@@ -35,7 +35,7 @@ with the console command `overthrew_claim_host`. The engine attributes the
 command to the issuing player. Panorama cannot read Lua-registered convars, so
 the claim goes through the client VM. The first valid claim is final. Each
 player gets five wrong guesses. Until a claim arrives, nobody receives settings access. If no
-claim arrives within 10 seconds of setup starting, native privileges are used so
+claim arrives within 30 seconds of setup starting, native privileges are used so
 that setup cannot stall. Dedicated servers continue using native custom-game host
 privileges.
 Everyone sees the host's current settings; only the current host can
