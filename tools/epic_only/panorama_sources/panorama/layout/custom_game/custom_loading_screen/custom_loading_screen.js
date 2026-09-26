@@ -221,16 +221,17 @@ function InitMatchRules() {
 	["LS_Tips_Logo", "LS_DiscordButton"].forEach(function(className) {
 		LOADING_HUD.CONTEXT.FindChildrenWithClassTraverse(className).forEach(function(element) { element.visible = false; });
 	});
+	const GOLD = "#d4bb86";
 	const panel = $.CreatePanel("Panel", LOADING_HUD.MOVIE_CONTAINER, "MatchRulesPanel");
-	panel.style.width = "100%";
-	panel.style.height = "100%";
-	panel.style.flowChildren = "down";
-	panel.style.horizontalAlign = "center";
-	panel.style.verticalAlign = "top";
-	panel.style.backgroundColor = "gradient(linear, 0% 0%, 100% 100%, from(#172330), to(#0c141e))";
-	panel.style.padding = "20px 30px";
-	panel.style.border = "1px solid #415465";
-	panel.style.zIndex = "100";
+	css(panel, {
+		width: "100%", height: "100%", flowChildren: "down", horizontalAlign: "center", verticalAlign: "top",
+		backgroundColor: "gradient(linear, 0% 0%, 100% 100%, from(#1a2835), to(#0b121a))",
+		padding: "14px 28px 16px 28px", border: "1px solid #415465", zIndex: "100",
+		boxShadow: "inset #00000088 0px 0px 24px 0px",
+	});
+	function css(target, styles) {
+		for (const key in styles) target.style[key] = styles[key];
+	}
 	function label(parent, text) {
 		const p = $.CreatePanel("Label", parent, "");
 		p.text = $.Localize(text);
@@ -239,8 +240,18 @@ function InitMatchRules() {
 		p.style.marginBottom = "4px";
 		return p;
 	}
+	function tooltip(target, text) {
+		target.SetPanelEvent("onmouseout", function() { $.DispatchEvent("DOTAHideTextTooltip", target); });
+		return function() { $.DispatchEvent("DOTAShowTextTooltip", target, $.Localize(text)); };
+	}
+	function formatTime(seconds) {
+		const minutes = Math.floor(seconds / 60);
+		const rest = Math.round(seconds % 60);
+		return minutes + ":" + (rest < 10 ? "0" : "") + rest;
+	}
 	const controls = {};
-	let killGoal, killGoalFrame, killGoalMeasure, goalDirty = false, syncingGoal = false, canEditRules = false;
+	const rowStyles = {};
+	let killGoal, killGoalFrame, killGoalMeasure, killGoalTime, goalDirty = false, syncingGoal = false, canEditRules = false;
 	function alignKillGoal() {
 		if (!killGoal.IsValid() || !killGoalMeasure.IsValid()) return;
 		killGoalMeasure.text = killGoal.text;
@@ -260,65 +271,91 @@ function InitMatchRules() {
 	function validKillGoal() {
 		return /^\d+$/.test(killGoal.text) && Number(killGoal.text) >= 1 && Number(killGoal.text) <= 2147483647;
 	}
+	// Mirrors HostOptions:ApplyRules: base match length is 1200 seconds per 30 kills.
+	function updateGoalTime() {
+		const valid = validKillGoal() && Number(killGoal.text) <= 99999;
+		killGoalTime.text = valid ? $.Localize("#host_rules_time_limit") + " " + formatTime(Number(killGoal.text) * 40) : "";
+	}
 	const categories = [
 		{ id: "core", options: ["single_draft", "turbo", "epic_orbs", "backpack_items", "kill_goal"] },
 		{ id: "other", options: ["all_vision", "infinite_rerolls", "longer_wards", "invincible_wards"] },
 		{ id: "items", options: ["divine_rapier", "dagon"] },
 	];
+	// Category tabs replace the per-page heading; unvisited pages glow until opened.
+	const tabBar = $.CreatePanel("Panel", panel, "MatchRulesTabs");
+	css(tabBar, {width: "100%", height: "32px", flowChildren: "right"});
+	const divider = $.CreatePanel("Panel", panel, "MatchRulesDivider");
+	css(divider, {width: "100%", height: "1px", marginBottom: "10px",
+		backgroundColor: "gradient(linear, 0% 0%, 100% 0%, from(#d4bb8699), to(#d4bb8600))"});
 	const body = $.CreatePanel("Panel", panel, "MatchRulesCategories");
 	body.style.width = "100%";
 	body.style.height = "fill-parent-flow(1.0)";
 	body.style.flowChildren = "down";
 	body.style.overflow = "squish scroll";
 	const groups = [];
-	const nextCaptions = [];
+	const tabs = [];
 	const visited = {};
+	let currentPage = 0;
+	function styleTab(tab, index, hovered) {
+		const active = index === currentPage;
+		const unseen = !active && !visited[index];
+		tab.caption.style.color = active ? "#f3dfae" : unseen ? "#dfc58b" : hovered ? "#c9d6e0" : "#7f95a6";
+		tab.caption.style.textShadow = unseen ? "0px 0px 6px 1.0 #c59a48aa" : "0px 1px 2px 1.0 #000000aa";
+		tab.underline.style.backgroundColor = active ? GOLD : hovered ? "#d4bb8655" : "transparent";
+	}
 	categories.forEach(function(category, index) {
+		const tab = $.CreatePanel("Button", tabBar, "MatchRulesTab_" + category.id);
+		css(tab, {height: "100%", padding: "0px 12px", marginRight: "2px"});
+		tab.caption = label(tab, "#host_rules_category_" + category.id);
+		css(tab.caption, {fontSize: "17px", fontWeight: "bold", letterSpacing: "1.5px", textTransform: "uppercase",
+			marginBottom: "0px", verticalAlign: "center"});
+		tab.underline = $.CreatePanel("Panel", tab, "");
+		css(tab.underline, {width: "100%", height: "2px", verticalAlign: "bottom"});
+		tab.SetPanelEvent("onactivate", function() { if (typeof SetHint === "function") SetHint(index); });
+		tab.SetPanelEvent("onmouseover", function() { styleTab(tab, index, true); });
+		tab.SetPanelEvent("onmouseout", function() { styleTab(tab, index, false); });
+		tabs.push(tab);
 		const group = $.CreatePanel("Panel", body, "MatchRules_" + category.id);
 		group.style.width = "100%";
 		group.style.flowChildren = "down";
 		group.style.marginBottom = "0px"; // one category is shown per page
 		groups.push(group);
-		const header = $.CreatePanel("Panel", group, "MatchRulesHeader_" + category.id);
-		header.style.width = "100%";
-		header.style.height = "30px";
-		const heading = label(header, "#host_rules_category_" + category.id);
-		heading.style.color = "#d4bb86";
-		heading.style.fontSize = "20px";
-		heading.style.fontWeight = "semi-bold";
-		heading.style.letterSpacing = "1px";
-		heading.style.marginBottom = "0px";
-		const caption = label(header, "");
-		caption.style.horizontalAlign = "right";
-		caption.hittest = false;
-		caption.text = (index + 1) + " / " + categories.length;
-		caption.style.fontSize = "16px";
-		nextCaptions.push(caption);
 		category.options.forEach(function(name) {
 			const row = $.CreatePanel(name === "kill_goal" ? "Panel" : "ToggleButton", group, "Rule_" + name);
-			row.style.width = "100%";
-			// Sized so five rows fit the fixed-height settings page without scrolling.
-			row.style.height = "36px";
-			row.style.padding = "3px 14px";
-			row.style.marginBottom = "4px";
-			row.style.backgroundColor = "#1b2b3b";
-			row.style.border = "1px solid #304456";
+			// A code-created ToggleButton brings its own tick box; the switch below replaces it.
+			row.Children().forEach(function(child) { child.visible = false; });
+			css(row, {
+				width: "100%",
+				// Sized so five rows fit the fixed-height settings page without scrolling.
+				height: "36px", padding: "0px 12px 0px 0px", marginBottom: "4px",
+				transitionProperty: "background-color, border", transitionDuration: "0.12s",
+			});
+			const accent = $.CreatePanel("Panel", row, "");
+			css(accent, {width: "3px", height: "100%", transitionProperty: "background-color", transitionDuration: "0.12s"});
 			const caption = label(row, "#host_rules_" + name);
-			caption.style.marginBottom = "0px";
-			caption.style.verticalAlign = "center";
+			css(caption, {marginBottom: "0px", marginLeft: "14px", verticalAlign: "center",
+				transitionProperty: "color", transitionDuration: "0.12s"});
+			const showTooltip = tooltip(row, "#host_rules_" + name + "_tip");
 			if (name === "kill_goal") {
+				css(row, {backgroundColor: "#16222e", border: "1px solid #26394a"});
+				accent.style.backgroundColor = GOLD;
+				row.SetPanelEvent("onmouseover", showTooltip);
+				killGoalTime = $.CreatePanel("Label", row, "KillGoalTime");
+				css(killGoalTime, {horizontalAlign: "right", verticalAlign: "center", marginRight: "112px",
+					fontSize: "15px", color: "#8da6b5"});
+				killGoalTime.hittest = false;
 				killGoalFrame = $.CreatePanel("Panel", row, "KillGoalField");
 				killGoalFrame.style.horizontalAlign = "right";
 				killGoalFrame.style.verticalAlign = "center";
 				killGoalFrame.style.width = "100px";
-				killGoalFrame.style.height = "30px";
-				killGoalFrame.style.backgroundColor = "#0c141e";
+				killGoalFrame.style.height = "28px";
+				killGoalFrame.style.backgroundColor = "#0a1017";
 				killGoalFrame.style.border = "1px solid #607988";
 				killGoal = $.CreatePanel("TextEntry", killGoalFrame, "KillGoalInput");
 				killGoal.style.horizontalAlign = "right";
 				killGoal.style.verticalAlign = "center";
 				killGoal.style.width = "100px";
-				killGoal.style.height = "30px";
+				killGoal.style.height = "28px";
 				killGoal.style.fontSize = "18px";
 				killGoal.style.fontFamily = "Radiance";
 				killGoal.style.fontWeight = "normal";
@@ -340,19 +377,66 @@ function InitMatchRules() {
 				alignKillGoal();
 				return;
 			}
+			// Panorama draws rounded borders without anti-aliasing, so the outline is an
+			// outer rounded background showing 1px around the inner fill. Oversized radii are
+			// clamped to half the height, keeping semicircular ends at any UI scale.
+			const track = $.CreatePanel("Panel", row, "");
+			css(track, {width: "40px", height: "22px", horizontalAlign: "right", verticalAlign: "center",
+				borderRadius: "999px", transitionProperty: "background-color, box-shadow", transitionDuration: "0.12s"});
+			const trackFill = $.CreatePanel("Panel", track, "");
+			css(trackFill, {width: "38px", height: "20px", margin: "1px", borderRadius: "999px",
+				transitionProperty: "background-color", transitionDuration: "0.12s"});
+			const knob = $.CreatePanel("Panel", trackFill, "");
+			css(knob, {width: "16px", height: "16px", margin: "2px", verticalAlign: "center", borderRadius: "50%",
+				boxShadow: "#00000099 0px 1px 2px 0px", transitionProperty: "transform, background-color", transitionDuration: "0.12s"});
+			let hovered = false;
+			rowStyles[name] = function() {
+				const on = row.IsSelected();
+				const hot = hovered && canEditRules;
+				css(row, {
+					backgroundColor: on ? (hot ? "#2a4058" : "#213347") : (hot ? "#1f2f3f" : "#16222e"),
+					border: "1px solid " + (hot ? "#5b7a95" : on ? "#3d5770" : "#26394a"),
+				});
+				accent.style.backgroundColor = on ? GOLD : "transparent";
+				caption.style.color = on ? "#f4f6f8" : "#9aabb8";
+				track.style.backgroundColor = on ? "#9cc07f" : "#415465";
+				// A faint glow in the outline colour softens the edge pixels.
+				track.style.boxShadow = (on ? "#9cc07f66" : "#41546566") + " 0px 0px 2px 0px";
+				trackFill.style.backgroundColor = on ? "gradient(linear, 0% 0%, 0% 100%, from(#6f9f5c), to(#4a7340))" : "#0a1017";
+				css(knob, {backgroundColor: on ? "#ffffff" : "#6d7f8e", transform: on ? "translate3d(18px, 0px, 0px)" : "translate3d(0px, 0px, 0px)"});
+			};
 			controls[name] = row;
+			row.SetPanelEvent("onmouseover", function() { hovered = true; rowStyles[name](); showTooltip(); });
+			row.SetPanelEvent("onmouseout", function() {
+				hovered = false;
+				rowStyles[name]();
+				$.DispatchEvent("DOTAHideTextTooltip", row);
+			});
 			row.SetPanelEvent("onactivate", function() {
+				rowStyles[name]();
 				GameEvents.SendToServerEnsured("HostOptions:set_option_state", {name: name, state: row.IsSelected()});
 			});
 		});
 	});
 	const start = $.CreatePanel("Button", panel, "ApplyMatchRules");
-	start.style.horizontalAlign = "center";
-	start.style.marginTop = "16px";
-	start.style.backgroundColor = "gradient(linear, 0% 0%, 0% 100%, from(#527647), to(#344e30))";
-	start.style.border = "1px solid #789364";
-	start.style.padding = "10px 26px";
-	label(start, "#host_rules_start").style.marginBottom = "0px";
+	css(start, {horizontalAlign: "center", marginTop: "12px", minWidth: "220px", height: "42px", padding: "0px 28px",
+		backgroundColor: "gradient(linear, 0% 0%, 0% 100%, from(#5e8f4f), to(#335230))",
+		border: "1px solid #9cc07f", borderRadius: "3px", boxShadow: "#000000aa 0px 2px 8px 0px",
+		transitionProperty: "brightness, saturation, opacity", transitionDuration: "0.12s"});
+	const startCaption = label(start, "#host_rules_start");
+	css(startCaption, {marginBottom: "0px", horizontalAlign: "center", verticalAlign: "center", fontSize: "18px",
+		fontWeight: "bold", letterSpacing: "1.5px", color: "#ffffff", textShadow: "0px 1px 3px 1.0 #000000cc"});
+	let startHovered = false;
+	function styleStart() {
+		const ready = start.enabled;
+		css(start, {
+			brightness: ready && startHovered ? "1.25" : "1",
+			saturation: ready ? "1" : "0.15",
+			opacity: ready ? "1" : "0.6",
+		});
+	}
+	start.SetPanelEvent("onmouseover", function() { startHovered = true; styleStart(); });
+	start.SetPanelEvent("onmouseout", function() { startHovered = false; styleStart(); });
 	const waiting = $.CreatePanel("Label", panel, "WaitingForHost");
 	waiting.style.horizontalAlign = "center";
 	waiting.style.marginTop = "16px";
@@ -380,11 +464,13 @@ function InitMatchRules() {
 	});
 	killGoal.SetPanelEvent("ontextentrychange", function() {
 		alignKillGoal();
+		updateGoalTime();
 		if (syncingGoal || !canEditRules) return;
 		goalDirty = true;
 		const valid = validKillGoal();
 		killGoalFrame.style.border = valid ? "1px solid #607988" : "1px solid #d66b62";
 		start.enabled = valid;
+		styleStart();
 		if (valid) GameEvents.SendToServerEnsured("HostOptions:set_option_state", {name: "kill_goal", state: Number(killGoal.text)});
 	});
 	function refresh() {
@@ -396,6 +482,7 @@ function InitMatchRules() {
 			syncingGoal = true;
 			killGoal.text = String(rules.kill_goal === undefined ? 50 : rules.kill_goal);
 			alignKillGoal();
+			updateGoalTime();
 			syncingGoal = false;
 			goalDirty = false;
 			killGoalFrame.style.border = "1px solid #607988";
@@ -403,8 +490,10 @@ function InitMatchRules() {
 		Object.keys(controls).forEach(function(name) {
 			controls[name].enabled = canEdit;
 			controls[name].SetSelected(rules[name] === 1);
+			rowStyles[name]();
 		});
 		start.enabled = canEdit && validKillGoal();
+		styleStart();
 		start.visible = canEdit;
 		waiting.visible = !canEdit && rules.locked !== 1;
 	}
@@ -412,12 +501,9 @@ function InitMatchRules() {
 	refresh();
 	matchRulesPageChanged = function(index) {
 		visited[index] = true;
+		currentPage = index;
 		groups.forEach(function(group, i) { group.visible = i === index; });
-		nextCaptions.forEach(function(caption, i) {
-			const unseen = !visited[(i + 1) % categories.length];
-			caption.style.color = unseen ? "#dfc58b" : "#8da6b5";
-			caption.style.textShadow = unseen ? "0px 0px 5px #c59a4855" : "none";
-		});
+		tabs.forEach(function(tab, i) { styleTab(tab, i, false); });
 	};
 	matchRulesPageChanged(0);
 	hints.splice(0, hints.length);

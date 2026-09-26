@@ -3716,5 +3716,17 @@ If you do not send us your steam URL or steamID we wont be adle to grant you ben
 		"host_rules_ready" "Choose the rules, then start hero selection."
 		"host_rules_waiting" "Waiting for the lobby host to choose the rules."
 		"host_rules_locked" "Rules locked. Starting hero selection..."
+		"host_rules_time_limit" "Time limit"
+		"host_rules_single_draft_tip" "Pick from four random heroes, one per attribute, no bans"
+		"host_rules_turbo_tip" "Double gold, experience, and kill Madstones"
+		"host_rules_epic_orbs_tip" "Every orb gives an Epic upgrade"
+		"host_rules_backpack_items_tip" "Items from the backpack slots can be used and provide stats / passives"
+		"host_rules_kill_goal_tip" "Kills needed to win. The time limit grows with the goal: 40 seconds per kill"
+		"host_rules_all_vision_tip" "Removes fog of war for everyone, but does not reveal invisible units"
+		"host_rules_infinite_rerolls_tip" "999 upgrade rerolls"
+		"host_rules_longer_wards_tip" "Wards last 60 minutes, and each team starts with four Observers in stock"
+		"host_rules_invincible_wards_tip" "Placed wards cannot be attacked or damaged"
+		"host_rules_divine_rapier_tip" "Allow Divine Rapier"
+		"host_rules_dagon_tip" "Allow Dagon"
 	}
 }

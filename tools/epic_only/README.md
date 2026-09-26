@@ -21,7 +21,9 @@ longer alter it on configurable FFA. Existing match-time adjustments still apply
 Single Draft and Turbo are on by default; Epic-Only is off. Settings replace
 the guides/videos as the only first page on configurable FFA; page indicators
 and navigation remain for future settings pages. The menu shows category
-headings, options, and the apply button; it omits explanatory paragraphs.
+tabs, options, and the apply button; it omits explanatory paragraphs. Each option
+row shows an on/off switch and a one-line hover tooltip (`host_rules_<name>_tip`),
+and Kill Goal shows the resulting base time limit (40 seconds per kill).
 **Apply & Start** freezes the settings and begins hero selection. On Local Host,
 native custom-game privileges and `GetListenServerHost()` both follow connection
 order (the first client to load), and scripts cannot see the lobby owner. The
@@ -257,7 +259,8 @@ These checks do not replace an online multiplayer test.
 ## Other and Items settings
 
 The setup menu has one category per page: Core, Other, Items. Existing arrows and
-page indicators remain; the page counter highlights unseen pages. Apply & Start
+page indicators remain; clickable Core/Other/Items tabs also switch pages, and
+unvisited tabs glow gold. Apply & Start
 is available on every page, centered clear of the navigation arrows.
 
 Other lists All Vision, Infinite Rerolls, Longer Wards and Invincible Wards in that
