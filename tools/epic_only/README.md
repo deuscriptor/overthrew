@@ -14,31 +14,32 @@ Gift-orb buttons and their popovers are removed from the minimap overlay.
 host can enter a positive whole number. Apply locks this as the match's fixed
 kill cap and updates the scoreboard; disconnects and goal-increase events no
 longer alter it on configurable FFA. Existing match-time adjustments still apply.
-All are off by default. Settings replace the guides/videos as the only first page
-on configurable FFA; page indicators and navigation remain for future settings
-pages. The menu shows category headings, options, and the apply button; it omits
-explanatory paragraphs. **Apply & Start** freezes the settings and begins hero
-selection. Local Host games resolve the host from the listen-server player's
-controller, rather than the first loader's native custom-game privileges. Until
-that controller is available, nobody receives settings access. Dedicated servers
-continue using native custom-game host privileges.
+Single Draft and Turbo are on by default; Epic-Only is off. Settings replace
+the guides/videos as the only first page on configurable FFA; page indicators
+and navigation remain for future settings pages. The menu shows category
+headings, options, and the apply button; it omits explanatory paragraphs.
+**Apply & Start** freezes the settings and begins hero selection. Local Host
+games resolve the host from the listen-server player's controller, rather than
+the first loader's native custom-game privileges. Until that controller is
+available, nobody receives settings access. Dedicated servers continue using
+native custom-game host privileges.
 Everyone sees the host's current settings; only the current host can
 change them. The server rejects changes after setup and duplicate start requests.
 Non-host players see a soft white **Waiting for host...** message in place of
 Apply & Start, with dots cycling every 0.6 seconds.
 
-**Invincible Wards**, below Longer Wards on the Other page, defaults on. It
+**Invincible Wards**, last on the Other page, defaults on. It
 protects placed Observer and Sentry wards from attacks and damage without
 changing their expiry or requiring Longer Wards. `invincible_wards_smoke.lua`
 checks native attacks, damage and expiry in a disposable tools match.
 
-**All Vision**, below Invincible Wards, defaults off. It disables fog of war for
+**All Vision**, first on the Other page, defaults on. It disables fog of war for
 all teams without granting True Sight; invisible enemies still require detection.
 
 Turbo doubles earned gold and experience, including passive and central-ring
 income, kills, creeps, objectives, and custom ability rewards. Starting gold stays
 700. Sales, refunds, redistributed gold, and spending retain their original
-amounts. Turbo defaults off and does not change any other Turbo-mode mechanics.
+amounts. Turbo defaults on and does not change any other Turbo-mode mechanics.
 
 Single Draft disables bans and offers each player four heroes, one per attribute,
 without shared offers. Epic mode converts all existing orb rewards, including
@@ -246,11 +247,12 @@ The setup menu has one category per page: Core, Other, Items. Existing arrows an
 page indicators remain; the page counter highlights unseen pages. Apply & Start
 is available on every page, centered clear of the navigation arrows.
 
-Other contains Infinite Rerolls (999 instead of 30, default off) and Longer Wards
+Other lists All Vision, Infinite Rerolls, Longer Wards and Invincible Wards in that
+order. Infinite Rerolls (999 instead of 30) defaults on, as does Longer Wards
 (60-minute Observer/Sentry lifetime, including Sentry detection, and initial
-Observer shop stock of four per team; default on). Reroll
+Observer shop stock of four per team). Reroll
 prices still follow the Epic-Only setting. Items contains Divine Rapier and Dagon
-(all levels), both default off. Settings remain host-only and lock before picking.
+(all levels), both default on. Settings remain host-only and lock before picking.
 
 Disabled item assemblies are disassembled by the engine into their components
 and recipe, with native combine locks to prevent an immediate rebuild. Components
@@ -280,3 +282,54 @@ subscription data and balances are not rewritten. Equipment sync, payments,
 inventory writes and match reward submissions to the original backend are blocked.
 `test_free_collection.lua` checks local entitlements, item use and backend-write
 isolation; `free_collection_smoke.lua` checks native access and equipping.
+
+## Backpack Items
+
+**Backpack Items**, below Epic-Only in Core, defaults off. When on, items in a
+hero's three backpack slots keep working:
+
+- Passive items, stat bonuses and the passives of active items apply as in main
+  slots. Only the first copy of each item name in the backpack works; duplicates
+  stay inactive. A copy in a main slot does not deactivate one in the backpack.
+- Linken's Sphere, Aeon Disk, neutral items and recipes stay fully inert.
+- Swapping Linken's Sphere or Aeon Disk between main slots and the backpack (either
+  way) puts both swapped items on a 6 second cooldown; a longer cooldown already
+  running is kept. A freshly swapped Linken's Sphere therefore cannot block.
+- Clicking a backpack item uses it: no-target items cast at once, targeted items
+  start the normal targeting cursor. Backpack slots still have no hotkeys.
+- Moving items from the backpack into main slots has no reactivation delay, and
+  backpack cooldowns recover at the normal rate.
+- Moving items between main slots and the backpack never interrupts their stats
+  or passives, however quickly they are switched.
+
+The server equips backpack items with the engine's own `OnEquip`, so each item's
+native modifiers apply without being moved. It also marks each active backpack
+item with `SetCanBeUsedOutOfInventory(true)`, so the engine casts it natively like
+a main slot item: validation and error messages, walking into cast range, turning,
+and every cast event (invisibility and fountain protection break, Linken's Sphere
+and Lotus Orb react). The flag is cleared again when an item leaves the backpack
+or stops being active (a duplicate, or moved to the stash); illusions never get it.
+`BackpackItems:FilterOrder` only refuses casts of inactive copies and toggles,
+with an error.
+
+The engine unequips both items whenever a swap crosses between main slots and
+the backpack, and re-equips the main slot one only later. The order filter
+therefore performs those moves itself (`BackpackItems:MoveItem`) and re-equips
+both items in the same server step; health and mana keep their percentages.
+Moves within main slots, within the backpack or to the stash stay native. Other
+inventory changes are reconciled every server tick.
+
+Limits: toggle items (Armlet) are refused: the engine toggles them in the
+backpack, but their toggled effect needs a main slot. Channelled items (Meteor
+Hammer) work. The engine drops shift-queued backpack casts. An item entering the
+backpack becomes castable on the next server tick. Illusions get the passives but,
+as usual, cannot use items; Tempest Double can. Apart from the Linken's Sphere /
+Aeon Disk rule, there is no swap delay.
+
+`test_backpack_items.lua` covers the rules, uniqueness, exclusions, the cast flag
+and order checks. `backpack_items_smoke.lua` checks them in a disposable tools
+match, including a Scythe of Vyse cast from out of range.
+`backpack_items_multiplayer_smoke.lua` simulates a match with three bot players on
+separate FFA teams: casts between players, Linken's Sphere / Aeon Disk / Lotus Orb,
+invisibility and fountain protection, hero swaps, illusions and Tempest Double
+(`backpack_items_multiplayer_off_smoke.lua` runs it with the option off).

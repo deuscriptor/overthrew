@@ -81,6 +81,7 @@ CustomChat = {
 MVPController = { AddOrbCaptureScore = function(_, id, score) observations.mvp = score end }
 EmitAnnouncerSoundForTeam = function(sound) observations.announcer = sound end
 DisableHelp = { ExecuteOrderFilter = function() return true end }
+BackpackItems = { FilterOrder = function() end } -- Covered by test_backpack_items.lua.
 ParticleManager = {
     CreateParticle = function(_, name) observations.particle = name; return 1 end,
     SetParticleControl = noop,

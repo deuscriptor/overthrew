@@ -13,6 +13,7 @@ require("game/init")
 require("game/single_draft")
 require("game/hero_swaps")
 require("game/host_items")
+require("game/backpack_items")
 require("modifiers/init")
 
 function Activate()

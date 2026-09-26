@@ -35,16 +35,20 @@ CustomNetTables = {SetTableValue = function(_, tableName, key, value)
 end}
 SingleDraft.Init = function() if IsSingleDraftMap() then initialized = initialized + 1 end end
 HostItems = {ApplyRules = function() end}
+local backpackApplied = 0
+BackpackItems = {ApplyRules = function() backpackApplied = backpackApplied + 1 end}
 dofile("scripts/vscripts/libraries/host_options.lua")
 GameLoop.current_layout = TEAMS_LAYOUTS.ot3_necropolis_ffa
 for draft = 0, 1 do for epic = 0, 1 do for turbo = 0, 1 do
     HostOptions:Init()
-    assert(not HostOptions:GetOption("turbo"), "Turbo must default off")
-    assert(HostOptions:GetOption("longer_wards"), "Longer Wards must default on")
-    assert(HostOptions:GetOption("invincible_wards"), "Invincible Wards must default on")
-    assert(not HostOptions:GetOption("all_vision"), "All Vision must default off")
+    assert(not HostOptions:GetOption("epic_orbs"), "Epic Orbs must default off")
+    assert(not HostOptions:GetOption("backpack_items"), "Backpack Items must default off")
+    for _, on in ipairs({"single_draft", "turbo", "infinite_rerolls", "all_vision",
+        "invincible_wards", "longer_wards", "divine_rapier", "dagon"}) do
+        assert(HostOptions:GetOption(on), on .. " must default on")
+    end
     assert(HostOptions.options.kill_goal == 50)
-    local event = {PlayerID = 1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft = draft, epic_orbs = epic, turbo = turbo, kill_goal = 45}
+    local event = {PlayerID = 1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft = draft, epic_orbs = epic, turbo = turbo, backpack_items = 0, kill_goal = 45}
     assert(not HostOptions:ApplyRules(event), "non-host accepted")
     event.PlayerID = 0
     event.epic_orbs = "true"
@@ -80,16 +84,16 @@ end end end
 assert(initialized == 4)
 for _, goal in ipairs({1, 15, 30, 45, 60, 90}) do
     HostOptions:Init()
-    assert(HostOptions:ApplyRules({PlayerID=0, single_draft=0, epic_orbs=0, turbo=0, kill_goal=goal,
+    assert(HostOptions:ApplyRules({PlayerID=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, kill_goal=goal,
         infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0}))
     assert(GameLoop.current_layout.game_base_duration == DEFAULT_MATCH_LENGTH * (goal / 30))
     assert(publishedGoal.goal == goal and publishedGoal.limit == GameLoop.current_layout.game_base_duration,
         "HUD and server must receive the same scaled limit")
 end
-for _, name in ipairs({"infinite_rerolls", "all_vision", "invincible_wards", "longer_wards", "divine_rapier", "dagon"}) do
+for _, name in ipairs({"backpack_items", "infinite_rerolls", "all_vision", "invincible_wards", "longer_wards", "divine_rapier", "dagon"}) do
     HostOptions:Init()
-    assert(HostOptions:GetOption(name) == (name == "longer_wards" or name == "invincible_wards"))
-    local event = {PlayerID=0, single_draft=0, epic_orbs=0, turbo=0, kill_goal=30,
+    assert(HostOptions:GetOption(name) == (name ~= "backpack_items"), name .. " default")
+    local event = {PlayerID=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=1, kill_goal=30,
         infinite_rerolls=1, all_vision=1, invincible_wards=1, longer_wards=0, divine_rapier=1, dagon=1}
     local value = event[name]
     event[name] = "true"
@@ -102,18 +106,19 @@ for _, name in ipairs({"infinite_rerolls", "all_vision", "invincible_wards", "lo
     HostOptions:SetOptionState(name, value == 0)
     assert(HostOptions:GetOption(name) == (value == 1), "locked new flag changed")
 end
+assert(backpackApplied > 0, "Applying rules must configure Backpack Items")
 HostOptions:Init()
 host = 1
-assert(not HostOptions:ApplyRules({PlayerID=0, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, kill_goal=30}))
+assert(not HostOptions:ApplyRules({PlayerID=0, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, kill_goal=30}))
 for _, invalid in ipairs({0, -1, 1.5, "30", false, math.huge, 2147483648}) do
-    assert(not HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, kill_goal=invalid}))
+    assert(not HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, kill_goal=invalid}))
     HostOptions:SetOptionState("kill_goal", invalid)
     assert(HostOptions.options.kill_goal == 50)
 end
-assert(HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, kill_goal=30}))
+assert(HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, kill_goal=30}))
 HostOptions:Init()
 state = DOTA_GAMERULES_STATE_HERO_SELECTION
-assert(not HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=1, epic_orbs=1, turbo=1, kill_goal=30}))
+assert(not HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=1, epic_orbs=1, turbo=1, backpack_items=0, kill_goal=30}))
 -- First loader owns native privileges, but only the listen-server owner may edit/start.
 state = DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP
 dedicated, host = false, 0
@@ -131,7 +136,7 @@ assert(HostOptions.options.kill_goal == 50, "non-owner or forged edit accepted")
 edits({PlayerID=1, name="kill_goal", state=60}, 1)
 assert(HostOptions.options.kill_goal == 60)
 local apply = listeners["HostOptions:apply_rules"]
-local event = {PlayerID=0, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, kill_goal=60}
+local event = {PlayerID=0, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, kill_goal=60}
 apply(event, 0)
 assert(not HostOptions.locked, "first loader started match")
 event.PlayerID = 1

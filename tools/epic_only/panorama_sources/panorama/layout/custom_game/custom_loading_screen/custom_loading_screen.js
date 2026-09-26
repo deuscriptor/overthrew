@@ -261,8 +261,8 @@ function InitMatchRules() {
 		return /^\d+$/.test(killGoal.text) && Number(killGoal.text) >= 1 && Number(killGoal.text) <= 2147483647;
 	}
 	const categories = [
-		{ id: "core", options: ["single_draft", "turbo", "epic_orbs", "kill_goal"] },
-		{ id: "other", options: ["infinite_rerolls", "longer_wards", "invincible_wards", "all_vision"] },
+		{ id: "core", options: ["single_draft", "turbo", "epic_orbs", "backpack_items", "kill_goal"] },
+		{ id: "other", options: ["all_vision", "infinite_rerolls", "longer_wards", "invincible_wards"] },
 		{ id: "items", options: ["divine_rapier", "dagon"] },
 	];
 	const body = $.CreatePanel("Panel", panel, "MatchRulesCategories");
@@ -277,11 +277,11 @@ function InitMatchRules() {
 		const group = $.CreatePanel("Panel", body, "MatchRules_" + category.id);
 		group.style.width = "100%";
 		group.style.flowChildren = "down";
-		group.style.marginBottom = "12px";
+		group.style.marginBottom = "0px"; // one category is shown per page
 		groups.push(group);
 		const header = $.CreatePanel("Panel", group, "MatchRulesHeader_" + category.id);
 		header.style.width = "100%";
-		header.style.height = "36px";
+		header.style.height = "30px";
 		const heading = label(header, "#host_rules_category_" + category.id);
 		heading.style.color = "#d4bb86";
 		heading.style.fontSize = "20px";
@@ -297,8 +297,9 @@ function InitMatchRules() {
 		category.options.forEach(function(name) {
 			const row = $.CreatePanel(name === "kill_goal" ? "Panel" : "ToggleButton", group, "Rule_" + name);
 			row.style.width = "100%";
-			row.style.height = "42px";
-			row.style.padding = "6px 14px";
+			// Sized so five rows fit the fixed-height settings page without scrolling.
+			row.style.height = "36px";
+			row.style.padding = "3px 14px";
 			row.style.marginBottom = "4px";
 			row.style.backgroundColor = "#1b2b3b";
 			row.style.border = "1px solid #304456";

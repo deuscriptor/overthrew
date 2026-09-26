@@ -36,6 +36,9 @@ function Filters:ExecuteOrderFilter(event)
 		return false
 	end
 
+	local backpack_result = BackpackItems:FilterOrder(event, unit, ability)
+	if backpack_result ~= nil then return backpack_result end
+
 	if order_type == DOTA_UNIT_ORDER_VECTOR_TARGET_POSITION and ability and order_vector and event.queue == 0 then
 		ability.vector_target_position = order_vector
 	end
