@@ -80,3 +80,13 @@ assert.equal(freeCollection.error, undefined);
 assert.equal(freeCollection.status, 0);
 assert.equal((freeCollection.stderr || '').trim(), '');
 assert.match(freeCollection.stdout, /PASS free collection:/);
+const turboItems = spawnSync(process.execPath, [
+  path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
+  'tools/epic_only/test_turbo_items.lua',
+], { cwd: root, encoding: 'utf8' });
+if (turboItems.stdout) process.stdout.write(turboItems.stdout);
+if (turboItems.stderr) process.stderr.write(turboItems.stderr);
+assert.equal(turboItems.error, undefined);
+assert.equal(turboItems.status, 0);
+assert.equal((turboItems.stderr || '').trim(), '');
+assert.match(turboItems.stdout, /PASS Turbo items:/);

@@ -68,7 +68,7 @@ function NeutralItemDrop:Activate()
 end
 
 function NeutralItemDrop:GetTierTime(tier)
-	return self.drop_period[GetBaseMapName()][tier] / (IsTurboMode() and 2 or 1)
+	return self.drop_period[GetBaseMapName()][tier]
 end
 
 function NeutralItemDrop:Drop(tier)

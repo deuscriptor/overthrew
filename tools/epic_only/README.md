@@ -1,9 +1,15 @@
 # Configurable FFA
 
 Select **Ffa** (`ot3_necropolis_ffa`) in the lobby. Before hero selection, the
-host can enable Turbo, Single Draft, and Epic-Only independently in the **Core**
+host can enable Single Draft, Turbo, and Epic-Only independently in the **Core**
 category, in that order. Epic-Only also makes
 every reroll cost 1; there is no separate reroll option.
+Turbo doubles kill Madstones. Timed Madstone grants use the original schedule
+for both modes: 2:01, 4:31, 7:01, 9:31 and 15:01. The experimental Turbo
+config and accelerated grant schedule have been removed. Native neutral
+crafting timings and recraft costs remain unchanged.
+Aghanim's Shard becomes available at 1:00 in Turbo, versus 2:00 otherwise.
+Gift-orb buttons and their popovers are removed from the minimap overlay.
 **Kill Goal** is a numeric input at the bottom of Core, prefilled with 50. The
 host can enter a positive whole number. Apply locks this as the match's fixed
 kill cap and updates the scoreboard; disconnects and goal-increase events no

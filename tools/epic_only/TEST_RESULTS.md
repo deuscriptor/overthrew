@@ -209,3 +209,11 @@ requires a map reload; a running user game was not interrupted to test it.
 - Full regression suite passed, including free-collection checks for local tier 2, zero cost, inventory refresh, reusable consumables, preserving stored account data and preventing backend purchase/equipment/currency writes.
 - Native engine: `FREE_COLLECTION_ACCESS_PASS 269 items; premium tier 2; no equipment backend timer` and `FREE_COLLECTION_EQUIP_PASS high_five_bronze`.
 - Panorama collection source extracted with preserved container metadata and rebuilt. Purchase tabs/buttons removed, vanity action buttons use equip/use directly, local consumable actions enabled. No multiplayer test performed.
+
+## 2026-09-24: Turbo Madstones and Shard availability
+
+- Core order is Single Draft, Turbo, Epic-Only, Kill Goal.
+- Turbo doubles kill Madstones and halves scheduled grant times; craft costs and native tier unlock times remain unchanged. User explicitly chose to preserve native crafting after investigating runtime tier timing.
+- Turbo schedules one initial Shard stock addition for each FFA team at half its configured initial stock time (120 / 2 = 60 seconds). Non-Turbo uses the native 120-second unlock.
+- `test_turbo_items.lua` covers all five grant times, normal mode unchanged, and the Shard timer/stock addition for all eight teams. Full regression suite and Panorama build passed.
+- Native local test verified `IncreaseItemStock` changes Shard stock from 0 to 1 before its normal unlock on all eight FFA teams. No multiplayer test was performed.
