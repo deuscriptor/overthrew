@@ -10,6 +10,10 @@ config and accelerated grant schedule have been removed. Native neutral
 crafting timings and recraft costs remain unchanged.
 Aghanim's Shard becomes available at 1:00 in Turbo, versus 2:00 otherwise.
 Gift-orb buttons and their popovers are removed from the minimap overlay.
+The top-left menu keeps Dashboard, Dota Settings, Scoreboard and Collection; the
+In-Game Settings, Inbox, Leaderboard, Feedback and Promo Events buttons (and the
+new-mail banner) are hidden on every map. Randomed heroes receive Faerie Fire and
+Enchanted Mango; Infused Raindrop is no longer included.
 **Kill Goal** is a numeric input at the bottom of Core, prefilled with 50. The
 host can enter a positive whole number. Apply locks this as the match's fixed
 kill cap and updates the scoreboard; disconnects and goal-increase events no
