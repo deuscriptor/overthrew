@@ -499,16 +499,81 @@ function InitMatchRules() {
 	}
 	CustomNetTables.SubscribeNetTableListener("game_options", function(table, key) { if (key === "match_rules") refresh(); });
 	refresh();
+	// Page switching reuses the loading screen's hint arrows and bullets. They are restyled like the
+	// settings (slate buttons, gold current page) and grouped into one row under the panel.
+	let pager;
+	function stylePager() {
+		const bullets = LOADING_HUD.BULLETS_ROOT;
+		const left = LOADING_HUD.CONTEXT.FindChildTraverse("LS_Tips_Left");
+		const right = LOADING_HUD.CONTEXT.FindChildTraverse("LS_Tips_Right");
+		if (!bullets || !left || !right) return;
+		const tipsRoot = bullets.GetParent();
+		tipsRoot.style.backgroundImage = "none"; // frame art with the notch under the bullets
+		pager = $.CreatePanel("Panel", tipsRoot, "MatchRulesPager");
+		css(pager, {flowChildren: "right", horizontalAlign: "center", verticalAlign: "bottom", marginBottom: "32px"});
+		[left, bullets, right].forEach(function(part) { part.SetParent(pager); });
+		css(bullets, {margin: "0px 12px", padding: "0px", horizontalAlign: "left", verticalAlign: "center"});
+		pager.arrows = [left, right];
+		pager.arrows.forEach(function(arrow) {
+			// Inline visibility overrides the stylesheet hiding the first/last arrow: the ends are dimmed
+			// instead, so the row does not shift.
+			css(arrow, {width: "30px", height: "30px", margin: "0px", horizontalAlign: "left", verticalAlign: "center",
+				visibility: "visible", backgroundImage: "none", borderRadius: "3px",
+				backgroundColor: "gradient(linear, 0% 0%, 100% 100%, from(#1a2835), to(#0b121a))",
+				boxShadow: "#000000aa 0px 2px 6px 0px", transitionProperty: "border, opacity, brightness", transitionDuration: "0.12s"});
+			const icon = arrow.GetChild(0);
+			// The chevron art is orange; desaturate it so the gold wash takes.
+			if (icon) {
+				css(icon, {width: "11px", height: "16px", margin: "0px", horizontalAlign: "center", verticalAlign: "center",
+					saturation: "0", washColor: GOLD, brightness: "1.3", transform: "none"});
+				// Now centred in a small button, the icon would take the hover and click from it.
+				icon.hittest = false;
+			}
+			arrow.SetPanelEvent("onmouseover", function() { arrow.hovered = arrow.noticed = true; refreshPager(); });
+			arrow.SetPanelEvent("onmouseout", function() { arrow.hovered = false; refreshPager(); });
+		});
+		bullets.Children().forEach(function(bullet, index) {
+			bullet.Children().forEach(function(art) { art.visible = false; });
+			bullet.SetPanelEvent("onactivate", function() { if (typeof SetHint === "function") SetHint(index); });
+			bullet.SetPanelEvent("onmouseover", function() { bullet.hovered = true; refreshPager(); });
+			bullet.SetPanelEvent("onmouseout", function() { bullet.hovered = false; refreshPager(); });
+		});
+		refreshPager();
+	}
+	function refreshPager() {
+		if (!pager) return;
+		// Like unvisited category tabs, arrows glow until first hovered or pressed and bullets glow until
+		// their page has been opened.
+		pager.arrows.forEach(function(arrow, side) {
+			const available = side === 0 ? currentPage > 0 : currentPage < categories.length - 1;
+			const hot = available && arrow.hovered;
+			const glow = available && !hot && !arrow.noticed;
+			arrow.enabled = available;
+			css(arrow, {opacity: available ? "1" : "0.35", brightness: hot ? "1.25" : "1",
+				border: "1px solid " + (hot ? GOLD : glow ? "#dfc58b" : "#415465"),
+				boxShadow: glow ? "#c59a48cc 0px 0px 8px 1px" : hot ? "#d4bb8666 0px 0px 6px 0px" : "#000000aa 0px 2px 6px 0px"});
+		});
+		LOADING_HUD.BULLETS_ROOT.Children().forEach(function(bullet, index) {
+			const active = index === currentPage;
+			const unseen = !active && !visited[index];
+			css(bullet, {width: active ? "22px" : "8px", height: "8px", marginLeft: index ? "6px" : "0px", verticalAlign: "center",
+				borderRadius: "4px",
+				backgroundColor: active ? GOLD : bullet.hovered ? "#c9d6e0" : unseen ? "#dfc58b" : "#7f95a6",
+				boxShadow: active ? "#d4bb8666 0px 0px 6px 0px" : unseen ? "#c59a48cc 0px 0px 6px 1px" : "#00000000 0px 0px 0px 0px"});
+		});
+	}
 	matchRulesPageChanged = function(index) {
 		visited[index] = true;
 		currentPage = index;
 		groups.forEach(function(group, i) { group.visible = i === index; });
 		tabs.forEach(function(tab, i) { styleTab(tab, i, false); });
+		refreshPager();
 	};
 	matchRulesPageChanged(0);
 	hints.splice(0, hints.length);
 	categories.forEach(function() { hints.push(["settings", 0]); });
 	InitHints();
+	stylePager();
 }
 
 function ToggleHostOption(name) {

@@ -37,7 +37,13 @@ class Panel {
 		if (parent) parent.children.push(this);
 	}
 	GetParent() { return this.parent; }
+	SetParent(parent) {
+		if (this.parent) this.parent.children = this.parent.children.filter(child => child !== this);
+		this.parent = parent;
+		parent.children.push(this);
+	}
 	Children() { return this.children; }
+	GetChild(index) { return this.children[index] || null; }
 	FindChildTraverse(id) {
 		if (this.id === id) return this;
 		for (const child of this.children) {
@@ -163,7 +169,22 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	const requests = [];
 	const waitingFrames = [];
 	const pagesRequested = [];
-	const context = vm.createContext({LOADING_HUD: {CONTEXT: root, MOVIE_CONTAINER: root}, hints: [], InitHints: () => {},
+	// The loading screen's own pager: arrows with a chevron image, and the bullets container.
+	const tipsRoot = new Panel("LS_Tips_Root", "Panel", root);
+	const arrowLeft = new Panel("LS_Tips_Left", "Button", tipsRoot, ["LS_Tips_Arrow"]);
+	new Panel("", "Image", arrowLeft);
+	const bulletsRoot = new Panel("LS_Tips_Bullets", "Panel", tipsRoot);
+	const arrowRight = new Panel("LS_Tips_Right", "Button", tipsRoot, ["LS_Tips_Arrow"]);
+	new Panel("", "Image", arrowRight);
+	const initHints = () => {
+		bulletsRoot.children = [];
+		for (let i = 0; i < 3; i++) {
+			const bullet = new Panel("Bullet_" + i, "Panel", bulletsRoot, ["LS_Bullet"]);
+			new Panel("", "Image", bullet, ["Bullet_BG"]);
+			new Panel("", "Image", bullet, ["Bullet_Active"]);
+		}
+	};
+	const context = vm.createContext({LOADING_HUD: {CONTEXT: root, MOVIE_CONTAINER: root, BULLETS_ROOT: bulletsRoot}, hints: [], InitHints: initHints,
 		SetHint: index => pagesRequested.push(index),
 		$: {CreatePanel: (type, parent, id) => new Panel(id, type, parent), Localize: value => value,
 			Schedule: (delay, callback) => { if (delay === 0.6) waitingFrames.push(callback); }},
@@ -172,12 +193,38 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 		CustomNetTables: {GetTableValue: () => data, SubscribeNetTableListener: (table, fn) => { listener = fn; }},
 	});
 	vm.runInContext(initRules + "InitMatchRules();", context);
-	assert.equal(root.children.length, 0, "wait for rules before constructing controls");
+	assert.equal(root.children.length, 1, "wait for rules before constructing controls");
 	const logo = new Panel("Logo", "Image", root, ["LS_Tips_Logo"]);
 	const discord = new Panel("Discord", "Button", root, ["LS_DiscordButton"]);
 	data = {host_id: 0, locked: 0, single_draft: 1, epic_orbs: 0, turbo: 1, longer_wards: 1};
 	vm.runInContext("InitMatchRules(); InitMatchRules();", context);
-	assert.equal(root.children.length, 3, "initialize only once");
+	assert.equal(root.children.length, 4, "initialize only once");
+	// Pager: arrows and bullets grouped into one row, styled like the settings.
+	const pager = root.FindChildTraverse("MatchRulesPager");
+	assert.equal(pager.parent, tipsRoot);
+	assert.deepEqual(pager.children.map(p => p.id), ["LS_Tips_Left", "LS_Tips_Bullets", "LS_Tips_Right"]);
+	assert.equal(tipsRoot.style.backgroundImage, "none", "frame art with the notch removed");
+	const bullets = () => bulletsRoot.children;
+	assert.ok(bullets()[0].children.every(art => art.visible === false), "bullet images replaced by styled dots");
+	assert.equal(arrowLeft.enabled, false, "no previous page on the first page");
+	assert.equal(arrowLeft.style.opacity, "0.35");
+	assert.equal(arrowLeft.style.visibility, "visible", "dimmed, not collapsed, so the row does not shift");
+	assert.equal(arrowRight.enabled, true);
+	assert.equal(arrowRight.children[0].style.washColor, "#d4bb86");
+	assert.equal(arrowRight.children[0].hittest, false, "hover and clicks reach the arrow, not its icon");
+	assert.deepEqual(bullets().map(b => b.style.width), ["22px", "8px", "8px"], "current page is a gold pill");
+	assert.equal(bullets()[0].style.backgroundColor, "#d4bb86");
+	assert.equal(arrowRight.style.border, "1px solid #dfc58b", "arrow glows until noticed");
+	assert.match(arrowRight.style.boxShadow, /^#c59a48cc/);
+	assert.equal(bullets()[1].style.backgroundColor, "#dfc58b", "unvisited page bullet glows like its tab");
+	arrowRight.events.onmouseover();
+	assert.equal(arrowRight.style.border, "1px solid #d4bb86", "arrow hover");
+	arrowRight.events.onmouseout();
+	assert.equal(arrowRight.style.border, "1px solid #415465", "no glow once hovered");
+	assert.doesNotMatch(arrowRight.style.boxShadow, /c59a48/);
+	bullets()[2].events.onactivate();
+	assert.equal(pagesRequested[pagesRequested.length - 1], 2, "bullets open their page");
+	pagesRequested.length = 0;
 	assert.equal(logo.visible, false);
 	assert.equal(discord.visible, false);
 	assert.equal(root.FindChildTraverse("Rule_flat_rerolls"), null);
@@ -200,8 +247,14 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	assert.equal(tabs[2].caption.style.color, "#dfc58b");
 	assert.equal(root.FindChildTraverse("MatchRules_core").visible, false);
 	assert.equal(root.FindChildTraverse("MatchRules_other").visible, true);
+	assert.equal(arrowLeft.enabled, true, "both arrows available on a middle page");
+	assert.equal(arrowLeft.style.border, "1px solid #dfc58b", "untouched previous arrow glows once available");
+	assert.deepEqual(bullets().map(b => b.style.width), ["8px", "22px", "8px"]);
+	assert.equal(bullets()[0].style.backgroundColor, "#7f95a6", "visited page bullet stops glowing");
+	assert.equal(bullets()[2].style.backgroundColor, "#dfc58b");
 	vm.runInContext("matchRulesPageChanged(2)", context);
 	assert.equal(root.FindChildTraverse("MatchRules_items").visible, true);
+	assert.equal(arrowRight.enabled, false, "no next page on the last page");
 	assert.equal(vm.runInContext("hints[0][0]", context), "settings");
 	const start = root.FindChildTraverse("ApplyMatchRules");
 	const waiting = root.FindChildTraverse("WaitingForHost");

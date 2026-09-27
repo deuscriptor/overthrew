@@ -287,10 +287,20 @@ These checks do not replace an online multiplayer test.
 
 ## Other and Items settings
 
-The setup menu has one category per page: Core, Other, Items. Existing arrows and
-page indicators remain; clickable Core/Other/Items tabs also switch pages, and
-unvisited tabs glow gold. Apply & Start
-is available on every page, centered clear of the navigation arrows.
+The setup menu has one category per page: Core, Other, Items. Clickable
+Core/Other/Items tabs switch pages, and unvisited tabs glow gold. Apply & Start is
+available on every page.
+
+Below the panel, the loading screen's own arrows and page bullets are regrouped into a
+single row, `‹ • • • ›` (`MatchRulesPager`), and restyled like the settings:
+- The arrows are slate buttons with a gold chevron and a gold border on hover. Each
+  glows until first hovered or pressed.
+- At the first or last page the arrow dims and is disabled rather than hidden, so the
+  row does not shift.
+- The current page is a gold pill. Bullets of unvisited pages glow like their tabs, and
+  visited ones are grey; bullets are clickable.
+- The loading-screen frame art (with the notch under the bullets) is removed in settings
+  mode. Other maps keep the original hint pager.
 
 Other lists All Vision, Infinite Rerolls, Longer Wards and Invincible Wards in that
 order. Infinite Rerolls (999 instead of 30) defaults on, as does Longer Wards

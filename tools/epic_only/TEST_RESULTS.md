@@ -494,3 +494,19 @@ clients remain manual checks.
     uppercase text it draws, which left 11 px of space before the text and 16 px after.
     Now 14 px and 13 px. The gap before the badge sits on the title only while the badge
     shows. The user confirmed the result in the client.
+
+## 2026-09-27: Settings pager restyle
+
+- `InitMatchRules` regroups the loading screen's `#LS_Tips_Left`, `#LS_Tips_Bullets` and
+  `#LS_Tips_Right` into `MatchRulesPager` under the panel and restyles them inline; no
+  compiled XML or CSS changes. `panorama_test.js` covers:
+  - the grouping, removed frame art, dimmed and disabled end arrows, and gold-pill current page;
+  - arrow glow until hover, and unvisited-page bullet glow;
+  - bullet clicks, and the icon ignoring the mouse.
+- Dota Tools (fresh client, loading screen, simulated mouse):
+  - The right arrow glowed and the unvisited bullets glowed with the tabs; hovering gave the gold border.
+  - Clicking switched to Other: the left arrow glowed, the right one settled, the first bullet greyed.
+  - First click attempt found the chevron image (now centred in a 30 px button) taking the
+    mouse events; `hittest = false` on the icon fixed hover and click.
+  - A temporary `SetHint` stack log showed that the setup code does not open other pages
+    (the grey tabs in one screenshot came from interaction). It was removed afterwards.
