@@ -367,6 +367,12 @@ function WebInventory:ItemConsumeEvent(event)
 		return
 	end
 
+	-- the GG token raises the kill goal and time limit, which the host has fixed
+	if item_name == "bp_gg_token" and GameLoop:HasFixedKillGoal() then
+		DisplayError(player_id, "#dota_hud_error_gg_token_fixed_kill_goal")
+		return
+	end
+
 	WebInventory:ConsumeItem(player_id, item_name, consumed_count, function()
 		if definition.on_consume then
 			-- refetch item data since UseItem updates it internally before this callback is invoked

@@ -2392,6 +2392,8 @@
 		"dota_hud_error_used_all_tips_for_today"	"Ви використали всі віддяки на сьогодні"
 		"dota_hud_error_used_all_tips_for_this_game""Ви використали всі віддяки в цій грі"
 		"dota_hud_error_tip_is_on_cooldown"			"Віддяки на зарядці"
+		"custom_chat_player_tip"					"%s1 дарує %s2 <img src='file://{images}/custom_game/collection/currency_icon_19.png'/> <font color='#f9d014'>%s3 Слави</font>!"
+		"end_screen_tips_received"					"Отримано віддяк: {d:tips_received}"
 
 		"payment_window_header"						"ПІДТВЕРДЬТЕ СВІЙ ВИБІР"
 		"payment_window_total"						"Усього:"
@@ -2845,6 +2847,7 @@
 		"reroll_tooltip_consumable"			"Переобрати варіанти за допомогою <font color='#DF0101'>ОДНОРАЗОВИХ ПЕРЕОБРАНЬ</font>.<br>Переобрання звичайного / <font color='#007cff'>рідкісного</font> / <font color='#e400ff'>епічного</font> покращення коштує 1 / <font color='#007cff'>2</font> / <font color='#e400ff'>4</font> переобрання."
 		"dota_hud_error_cant_equip_unowned_item"	"Не можна спорядити предмет, якого у вас немає!"
 		"dota_hud_error_cannot_use_consumables_in_demo_mode"	"У демо-режимі не можна використовувати одноразові предмети!"
+		"dota_hud_error_gg_token_fixed_kill_goal"	"Мету вбивств задав хост, її не можна змінити"
 
 		"banner_battle_pass_header"	"БОЙОВА ПЕРЕПУСТКА"
 		"banner_battle_pass_header_arrived"	"ВЖЕ ТУТ!"
@@ -3722,7 +3725,7 @@
 		"host_rules_epic_orbs_tip" "Кожна сфера дає епічне покращення"
 		"host_rules_backpack_items_tip" "Предмети в слотах рюкзака можна використовувати, і вони дають характеристики / пасивні ефекти"
 		"host_rules_kill_goal_tip" "Кількість вбивств для перемоги. Ліміт часу зростає разом із метою: 40 секунд за вбивство"
-		"host_rules_all_vision_tip" "Прибирає туман війни для всіх, але не розкриває невидимих істот"
+		"host_rules_all_vision_tip" "Прибирає туман війни для всіх, але не розкриває невидимих істот. Істоти на власному фонтані приховані від ворогів, як під Smoke of Deceit"
 		"host_rules_infinite_rerolls_tip" "999 переобрань покращень"
 		"host_rules_longer_wards_tip" "Варди діють 60 хвилин, а в магазині кожної команди на старті чотири оглядові варди"
 		"host_rules_invincible_wards_tip" "Встановлені варди не можна атакувати чи пошкодити"

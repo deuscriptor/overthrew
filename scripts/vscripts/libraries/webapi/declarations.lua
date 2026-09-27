@@ -125,21 +125,10 @@ ITEM_DEFINITIONS = {}
 
 -- maximum amount of tips player can use in a single game
 TIPS_PER_GAME_MAX = 3
--- maximum amount of tips player can use a day (total) having Tipping Hand
-TIPS_MAX_FROM_TIPPING_HAND = 6
--- maximum amount of tips player can use a day (total) having Golden Hand
-TIPS_MAX_FROM_GOLDEN_HAND = 12
--- currency given to target player per tip used
-TIPS_CURRENCY_PER_TIP = 5
+-- currency amount announced per tip (display only - nothing is credited)
+TIPS_CURRENCY_PER_TIP = 50
 -- cooldown of tip per player (on the one who tips)
 TIPS_COOLDOWN = 30
-
-
-TIPS_FROM_SUBSCRIPTION_TIER = {
-	[2] = 12,
-	[1] = 9,
-	[0] = 6,
-}
 
 
 PRODUCTS_CURRENCY_PRICES = {

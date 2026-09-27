@@ -2392,6 +2392,8 @@ If you do not send us your steam URL or steamID we wont be adle to grant you ben
 		"dota_hud_error_used_all_tips_for_today"	"You have used all tips for today"
 		"dota_hud_error_used_all_tips_for_this_game""You have used all tips for this game"
 		"dota_hud_error_tip_is_on_cooldown"			"Tips are on cooldown"
+		"custom_chat_player_tip"					"%s1 has tipped %s2 <img src='file://{images}/custom_game/collection/currency_icon_19.png'/> <font color='#f9d014'>%s3 Glory</font>!"
+		"end_screen_tips_received"					"Tips received: {d:tips_received}"
 
 		"payment_window_header"						"CONFIRM YOUR CHOICE"
 		"payment_window_total"						"Total:"
@@ -2845,6 +2847,7 @@ If you do not send us your steam URL or steamID we wont be adle to grant you ben
 		"reroll_tooltip_consumable"			"Reroll selection using <font color='#DF0101'>CONSUMABLE REROLLS</font>.<br>Rerolling a Common / <font color='#007cff'>Rare</font> / <font color='#e400ff'>Epic</font> Upgrade costs 1 / <font color='#007cff'>2</font> / <font color='#e400ff'>4</font> rerolls."
 		"dota_hud_error_cant_equip_unowned_item"	"Can't equip item you don't own!"
 		"dota_hud_error_cannot_use_consumables_in_demo_mode"	"Cannot use Consumable items in Demo mode!"
+		"dota_hud_error_gg_token_fixed_kill_goal"	"The host set the Kill Goal, so it can't be changed"
 
 		"banner_battle_pass_header"	"BATTLE PASS"
 		"banner_battle_pass_header_arrived"	"HAS ARRIVED!"
@@ -3722,7 +3725,7 @@ If you do not send us your steam URL or steamID we wont be adle to grant you ben
 		"host_rules_epic_orbs_tip" "Every orb gives an Epic upgrade"
 		"host_rules_backpack_items_tip" "Items from the backpack slots can be used and provide stats / passives"
 		"host_rules_kill_goal_tip" "Kills needed to win. The time limit grows with the goal: 40 seconds per kill"
-		"host_rules_all_vision_tip" "Removes fog of war for everyone, but does not reveal invisible units"
+		"host_rules_all_vision_tip" "Removes fog of war for everyone, but does not reveal invisible units. Units on their own fountain are hidden from enemies, as if smoked"
 		"host_rules_infinite_rerolls_tip" "999 upgrade rerolls"
 		"host_rules_longer_wards_tip" "Wards last 60 minutes, and each team starts with four Observers in stock"
 		"host_rules_invincible_wards_tip" "Placed wards cannot be attacked or damaged"

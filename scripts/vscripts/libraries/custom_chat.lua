@@ -59,6 +59,7 @@ C_CHAT_ENUM = {
 	PLAYER_NAME = 0,
 	PLAYER_COLOR = 1,
 	HERO_NAME = 2,
+	PLAYER_COLOR_READABLE = 3, -- player colour lifted towards white when too dark for the chat background
 }
 C_CHAT_PRESETS = {
 	---@param suffix string|number optional

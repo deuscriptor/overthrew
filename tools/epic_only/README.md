@@ -267,6 +267,18 @@ orbs are returned as upgrade choices of their original rarities to the player
 who used them; unspent choices remain queued. Refunds do not rerun lucky-trinket
 rolls or grant new starting rewards. Non-orb account bonuses stay with the player.
 
+A swapped hero keeps its pre-game stun. The stun is re-created under the hero's new team
+with the time it had left. The old stun still counted as coming from the previous team,
+so the new fountain's debuff immunity suppressed it: the hero could walk until it left
+the fountain and was then stunned. `swap_pregame_stun_smoke.lua` reproduces this in
+Tools (which skips the production stun) and checks the fix.
+
+The menu uses the host settings' style: a dark gradient panel with a gold hairline and
+gold title. Rows are cards with portraits and player-colour strips, as on the tip toast.
+The row accent is gold for an incoming request and faint gold for one you sent. Accept
+and Request are green, Decline red and Cancel neutral; names stay on one line.
+`hero_swaps_look_smoke.lua` fills it with every row state for screenshots.
+
 The regression runner includes server request/consent tests and Panorama panel
 tests. `hero_swaps_smoke.lua` checks engine reassignment and refund behavior in a
 disposable local Tools session with a synthetic second player;
@@ -275,10 +287,20 @@ These checks do not replace an online multiplayer test.
 
 ## Other and Items settings
 
-The setup menu has one category per page: Core, Other, Items. Existing arrows and
-page indicators remain; clickable Core/Other/Items tabs also switch pages, and
-unvisited tabs glow gold. Apply & Start
-is available on every page, centered clear of the navigation arrows.
+The setup menu has one category per page: Core, Other, Items. Clickable
+Core/Other/Items tabs switch pages, and unvisited tabs glow gold. Apply & Start is
+available on every page.
+
+Below the panel, the loading screen's own arrows and page bullets are regrouped into a
+single row, `‹ • • • ›` (`MatchRulesPager`), and restyled like the settings:
+- The arrows are slate buttons with a gold chevron and a gold border on hover. Each
+  glows until first hovered or pressed.
+- At the first or last page the arrow dims and is disabled rather than hidden, so the
+  row does not shift.
+- The current page is a gold pill. Bullets of unvisited pages glow like their tabs, and
+  visited ones are grey; bullets are clickable.
+- The loading-screen frame art (with the notch under the bullets) is removed in settings
+  mode. Other maps keep the original hint pager.
 
 Other lists All Vision, Infinite Rerolls, Longer Wards and Invincible Wards in that
 order. Infinite Rerolls (999 instead of 30) defaults on, as does Longer Wards
@@ -301,6 +323,16 @@ options on/off, component preservation and an unrelated shared-component recipe.
 Kill Goal scales the starting match limit as DEFAULT_MATCH_LENGTH * (Kill Goal / 30).
 DEFAULT_MATCH_LENGTH is 1200 seconds: 30 kills gives 20 minutes, 60 gives 40 minutes.
 The same limit is used by the server and published to the HUD.
+
+Because the host fixes the Kill Goal, the early-game "+1 kill goal" menu
+(`early_consumables_menu`: the vote, GG Token and Double MMR Token) is never shown on
+this map, and the server ignores a vote there. Before this change, a vote left the goal
+unchanged but still extended the time limit. Other maps keep the menu.
+`test_early_consumables.lua` covers both cases.
+Using a GG Token (e.g. from the collection) is refused before it is consumed, with
+"The host set the Kill Goal, so it can't be changed"
+(`WebInventory:ItemConsumeEvent`, covered in `test_free_collection.lua`).
+`kill_goal_lock_smoke.lua` checks the vote, the menu state and the token in a tools match.
 
 ## Free local collection
 
@@ -366,3 +398,61 @@ match, including a Scythe of Vyse cast from out of range.
 separate FFA teams: casts between players, Linken's Sphere / Aeon Disk / Lotus Orb,
 invisibility and fountain protection, hero swaps, illusions and Tempest Double
 (`backpack_items_multiplayer_off_smoke.lua` runs it with the option off).
+
+## Player tips
+
+Tipping works like Dota Plus / Battle Pass tipping, but no currency is moved.
+Every player row on the scoreboard except your own has a **Tip** button. Allies
+and enemies can both be tipped. A tip:
+
+- shows a 6 second toast to all players: tipper portrait, the Glory icon with
+  "50", target portrait (the original Overthrow 3.0 `player_tip` toast), restyled after
+  Dota's own tip notification as a compact dark card (`toasts.css`). Each
+  portrait has a player-colour strip underneath; players without a Steam account
+  (bots) show their name as plain text. The card glints once as it slides in
+  and the coin pops (CSS keyframes). The tipped player sees a gold frame with a single
+  pulse (`TipToLocalPlayer`) and hears a
+  second chime (`Loot_Drop_Sfx_Minor` after `General.Coins`). At most three tip
+  toasts are on screen at once; the oldest leaves early;
+- posts a chat line to all players, worded like Valve's `DOTA_Tip_Chat`:
+  "<tipper> has tipped <target> [coin] 50 Glory!". Names use
+  `C_CHAT_ENUM.PLAYER_COLOR_READABLE`, which lifts dark player colours (FFA
+  Brown, Blue, Purple) towards white to a luminance of 0.45 so they stay readable
+  on the chat background. Brighter colours are unchanged;
+- adds one to the target's `tips_received` stat. On the end screen, each tipped
+  player's row shows a Glory icon and the count, with a "Tips received" tooltip.
+
+Nobody gains or loses Glory; "50" is display only (`TIPS_CURRENCY_PER_TIP`).
+There is no reason field and no way to refuse a tip, so what a tip means depends on
+when it is sent. Each player can send 3 tips per match (`TIPS_PER_GAME_MAX`), with a
+30 second cooldown between them (`TIPS_COOLDOWN`). The server enforces both and
+shows the existing error messages; the Tip button is greyed out while either limit
+applies. Self tips are ignored. Tipping is always on, on all maps.
+
+Tips never reach the original backend. The daily and subscription-tier limits,
+the `api/lua/match/tip` request, which sent both players' Steam IDs, and the
+developer bypass were removed.
+`test_tips.lua` covers the rules and the absence of HTTP requests, and
+`panorama_test.js` covers the button state and the end-screen badge.
+`tips_smoke.lua` checks tips between player 0 and two bot players in a tools match,
+then shows a toast, a chat line and the end screen for screenshots.
+
+## Fountain smoke (All Vision)
+
+All Vision turns off the engine's fog everywhere, so enemies could watch every
+fountain. With All Vision on (configurable FFA map only), a team's heroes and units
+inside their own fountain zone (the fountain aura, radius 1,194 around the tower)
+are smoked:
+
+- invisible to enemies, including true sight (Gem, Sentry Wards) and the minimap;
+- the smoke never breaks while inside, even with enemies nearby;
+- the owning team sees the Smoke of Deceit particle (`smoke_of_deceit_buff`,
+  created per team) and the usual translucency;
+- couriers are not covered.
+
+The effect ends about 0.5 s after leaving the zone (aura linger). It lives in
+`modifier_fountain_rejuvenation_effect_lua`. The server decides in `OnCreated`
+and passes the decision to clients through the stack count, which `CheckState` and
+the invisibility level read. `test_fountain_smoke.lua` covers the rules;
+`fountain_smoke_smoke.lua` checks it in a tools match with an enemy bot.
+

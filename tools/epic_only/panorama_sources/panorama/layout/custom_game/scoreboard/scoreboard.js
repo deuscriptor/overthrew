@@ -264,23 +264,17 @@ function SetScoreboardVisibleState(b_show) {
 
 GameUI.SetScoreboardVisibleState = SetScoreboardVisibleState;
 
-const TIP_COOLDOWN = 30;
-let last_tip_cooldown;
-function UpdateTips(data) {
-	dotaHud.SetHasClass("TipsBlock", data.used_this_game >= data.max_this_game || data.used_total >= data.max_total);
-
-	if (data.cooldown > 0) {
-		last_tip_cooldown = data.cooldown;
-		const check_tip_cooldown = () => {
-			dotaHud.SetHasClass("TipsBlock", Game.GetGameTime() < last_tip_cooldown + TIP_COOLDOWN);
-			if (Game.GetGameTime() >= last_tip_cooldown + TIP_COOLDOWN) {
-				return;
-			}
-			$.Schedule(0.5, check_tip_cooldown);
-		};
-		check_tip_cooldown();
-	}
+let tips_data;
+function UpdateTipsBlock() {
+	if (!tips_data) return;
+	const on_cooldown = Game.GetGameTime() < tips_data.cooldown + tips_data.cooldown_duration;
+	dotaHud.SetHasClass("TipsBlock", tips_data.used_this_game >= tips_data.max_this_game || on_cooldown);
 }
+function UpdateTips(data) {
+	tips_data = data;
+	UpdateTipsBlock();
+}
+interval_funcs.UpdateTipsBlock = UpdateTipsBlock;
 function EnableKickVoting() {
 	HUD.CONTEXT.SetHasClass("BKickVotingEnabled", true);
 }

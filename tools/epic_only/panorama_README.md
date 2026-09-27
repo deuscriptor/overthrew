@@ -16,7 +16,16 @@ Version 4 scripts store plaintext DATA, as documented in
 [ValveResourceFormat's Panorama implementation](https://github.com/ValveResourceFormat/ValveResourceFormat/blob/master/ValveResourceFormat/Resource/ResourceTypes/Panorama.cs).
 Builds use the saved original container each time. RED2 source dependency
 metadata is retained; it describes the original compiler input and is not a
-checksum of the runtime DATA. No XML/CSS containers are modified.
+checksum of the runtime DATA. No XML containers are modified.
+
+Styles (`.css` in `panorama_sources/`) are compiled, not patched: `build` copies each
+source into `content/dota_addons/overthrew/` and runs `game/bin/win64/resourcecompiler.exe`;
+`build` and `verify` then compare the compiled DATA CSS with the source, ignoring
+whitespace and comments. `toasts.css` was recovered from the original `toasts.vcss_c`
+(backed up), and an unmodified recompile reproduced its CSS byte for byte. Keep image
+URLs as `s2r://panorama/images/..._png.vtex`: there are no PNG sources, and
+`file://{images}` URLs compile to empty paths. The compiler accepts unknown
+properties, so check the client log after style changes.
 
 `MAP_NAME` remains the real map identity. `MAP_BASE_NAME` supplies the original
 FFA layout, art, and map-specific UI constants. The private map is not added to

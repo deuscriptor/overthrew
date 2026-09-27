@@ -37,7 +37,13 @@ class Panel {
 		if (parent) parent.children.push(this);
 	}
 	GetParent() { return this.parent; }
+	SetParent(parent) {
+		if (this.parent) this.parent.children = this.parent.children.filter(child => child !== this);
+		this.parent = parent;
+		parent.children.push(this);
+	}
 	Children() { return this.children; }
+	GetChild(index) { return this.children[index] || null; }
 	FindChildTraverse(id) {
 		if (this.id === id) return this;
 		for (const child of this.children) {
@@ -77,7 +83,8 @@ class Panel {
 		NewProtectedFrame: () => ({SubscribeProtected: (name, fn) => {events[name] = fn;}}),
 		Subscribe: (name, fn) => {events[name] = fn;},
 		SendToServerEnsured: (name, payload) => sent.push({name, payload}),
-	}, DOTA_GameState: {DOTA_GAMERULES_STATE_PRE_GAME: 8}, CustomNetTables: {
+	}, GameUI: {GetTeamColor: team => ({2: "#3dd296;", 3: "#F3C909;"})[team]}, Players: {GetTeam: id => id + 2},
+	DOTA_GameState: {DOTA_GAMERULES_STATE_PRE_GAME: 8}, CustomNetTables: {
 		GetTableValue: () => data,
 		SubscribeNetTableListener: (table, fn) => {listener = fn;},
 	}});
@@ -88,6 +95,11 @@ class Panel {
 	container.FindChildTraverse("RequestSwap_1").events.onactivate();
 	assert.equal(sent[0].name, "HeroSwaps:request");
 	assert.equal(sent[0].payload.target, 1);
+	// Host-settings styling: green primary action, player-colour strip under the portrait.
+	assert.equal(container.FindChildTraverse("RequestSwap_1").style.border, "1px solid #9cc07f");
+	const swapRow = container.FindChildTraverse("HeroSwapPlayer_1");
+	assert.equal(swapRow.children[1].style.borderBottom, "3px solid #F3C909");
+	assert.equal(swapRow.children[1].image, "file://{images}/heroes/npc_dota_hero_lina.png");
 	data.requests = {5: {id: 5, from: 1, to: 0}};
 	listener("game_options", "hero_swaps", data);
 	const swapBody = container.FindChildTraverse("HeroSwapsBody");
@@ -95,7 +107,7 @@ class Panel {
 	const swapBadge = container.FindChildTraverse("HeroSwapRequestBadge");
 	assert.equal(swapBody.visible, false, "Incoming request must not open the menu");
 	assert.equal(swapBadge.visible, true);
-	assert.equal(swapBadge.text, "1");
+	assert.equal(swapBadge.children[0].text, "1", "count label centred inside the badge circle");
 	assert.ok(!swapBody.children.some(panel => panel.text === "#hero_swaps_hint"), "Explanatory description removed");
 	swapToggle.events.onactivate();
 	assert.equal(swapBody.visible, true, "Player can open request controls");
@@ -105,6 +117,10 @@ class Panel {
 	container.FindChildTraverse("AcceptSwap_1").events.onactivate();
 	assert.equal(sent[1].name, "HeroSwaps:accept");
 	assert.equal(sent[1].payload.request_id, 5);
+	assert.equal(container.FindChildTraverse("AcceptSwap_1").style.border, "1px solid #9cc07f");
+	assert.equal(container.FindChildTraverse("DeclineSwap_1").style.border, "1px solid #d66b62");
+	assert.equal(container.FindChildTraverse("HeroSwapPlayer_1").children[0].style.backgroundColor, "#d4bb86",
+		"incoming request marked with the gold accent");
 	container.FindChildTraverse("DeclineSwap_1").events.onactivate();
 	assert.equal(sent[2].name, "HeroSwaps:decline");
 	data.requests = {6: {id: 6, from: 0, to: 1}};
@@ -153,7 +169,22 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	const requests = [];
 	const waitingFrames = [];
 	const pagesRequested = [];
-	const context = vm.createContext({LOADING_HUD: {CONTEXT: root, MOVIE_CONTAINER: root}, hints: [], InitHints: () => {},
+	// The loading screen's own pager: arrows with a chevron image, and the bullets container.
+	const tipsRoot = new Panel("LS_Tips_Root", "Panel", root);
+	const arrowLeft = new Panel("LS_Tips_Left", "Button", tipsRoot, ["LS_Tips_Arrow"]);
+	new Panel("", "Image", arrowLeft);
+	const bulletsRoot = new Panel("LS_Tips_Bullets", "Panel", tipsRoot);
+	const arrowRight = new Panel("LS_Tips_Right", "Button", tipsRoot, ["LS_Tips_Arrow"]);
+	new Panel("", "Image", arrowRight);
+	const initHints = () => {
+		bulletsRoot.children = [];
+		for (let i = 0; i < 3; i++) {
+			const bullet = new Panel("Bullet_" + i, "Panel", bulletsRoot, ["LS_Bullet"]);
+			new Panel("", "Image", bullet, ["Bullet_BG"]);
+			new Panel("", "Image", bullet, ["Bullet_Active"]);
+		}
+	};
+	const context = vm.createContext({LOADING_HUD: {CONTEXT: root, MOVIE_CONTAINER: root, BULLETS_ROOT: bulletsRoot}, hints: [], InitHints: initHints,
 		SetHint: index => pagesRequested.push(index),
 		$: {CreatePanel: (type, parent, id) => new Panel(id, type, parent), Localize: value => value,
 			Schedule: (delay, callback) => { if (delay === 0.6) waitingFrames.push(callback); }},
@@ -162,12 +193,38 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 		CustomNetTables: {GetTableValue: () => data, SubscribeNetTableListener: (table, fn) => { listener = fn; }},
 	});
 	vm.runInContext(initRules + "InitMatchRules();", context);
-	assert.equal(root.children.length, 0, "wait for rules before constructing controls");
+	assert.equal(root.children.length, 1, "wait for rules before constructing controls");
 	const logo = new Panel("Logo", "Image", root, ["LS_Tips_Logo"]);
 	const discord = new Panel("Discord", "Button", root, ["LS_DiscordButton"]);
 	data = {host_id: 0, locked: 0, single_draft: 1, epic_orbs: 0, turbo: 1, longer_wards: 1};
 	vm.runInContext("InitMatchRules(); InitMatchRules();", context);
-	assert.equal(root.children.length, 3, "initialize only once");
+	assert.equal(root.children.length, 4, "initialize only once");
+	// Pager: arrows and bullets grouped into one row, styled like the settings.
+	const pager = root.FindChildTraverse("MatchRulesPager");
+	assert.equal(pager.parent, tipsRoot);
+	assert.deepEqual(pager.children.map(p => p.id), ["LS_Tips_Left", "LS_Tips_Bullets", "LS_Tips_Right"]);
+	assert.equal(tipsRoot.style.backgroundImage, "none", "frame art with the notch removed");
+	const bullets = () => bulletsRoot.children;
+	assert.ok(bullets()[0].children.every(art => art.visible === false), "bullet images replaced by styled dots");
+	assert.equal(arrowLeft.enabled, false, "no previous page on the first page");
+	assert.equal(arrowLeft.style.opacity, "0.35");
+	assert.equal(arrowLeft.style.visibility, "visible", "dimmed, not collapsed, so the row does not shift");
+	assert.equal(arrowRight.enabled, true);
+	assert.equal(arrowRight.children[0].style.washColor, "#d4bb86");
+	assert.equal(arrowRight.children[0].hittest, false, "hover and clicks reach the arrow, not its icon");
+	assert.deepEqual(bullets().map(b => b.style.width), ["22px", "8px", "8px"], "current page is a gold pill");
+	assert.equal(bullets()[0].style.backgroundColor, "#d4bb86");
+	assert.equal(arrowRight.style.border, "1px solid #dfc58b", "arrow glows until noticed");
+	assert.match(arrowRight.style.boxShadow, /^#c59a48cc/);
+	assert.equal(bullets()[1].style.backgroundColor, "#dfc58b", "unvisited page bullet glows like its tab");
+	arrowRight.events.onmouseover();
+	assert.equal(arrowRight.style.border, "1px solid #d4bb86", "arrow hover");
+	arrowRight.events.onmouseout();
+	assert.equal(arrowRight.style.border, "1px solid #415465", "no glow once hovered");
+	assert.doesNotMatch(arrowRight.style.boxShadow, /c59a48/);
+	bullets()[2].events.onactivate();
+	assert.equal(pagesRequested[pagesRequested.length - 1], 2, "bullets open their page");
+	pagesRequested.length = 0;
 	assert.equal(logo.visible, false);
 	assert.equal(discord.visible, false);
 	assert.equal(root.FindChildTraverse("Rule_flat_rerolls"), null);
@@ -190,8 +247,14 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	assert.equal(tabs[2].caption.style.color, "#dfc58b");
 	assert.equal(root.FindChildTraverse("MatchRules_core").visible, false);
 	assert.equal(root.FindChildTraverse("MatchRules_other").visible, true);
+	assert.equal(arrowLeft.enabled, true, "both arrows available on a middle page");
+	assert.equal(arrowLeft.style.border, "1px solid #dfc58b", "untouched previous arrow glows once available");
+	assert.deepEqual(bullets().map(b => b.style.width), ["8px", "22px", "8px"]);
+	assert.equal(bullets()[0].style.backgroundColor, "#7f95a6", "visited page bullet stops glowing");
+	assert.equal(bullets()[2].style.backgroundColor, "#dfc58b");
 	vm.runInContext("matchRulesPageChanged(2)", context);
 	assert.equal(root.FindChildTraverse("MatchRules_items").visible, true);
+	assert.equal(arrowRight.enabled, false, "no next page on the last page");
 	assert.equal(vm.runInContext("hints[0][0]", context), "settings");
 	const start = root.FindChildTraverse("ApplyMatchRules");
 	const waiting = root.FindChildTraverse("WaitingForHost");
@@ -327,3 +390,187 @@ for (const epic of [false, true]) {
 	}
 }
 console.log("PASS: server-supplied reroll price, final 1–3 rerolls, empty balance, duplicate-click guard and normal-map pricing");
+
+// Scoreboard Tip button: greyed out during the cooldown and once the per-game cap is used.
+{
+	const scoreboardSource = fs.readFileSync(path.join(scripts, "scoreboard/scoreboard.js"), "utf8");
+	const hudClasses = new Set();
+	let now = 0;
+	const dollar = id => new Panel(id);
+	dollar.GetContextPanel = () => new Panel("Scoreboard");
+	dollar.Schedule = () => {};
+	const context = vm.createContext({
+		$: dollar,
+		dotaHud: { SetHasClass: (name, value) => (value ? hudClasses.add(name) : hudClasses.delete(name)), BHasClass: name => hudClasses.has(name) },
+		Game: { GetGameTime: () => now },
+		GameUI: {},
+	});
+	vm.runInContext(scoreboardSource.slice(0, scoreboardSource.lastIndexOf("(function () {")), context);
+	const tick = () => vm.runInContext("Object.values(interval_funcs).forEach((func) => func())", context);
+	now = 110;
+	context.UpdateTips({ max_this_game: 3, used_this_game: 1, cooldown: 100, cooldown_duration: 30 });
+	assert.ok(hudClasses.has("TipsBlock"), "blocked during cooldown");
+	now = 130;
+	tick();
+	assert.ok(!hudClasses.has("TipsBlock"), "unblocked after cooldown");
+	now = 140;
+	context.UpdateTips({ max_this_game: 3, used_this_game: 3, cooldown: 140, cooldown_duration: 30 });
+	now = 1000;
+	tick();
+	assert.ok(hudClasses.has("TipsBlock"), "cap keeps the button blocked after the cooldown");
+	context.UpdateTips({ max_this_game: 3, used_this_game: 0, cooldown: -10000, cooldown_duration: 30 });
+	assert.ok(!hudClasses.has("TipsBlock"), "fresh player can tip");
+	console.log("PASS scoreboard tips: cooldown, per-game cap survives cooldown, fresh state");
+}
+
+// End screen: tips-received badge sits before the MVP crown and only shows when tipped.
+{
+	const endScreenSource = fs.readFileSync(path.join(scripts, "end_screen/end_screen.js"), "utf8");
+	const start = endScreenSource.indexOf("function CreateTipsBadge");
+	const badgeSource = endScreenSource.slice(start, endScreenSource.indexOf("\nfunction ", start + 1));
+	class EndPanel extends Panel {
+		constructor(id, type, parent, props = {}) { super(id, type, parent); Object.assign(this, props); }
+		SetDialogVariableInt(name, value) { this.vars[name] = value; }
+		MoveChildBefore(child, before) {
+			this.children.splice(this.children.indexOf(child), 1);
+			this.children.splice(this.children.indexOf(before), 0, child);
+		}
+	}
+	const dispatched = [];
+	const dollar = {
+		CreatePanel: (type, parent, id, props) => new EndPanel(id, type, parent, props),
+		Localize: (key, panel) => `${key}:${panel.vars.tips_received}`,
+		DispatchEvent: (...args) => dispatched.push(args),
+	};
+	const context = vm.createContext({ $: dollar });
+	vm.runInContext(badgeSource, context);
+	const basic = new EndPanel("BasicPlayerRoot_0");
+	new EndPanel("EG_HeroIcon", "Image", basic);
+	new EndPanel("EG_PSB_MVP_Icon", "Panel", basic);
+	context.CreateTipsBadge(basic, { tips_received: 0 });
+	context.CreateTipsBadge(basic, undefined);
+	assert.equal(basic.FindChildTraverse("EG_PSB_Tips"), null, "no badge without tips");
+	context.CreateTipsBadge(basic, { tips_received: 4 });
+	const badge = basic.FindChildTraverse("EG_PSB_Tips");
+	assert.deepEqual(basic.children.map(child => child.id), ["EG_HeroIcon", "EG_PSB_Tips", "EG_PSB_MVP_Icon"]);
+	assert.equal(badge.children[1].text, "4");
+	badge.events.onmouseover();
+	assert.deepEqual(dispatched[0], ["DOTAShowTextTooltip", badge, "#end_screen_tips_received:4"]);
+	console.log("PASS end screen tips: badge only when tipped, placed before MVP crown, localized tooltip");
+}
+
+// Chat: dark FFA team colours are lifted to a readable luminance, bright ones stay exact.
+{
+	const chatConst = fs.readFileSync(path.join(scripts, "custom_chat/custom_chat_const.js"), "utf8");
+	const teams = { 2: "#3dd296;", 3: "#F3C909;", 8: "#815336;", 9: "#8c2af4;", 10: "#3455FF;" };
+	const context = vm.createContext({
+		$: { GetContextPanel: () => new Panel("Chat") },
+		DOTATeam_t: { DOTA_TEAM_GOODGUYS: 2, DOTA_TEAM_BADGUYS: 3 },
+		MAP_BASE_NAME: "ot3_necropolis_ffa",
+		GameUI: { GetTeamColor: team => teams[team] },
+		Players: { GetTeam: id => id },
+	});
+	vm.runInContext(chatConst, context);
+	const luminance = hex => {
+		const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.substr(i, 2), 16));
+		return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+	};
+	const readable = id => vm.runInContext(`C_CHAT_ACTIONS[C_CHAT_ENUM.PLAYER_COLOR_READABLE](${id})`, context);
+	assert.equal(readable(2), "#3dd296", "bright teal unchanged");
+	assert.equal(readable(3), "#F3C909", "bright yellow unchanged");
+	for (const id of [8, 9, 10]) {
+		const color = readable(id);
+		assert.match(color, /^#[0-9a-f]{6}$/);
+		assert.ok(Math.abs(luminance(color) - 0.45) < 0.01, `team ${id} lifted to the readable minimum`);
+	}
+	const [r, g, b] = [1, 3, 5].map(i => parseInt(readable(9).substr(i, 2), 16));
+	assert.ok(b > r && r > g, "purple keeps its hue order");
+	assert.equal(vm.runInContext("ReadableChatColor('')", context), "");
+	console.log("PASS chat tip colours: dark team colours readable, bright colours exact, hue kept");
+}
+
+// Tip toast: player strips, bot name fallback, highlight for the tipped player, coin pop, at most three at once.
+{
+	const toastsSource = fs.readFileSync(path.join(scripts, "toasts/toasts.js"), "utf8");
+	class ToastPanel extends Panel {
+		constructor(id, type, parent, props = {}) { super(id, type, parent); Object.assign(this, props); this.valid = true; }
+		SetDialogVariableInt(name, value) { this.vars[name] = value; }
+		AddClass(name) { this.classes.push(name); }
+		SetHasClass(name, value) { if (value) this.classes.push(name); else this.classes = this.classes.filter(c => c !== name); }
+		GetChild(index) { return this.children[index]; }
+		FindChild(id) { return this.children.find(child => child.id === id) || null; }
+		IsValid() { return this.valid; }
+		DeleteAsync() { this.valid = false; this.parent.children = this.parent.children.filter(child => child !== this); }
+		BLoadLayoutSnippet(name) {
+			this.snippet = name;
+			const player = () => { const c = new ToastPanel("", "Panel", this, {}); new ToastPanel("", "Image", c); new ToastPanel("", "DOTAUserName", c); return c; };
+			player();
+			const value = new ToastPanel("", "Panel", this);
+			value.classes.push("TipValueContainer");
+			new ToastPanel("", "Label", value);
+			new ToastPanel("", "Panel", value).classes.push("TipCurrencyContainer");
+			player();
+		}
+	}
+	const root = new ToastPanel("toast_notifications");
+	let scheduled = [];
+	const sounds = [];
+	const dollar = {
+		GetContextPanel: () => root,
+		CreatePanel: (type, parent, id, props) => new ToastPanel(id, type, parent, props),
+		Localize: key => key,
+		Schedule: (delay, fn) => { scheduled.push({ delay, fn }); return scheduled.length; },
+		CancelScheduled: () => undefined,
+	};
+	const infos = {
+		0: { player_name: "Me", player_steamid: "76561190000000000", player_selected_hero: "npc_dota_hero_sven" },
+		1: { player_name: "Tip Bot 1", player_steamid: "0", player_selected_hero: "npc_dota_hero_pudge" },
+		2: { player_name: "Tip Bot 2", player_steamid: "0", player_selected_hero: "npc_dota_hero_techies" },
+	};
+	const context = vm.createContext({
+		$: dollar,
+		Game: { EmitSound: name => sounds.push(name), GetPlayerInfo: id => infos[id], GetLocalPlayerID: () => 0 },
+		GameUI: { GetTeamColor: team => ({ 2: "#3dd296;", 8: "#815336;" })[team] },
+		Players: { GetTeam: id => (id === 0 ? 8 : 2) },
+		GetPortraitImage: (id, hero) => `portrait:${hero}`,
+	});
+	vm.runInContext(toastsSource.slice(0, toastsSource.lastIndexOf("(() => {")), context);
+	const tip = (source, target) => context.NewToast({ toast_type: "player_tip", data: { source_player_id: source, target_player_id: target, currency: 50 } });
+
+	tip(1, 0);
+	const first = root.children[0];
+	assert.equal(first.snippet, "player_tip");
+	assert.equal(first.vars.value, 50);
+	const [source, value, target] = first.children;
+	assert.equal(source.children[0].image, "portrait:npc_dota_hero_pudge");
+	assert.equal(source.children[0].style.borderBottom, "3px solid #3dd296");
+	assert.equal(target.children[0].style.borderBottom, "3px solid #815336");
+	assert.equal(source.children[1].style.visibility, "collapse", "empty DOTAUserName hidden for bots");
+	assert.equal(source.children[2].text, "Tip Bot 1", "bot name shown as a label");
+	assert.equal(source.children[2].class, "TipPlayerName", "bot name styled by toasts.css");
+	assert.equal(target.children[1].steamid, "76561190000000000", "real players keep DOTAUserName");
+	assert.equal(target.children.length, 2);
+	assert.ok(first.classes.includes("TipToLocalPlayer"), "tipped local player gets the gold frame class");
+	assert.deepEqual(sounds, ["General.Coins", "Loot_Drop_Sfx_Minor"]);
+	assert.deepEqual(value.children[1].style, {}, "coin pop is a toasts.css animation");
+	assert.ok(scheduled.some(s => s.delay === 6), "tip toast lasts 6 seconds");
+
+	sounds.length = 0;
+	tip(0, 2);
+	assert.ok(!root.children[1].classes.includes("TipToLocalPlayer"), "no frame when someone else is tipped");
+	assert.deepEqual(sounds, ["General.Coins"]);
+	tip(2, 1);
+	tip(1, 2);
+	assert.equal(root.children.length, 3, "at most three tip toasts on screen");
+	assert.ok(!first.valid, "oldest tip toast removed first");
+
+	// each expiry removes its own toast (it used to pass the newest id instead)
+	const expiries = scheduled.filter(s => s.delay === 6);
+	const [second, third, fourth] = root.children;
+	expiries[1].fn();
+	assert.ok(!second.valid && third.valid && fourth.valid);
+	assert.equal(vm.runInContext("tip_toasts.length", context), 2, "expired toast leaves the cap list");
+	tip(0, 1);
+	assert.ok(third.valid && fourth.valid, "a new tip under the cap removes nothing");
+	console.log("PASS tip toast: colour strips, bot names, tipped-player class and chime, three-toast cap");
+}

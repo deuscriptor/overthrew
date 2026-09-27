@@ -41,6 +41,7 @@ function EndGameStats:Init()
 				gpm = 0,
 				xpm = 0,
 				capture_orbs_time = 0,
+				tips_received = 0,
 
 				current_rating = 1500,
 				rating_change = 0
@@ -194,6 +195,11 @@ end
 
 function EndGameStats:Add_KilledWards(player_id, ward_name)
 	EndGameStats.stats[player_id].wards_killed[ward_name] = EndGameStats.stats[player_id].wards_killed[ward_name] + 1
+end
+
+
+function EndGameStats:Add_TipReceived(player_id)
+	EndGameStats.stats[player_id].tips_received = (EndGameStats.stats[player_id].tips_received or 0) + 1
 end
 
 

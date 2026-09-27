@@ -5,10 +5,14 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { spawnSync } = require("node:child_process");
 
 const root = path.resolve(__dirname, "../..");
 const sources = path.join(__dirname, "panorama_sources");
 const backups = path.join(__dirname, "panorama_backups");
+// Styles are compiled by Valve's resourcecompiler, which reads sources from the addon's content folder.
+const content = path.resolve(root, "../../../content/dota_addons", path.basename(root));
+const resourceCompiler = path.resolve(root, "../../bin/win64/resourcecompiler.exe");
 // The shop item asks for this texture; only its older Flash PNG was supplied.
 const imageAliases = {
 	"panorama/images/items/orb_epic_png.vtex_c": "panorama/images/custom_game/upgrades/orb_epic_png.vtex_c",
@@ -84,6 +88,31 @@ function rebuild(original, source) {
 	return bytes;
 }
 
+// Compiled styles: DATA holds the source CRC32, an image table, then the minified CSS.
+function styleText(bytes) {
+	const table = 8 + bytes.readUInt32LE(8);
+	for (let i = 0; i < bytes.readUInt32LE(12); i++) {
+		const entry = table + i * 12;
+		if (bytes.toString("ascii", entry, entry + 4) !== "DATA") continue;
+		const data = bytes.subarray(entry + 4 + bytes.readUInt32LE(entry + 4)).subarray(0, bytes.readUInt32LE(entry + 8));
+		let offset = 6;
+		for (let image = 0; image < data.readUInt16LE(4); image++) offset = data.indexOf(0, offset) + 1 + 8;
+		return data.toString("utf8", offset);
+	}
+	throw new Error("Missing DATA block");
+}
+
+const normalizeStyle = text => text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, "");
+
+function compileStyle(name, source) {
+	const input = path.join(content, name.replace(/\.vcss_c$/, ".css"));
+	fs.mkdirSync(path.dirname(input), { recursive: true });
+	fs.copyFileSync(source, input);
+	const result = spawnSync(resourceCompiler, ["-nop4", "-f", "-i", input], { encoding: "utf8" });
+	if (result.error || !/OK: 1 compiled, 0 failed/.test(result.stdout || ""))
+		throw new Error(`resourcecompiler failed for ${name}:\n${result.stdout || result.error}`);
+}
+
 function files(dir) {
 	return fs.readdirSync(dir, { withFileTypes: true }).flatMap(item => {
 		const full = path.join(dir, item.name);
@@ -117,6 +146,15 @@ function main() {
 			else if (!rebuilt.equals(fs.readFileSync(path.join(root, name)))) throw new Error(`Resource differs: ${name}`);
 			count++;
 		}
+		let styles = 0;
+		for (const source of files(sources).filter(name => name.endsWith(".css"))) {
+			const name = path.relative(sources, source).replace(/\.css$/, ".vcss_c");
+			if (!fs.existsSync(path.join(backups, name))) throw new Error(`Missing original style backup: ${name}`);
+			if (command === "build") compileStyle(name, source);
+			if (normalizeStyle(styleText(fs.readFileSync(path.join(root, name)))) !== normalizeStyle(fs.readFileSync(source, "utf8")))
+				throw new Error(`Compiled style differs from source: ${name}`);
+			styles++;
+		}
 		for (const [target, original] of Object.entries(imageAliases)) {
 			const bytes = fs.readFileSync(path.join(root, original));
 			const output = path.join(root, target);
@@ -126,9 +164,10 @@ function main() {
 			} else if (!bytes.equals(fs.readFileSync(output))) throw new Error(`Image alias differs: ${target}`);
 		}
 		console.log(`${command}: ${count} Panorama scripts; syntax, block bounds, CRC32 and DATA verified`);
+		console.log(`${command}: ${styles} Panorama styles compiled from source and verified`);
 		console.log(`${command}: ${Object.keys(imageAliases).length} shop image alias verified`);
 	} else throw new Error("Usage: node panorama_resources.js extract <panorama/...vjs_c> | build | verify");
 }
 
 if (require.main === module) main();
-module.exports = { parse, rebuild, crc32, root, sources, backups };
+module.exports = { parse, rebuild, crc32, styleText, root, sources, backups };

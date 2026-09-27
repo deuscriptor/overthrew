@@ -377,3 +377,136 @@ clients remain manual checks.
   and escape is kept; no unescaped quotes.
 - `run_tests.js` parity check now covers English, Russian and Ukrainian (3362 tokens
   each). Full offline suite passes. Not checked in game with a Ukrainian client.
+
+## 2026-09-27: Player tips
+
+- Offline: `test_tips.lua` (new, in `run_tests.js`) runs the production `tips.lua`,
+  `custom_chat.lua`, `toasts.lua` and `end_game_stats.lua`. It checks the toast/chat
+  payloads, the tally, the 3-per-game cap (still enforced after the cooldown), the
+  30 s cooldown per tipper, ignored self/invalid tips and that no HTTP requests are
+  made. `panorama_test.js` adds scoreboard Tip-button blocking (cooldown; the cap
+  survives the cooldown, which the previous client code got wrong) and the
+  end-screen badge (only when tipped, before the MVP crown, localized tooltip).
+  Panorama rebuild/verify: 28 scripts. Full offline suite passes (3364 tokens in
+  each language).
+- Dota Tools (`tips_smoke.lua`, player 0 plus Pudge/Techies bot players on separate
+  FFA teams): all seven checks `ok`, including zero HTTP requests. Screenshots with
+  a Ukrainian client showed the top-right toast (Techies → «дякує» → coin 5 →
+  Sven) and the chat line «Tip Bot 2 дарує <name> 5 Слави!». The end screen showed
+  the Glory badge with the correct counts (Pudge 2, Sven 5, Techies 1), after the
+  hero name and left of the MVP crown.
+- Not checked: clicking the scoreboard Tip button and hovering over the tooltip (no simulated mouse
+  input), English/Russian clients, real multiplayer.
+
+## 2026-09-27: Tip toast and chat line polish
+
+- `toasts.js` is now editable in `panorama_sources`; the original container is backed up
+  in `panorama_backups`. Tip toast: player-colour strips under the portraits, a plain-text
+  name when there's no Steam ID, a gold frame and second chime for the tipped player,
+  a coin pop, and at most three tip toasts on screen.
+  Fixed an existing bug: each toast's expiry passed the newest toast id instead of its
+  own.
+- Chat line: 19 px Glory coin icon; names use the new `PLAYER_COLOR_READABLE`
+  action.
+- Offline: `panorama_test.js` adds tests for the readable chat colours and the tip
+  toast, including the expiry-id fix. `test_tips.lua` checks the new colour action.
+  29 Panorama scripts rebuilt and verified. The full suite passes.
+- Not checked in the client: the user will check it in-game. Inline styles
+  set from JS (`borderBottom`, `boxShadow`, the `preTransformScale2d`
+  transition) and the chat `<img>` size still need a visual check.
+
+## 2026-09-27: Compiled tip toast style, amount 50
+
+- `toasts.css` was recovered from the compiled `toasts.vcss_c`, whose original is backed up.
+  Recompiling it unchanged with `resourcecompiler.exe` gave byte-identical CSS. Using
+  `file://{images}` URLs gives empty `s2r://` paths, so the sources keep `s2r://` URLs.
+  The compiler accepted a bogus property; it does not validate property names.
+- Restyle, tip rules only: compact dark gradient card with a gold top hairline, flush
+  112×63 portraits, names underneath, 6 px stacking gap. `TipArrive` glint,
+  `TipCoinPop` and `TipLocalArrive` pulse are CSS keyframes. The tipped-you frame is now
+  the `TipToLocalPlayer` class and bot names use the `TipPlayerName` class; the inline
+  styles are gone. Amount changed to 50 (`TIPS_CURRENCY_PER_TIP`).
+- `panorama_resources.js build`/`verify` now compile and check `.css` sources. There are
+  29 scripts and 1 style; the full offline suite passes.
+- Dota Tools, fresh session: `tips_smoke.lua` finished with DONE. A screenshot showed two
+  stacked cards: the tip to player 0 with the gold frame, and the bot-to-bot tip without it.
+  Both showed 50, and chat read «… 50 Слави!». The client log had no CSS or texture
+  errors for the toast. The sub-second glint and coin pop could not be caught by
+  `jpeg_screenshot`, so they need a human look.
+
+## 2026-09-27: Early "+1 kill goal" menu hidden
+
+- `EarlyConsumables:SendEarlyConsumablesState` returns early when
+  `GameLoop:HasFixedKillGoal()`, so the menu, which only appears on that state event,
+  never shows. `PlayerVoteAdditionalGoal` ignores votes there, because a vote still
+  extended the host's time limit. Other maps are unchanged.
+- Offline: new `test_early_consumables.lua` (in `run_tests.js`) covers both cases. The full
+  suite passes.
+- Dota Tools: on a fresh FFA match, a screenshot at 0:04 match time, inside the
+  20-second window, showed no menu.
+- GG Token: `WebInventory:ItemConsumeEvent` refuses `bp_gg_token` while the kill goal is
+  host-fixed, before consuming it, and shows the new
+  `dota_hud_error_gg_token_fixed_kill_goal` error (EN/RU/UK). `test_free_collection.lua`
+  covers refusal and other maps.
+- Dota Tools: `kill_goal_lock_smoke.lua` printed `KGLOCK PASS goal 40, time limit 1600`. No
+  menu state was sent, and the vote and token left the goal and time unchanged. A screenshot showed
+  the Ukrainian error «Мету вбивств задав хост, її не можна змінити» and no menu at 0:02.
+
+## 2026-09-27: Fountain smoke with All Vision
+
+- With All Vision on, the fountain aura's effect modifier makes units on their own fountain
+  invisible, immune to true sight and hidden from the enemy minimap. The owning team sees
+  a smoke particle. The All Vision tooltip is updated in EN/RU/UK.
+- Offline: new `test_fountain_smoke.lua` (in `run_tests.js`). The full suite passes.
+- Dota Tools (`fountain_smoke_smoke.lua`, player 0 plus an enemy bot): all 10 checks `ok`:
+  - both heroes smoked on their own fountains, and neither side can see the other's;
+  - a Sentry Ward with true sight placed 150 units from the smoked bot did not reveal it;
+  - Sven visible to the enemy after leaving and smoked again after returning.
+
+  Screenshots: Sven translucent on his fountain; the enemy fountain centred on the bot's
+  position appears empty. Bot players added mid-game spawn at the map centre, so the
+  smoke moves the bot to its fountain first.
+
+## 2026-09-27: Hero swap menu restyle and pre-game stun fix
+
+- Bug: after a pre-game swap, `modifier_pregame_stunned` stayed on the hero but still
+  counted as coming from the old team. On the new team's fountain, the aura's debuff
+  immunity suppressed it, so the hero could walk until it left the fountain.
+  `swap_pregame_stun_smoke.lua` reproduced this: `IsStunned` false on the fountain and true
+  outside it. `HeroSwaps:Assign` now re-creates the stun after the team change with its
+  remaining time. After the fix, the smoke shows both swapped heroes stunned on their new
+  fountains, with the same remaining time, and outside them. `test_hero_swaps.lua` covers
+  the re-creation.
+- Menu restyle in `utils.js`: host-settings palette, toast-style player cards, green/red/neutral
+  buttons; IDs and behaviour unchanged. `panorama_test.js` checks button looks, the colour
+  strip and the incoming-request accent. The full suite passes.
+- Dota Tools, Ukrainian client, with simulated clicks: `hero_swaps_look_smoke.lua` gave
+  incoming, sent and plain rows. The first build squeezed names under the long Ukrainian
+  button labels, so the panel was widened to 420 px with single-line names; re-checked.
+  Hover brightened the row. A real click on Accept swapped the heroes (player 0 became Lina)
+  and showed the gold status line.
+- Toggle polish, measured from 1600x900 client screenshots with a pixel script:
+  - The request count now fills a 19 px gold circle (16 screen px) and is centred with
+    text-align plus 2 px top padding. Digit ink boxes for 1/2/3 are centred vertically and
+    within 0.5 px horizontally; before, the count was about 1 px left, and a 15 px circle
+    could only get within 0.5 px. Margins on a centred child did not move it at this scale.
+  - The title is centred inside its own label: Panorama sized it ~5 px wider than the
+    uppercase text it draws, which left 11 px of space before the text and 16 px after.
+    Now 14 px and 13 px. The gap before the badge sits on the title only while the badge
+    shows. The user confirmed the result in the client.
+
+## 2026-09-27: Settings pager restyle
+
+- `InitMatchRules` regroups the loading screen's `#LS_Tips_Left`, `#LS_Tips_Bullets` and
+  `#LS_Tips_Right` into `MatchRulesPager` under the panel and restyles them inline; no
+  compiled XML or CSS changes. `panorama_test.js` covers:
+  - the grouping, removed frame art, dimmed and disabled end arrows, and gold-pill current page;
+  - arrow glow until hover, and unvisited-page bullet glow;
+  - bullet clicks, and the icon ignoring the mouse.
+- Dota Tools (fresh client, loading screen, simulated mouse):
+  - The right arrow glowed and the unvisited bullets glowed with the tabs; hovering gave the gold border.
+  - Clicking switched to Other: the left arrow glowed, the right one settled, the first bullet greyed.
+  - First click attempt found the chevron image (now centred in a 30 px button) taking the
+    mouse events; `hittest = false` on the icon fixed hover and click.
+  - A temporary `SetHint` stack log showed that the setup code does not open other pages
+    (the grey tabs in one screenshot came from interaction). It was removed afterwards.
