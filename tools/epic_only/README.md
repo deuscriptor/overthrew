@@ -68,12 +68,21 @@ been removed; the configurable mode uses the original VPK and overview.
 Historical build tools remain available.
 
 Localization: the addon ships English (`resource/addon_english.txt`, the default
-and fallback for every other client language) and Russian
-(`resource/addon_russian.txt`). Every token added, renamed or removed in one file
-must be changed in the other in the same commit, with a Russian translation
-rather than copied English text. Item, hero and game-mode names (Divine Rapier,
-Dagon, Single Draft, Turbo) stay in English, as in the Russian Dota client.
-`run_tests.js` fails when the two files' token sets differ.
+and fallback for every other client language), Russian
+(`resource/addon_russian.txt`) and Ukrainian (`resource/addon_ukrainian.txt`).
+Every token added, renamed or removed in one file must be changed in the other
+two in the same commit, with real translations rather than copied English text.
+Russian keeps item, hero and game-mode names (Divine Rapier, Dagon, Single Draft,
+Turbo) in English, as in the Russian Dota client. Ukrainian follows the official
+Dota 2 Ukrainian client, whose files (`resource/localization/*_ukrainian.txt`)
+are inside `game/dota/pak01_dir.vpk` and serve as the terminology reference:
+formal «ви» address, the ’ apostrophe, official Ukrainian hero and ability names
+in prose (Некрофос, «Серцеспинна аура»), English item titles (Divine Rapier) with
+Ukrainian names in prose (Скіпетр Аґаніма), «Турбо» but «Single Draft», «кріп»,
+«зарядка» for cooldown, «лютит» for Madstone, «сфера» for orb and «переобрання»
+for reroll. Ability descriptions start with the official
+«Англійською: <b><font color='#F2A93E'>English name</font></b>\n» line.
+`run_tests.js` fails when the three files' token sets differ.
 
 Validation: `test_host_rules.lua` covers all eight rule combinations, host changes,
 invalid values, locking, and repeated Apply. `panorama_test.js` covers delayed

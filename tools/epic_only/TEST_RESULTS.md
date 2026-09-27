@@ -362,3 +362,18 @@ clients remain manual checks.
 - `run_tests.js` now asserts `addon_english.txt` and `addon_russian.txt` define the
   same token set (3362 tokens). Full offline suite passes. Not checked in game
   with a Russian client.
+
+## 2026-09-27: Ukrainian localization added
+
+- New `resource/addon_ukrainian.txt`, generated in the same key order and layout
+  as `addon_english.txt`. All 3,362 tokens are present; 245 values stay as in English
+  (placeholders, map/mode/cosmetic/item titles kept English as in the official client).
+- Style and terminology follow the official Dota 2 Ukrainian client, taken from the
+  game's own `resource/localization/*_ukrainian.txt` (inside `game/dota/pak01_dir.vpk`).
+  About 420 values reuse official text verbatim (same English source string, or the
+  hero_demo sample addon's Ukrainian file); the rest were translated with official
+  hero, ability, item and creep names.
+- Validated with a script: every English placeholder, `%var%`, `{s:..}`, tag, `\n`
+  and escape is kept; no unescaped quotes.
+- `run_tests.js` parity check now covers English, Russian and Ukrainian (3362 tokens
+  each). Full offline suite passes. Not checked in game with a Ukrainian client.

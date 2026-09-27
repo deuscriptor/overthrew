@@ -17,10 +17,12 @@ assert.ok(fs.existsSync(path.join(root, overviewMaterial + '_c')), 'Minimap mate
 console.log('PASS configurable FFA uses the original minimap material and coordinate calibration');
 const localizationKeys = language => new Set([...read(`resource/addon_${language}.txt`).matchAll(/^\s*"([^"]+)"[ \t]*"/gm)].map(match => match[1]));
 const englishKeys = localizationKeys('english');
-const russianKeys = localizationKeys('russian');
-assert.deepEqual([...englishKeys].filter(key => !russianKeys.has(key)), [], 'English tokens missing from addon_russian.txt');
-assert.deepEqual([...russianKeys].filter(key => !englishKeys.has(key)), [], 'Russian tokens missing from addon_english.txt');
-console.log(`PASS addon_english.txt and addon_russian.txt define the same ${englishKeys.size} tokens`);
+for (const language of ['russian', 'ukrainian']) {
+  const keys = localizationKeys(language);
+  assert.deepEqual([...englishKeys].filter(key => !keys.has(key)), [], `English tokens missing from addon_${language}.txt`);
+  assert.deepEqual([...keys].filter(key => !englishKeys.has(key)), [], `${language} tokens missing from addon_english.txt`);
+}
+console.log(`PASS addon_english.txt, addon_russian.txt and addon_ukrainian.txt define the same ${englishKeys.size} tokens`);
 const original = read('scripts/npc/items/orbs.txt');
 const variant = read('scripts/npc/items/orbs_epic_only.txt');
 const shop = read('scripts/shops/ot3_ffa_epic_shops.txt');
