@@ -13,14 +13,14 @@ Dota 2 custom game addon `overthrew`, a fork of Overthrow 3.0. Work branch `map-
 - Core: Single Draft (on), Turbo (on; 2x earned gold/XP), Epic-Only orbs (off; rerolls cost 1), Backpack Items (off; backpack slots keep working, see README), Kill Goal (default 50; match time = 1200s × goal/30)
 - Other, in menu order: All Vision (on), Infinite Rerolls (on; 999), Longer Wards (on), Invincible Wards (on)
 - Items: Divine Rapier (on), Dagon (on); off = item disabled/disassembled
-- Also: cross-team Hero Swaps; free local premium/collection (backend writes blocked).
+- Also: cross-team Hero Swaps; free local premium/collection (backend writes blocked); scoreboard player tips (always on, local only: toast + chat + end-screen tally, 3/match, 30s cooldown, no currency moved; `libraries/webapi/tips.lua`).
 
 ## Key code
 
 - `scripts/vscripts/libraries/host_options.lua` — option state, `MATCH_FLAGS`, net table `game_options` (`host_options`, `match_rules`), events `HostOptions:apply_rules` / `HostOptions:set_option_state`
 - `scripts/vscripts/core_declarations.lua` — `UsesHostRules()`, `IsSingleDraftMap()`, `IsEpicOnlyMap()`, `IsFlatRerollMap()`
 - `scripts/vscripts/game/` — `single_draft.lua`, `turbo_rewards.lua`, `hero_swaps.lua`, `host_items.lua`, `backpack_items.lua`, `game_loop.lua`, `neutral_item_drop.lua`
-- **Panorama:** runtime uses compiled `.vjs_c`. Editable JS lives in `tools/epic_only/panorama_sources/` and must be rebuilt (below). Originals in `tools/epic_only/panorama_backups/`. XML/CSS containers are not modified.
+- **Panorama:** runtime uses compiled `.vjs_c`. Editable JS lives in `tools/epic_only/panorama_sources/` and must be rebuilt (below). Originals in `tools/epic_only/panorama_backups/`. XML containers are not modified. CSS: only `toasts/toasts.css` has an editable source (recovered from the compiled file); `panorama_resources.js build` compiles it with Valve's `resourcecompiler.exe` via `content/dota_addons/overthrew/` (outside git). Image URLs in CSS sources must stay `s2r://…_png.vtex` (no PNG sources exist; `file://{images}` compiles to empty paths). The compiler does not validate property names; check the client log (`-condebug`).
 - **Docs:** `tools/epic_only/README.md` (authoritative feature spec), `panorama_README.md`, `TEST_RESULTS.md`, `PUBLISHING_CHECK.md`, `NEUTRAL_TIMINGS_INVESTIGATION.md`.
 - **Localization:** English (`resource/addon_english.txt`, default/fallback for other client languages), Russian (`resource/addon_russian.txt`) and Ukrainian (`resource/addon_ukrainian.txt`). Every token change goes into **all three** files, with real translations. Russian keeps item/hero/game-mode names in English, as the Russian Dota client does. Ukrainian follows the official Dota 2 Ukrainian client (reference: `resource/localization/*_ukrainian.txt` in `game/dota/pak01_dir.vpk`): «ви» address, ’ apostrophe, official hero/ability names in prose, item titles in English, «Англійською: …» line on ability descriptions. `run_tests.js` fails if the token sets differ.
 
@@ -46,7 +46,7 @@ Environment (verified 2026-09-26): Node.js v24 at `C:\Program Files\nodejs` (on 
 
 **2. In-game (Dota 2 Workshop Tools):**
 - Launch Dota with `-tools`, pick addon `overthrew`, then console: `dota_launch_custom_game overthrew ot3_necropolis_ffa` (Local Host lobby; host settings appear pre-pick).
-- Smoke scripts `scripts/vscripts/*_smoke.lua` run in a disposable tools session via `script_reload_code <name>` (e.g. `host_rules_smoke`, `turbo_smoke`, `host_settings_smoke`, `host_items_smoke`, `hero_swaps_smoke`, `hero_swaps_ui_smoke`, `invincible_wards_smoke`, `all_vision_smoke`, `free_collection_smoke`, `single_draft_smoke`, `backpack_items_smoke`, `host_claim_smoke`). They print `..._PASS` markers or assert. Some mutate state — use fresh sessions.
+- Smoke scripts `scripts/vscripts/*_smoke.lua` run in a disposable tools session via `script_reload_code <name>` (e.g. `host_rules_smoke`, `turbo_smoke`, `host_settings_smoke`, `host_items_smoke`, `hero_swaps_smoke`, `hero_swaps_ui_smoke`, `invincible_wards_smoke`, `all_vision_smoke`, `free_collection_smoke`, `single_draft_smoke`, `backpack_items_smoke`, `host_claim_smoke`, `tips_smoke`). They print `..._PASS` markers or assert. Some mutate state — use fresh sessions.
 - Send console commands from a terminal via VConsole (port 29000): `node tools/epic_only/vconsole.js 'script_reload_code host_rules_smoke'` (options `--port --wait-ms --listen-ms`).
 - Reloading: after Lua changes restart the map (`disconnect`, then `dota_launch_custom_game ...`); `script_reload` mid-match re-runs init and resets host options. HUD Panorama scripts reload on map restart, but the loading screen (host settings menu) only reloads after quitting and relaunching the client.
 - The Dota game window must be in the foreground, or Panorama stops laying out and screenshots are stale. `jpeg_screenshot <name>` writes to `game/dota/screenshots/`.

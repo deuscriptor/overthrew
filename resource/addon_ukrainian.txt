@@ -2392,6 +2392,8 @@
 		"dota_hud_error_used_all_tips_for_today"	"Ви використали всі віддяки на сьогодні"
 		"dota_hud_error_used_all_tips_for_this_game""Ви використали всі віддяки в цій грі"
 		"dota_hud_error_tip_is_on_cooldown"			"Віддяки на зарядці"
+		"custom_chat_player_tip"					"%s1 дарує %s2 <img src='file://{images}/custom_game/collection/currency_icon_19.png'/> <font color='#f9d014'>%s3 Слави</font>!"
+		"end_screen_tips_received"					"Отримано віддяк: {d:tips_received}"
 
 		"payment_window_header"						"ПІДТВЕРДЬТЕ СВІЙ ВИБІР"
 		"payment_window_total"						"Усього:"

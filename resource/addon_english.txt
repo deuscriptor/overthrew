@@ -2392,6 +2392,8 @@ If you do not send us your steam URL or steamID we wont be adle to grant you ben
 		"dota_hud_error_used_all_tips_for_today"	"You have used all tips for today"
 		"dota_hud_error_used_all_tips_for_this_game""You have used all tips for this game"
 		"dota_hud_error_tip_is_on_cooldown"			"Tips are on cooldown"
+		"custom_chat_player_tip"					"%s1 has tipped %s2 <img src='file://{images}/custom_game/collection/currency_icon_19.png'/> <font color='#f9d014'>%s3 Glory</font>!"
+		"end_screen_tips_received"					"Tips received: {d:tips_received}"
 
 		"payment_window_header"						"CONFIRM YOUR CHOICE"
 		"payment_window_total"						"Total:"

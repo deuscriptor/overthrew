@@ -327,3 +327,187 @@ for (const epic of [false, true]) {
 	}
 }
 console.log("PASS: server-supplied reroll price, final 1–3 rerolls, empty balance, duplicate-click guard and normal-map pricing");
+
+// Scoreboard Tip button: greyed out during the cooldown and once the per-game cap is used.
+{
+	const scoreboardSource = fs.readFileSync(path.join(scripts, "scoreboard/scoreboard.js"), "utf8");
+	const hudClasses = new Set();
+	let now = 0;
+	const dollar = id => new Panel(id);
+	dollar.GetContextPanel = () => new Panel("Scoreboard");
+	dollar.Schedule = () => {};
+	const context = vm.createContext({
+		$: dollar,
+		dotaHud: { SetHasClass: (name, value) => (value ? hudClasses.add(name) : hudClasses.delete(name)), BHasClass: name => hudClasses.has(name) },
+		Game: { GetGameTime: () => now },
+		GameUI: {},
+	});
+	vm.runInContext(scoreboardSource.slice(0, scoreboardSource.lastIndexOf("(function () {")), context);
+	const tick = () => vm.runInContext("Object.values(interval_funcs).forEach((func) => func())", context);
+	now = 110;
+	context.UpdateTips({ max_this_game: 3, used_this_game: 1, cooldown: 100, cooldown_duration: 30 });
+	assert.ok(hudClasses.has("TipsBlock"), "blocked during cooldown");
+	now = 130;
+	tick();
+	assert.ok(!hudClasses.has("TipsBlock"), "unblocked after cooldown");
+	now = 140;
+	context.UpdateTips({ max_this_game: 3, used_this_game: 3, cooldown: 140, cooldown_duration: 30 });
+	now = 1000;
+	tick();
+	assert.ok(hudClasses.has("TipsBlock"), "cap keeps the button blocked after the cooldown");
+	context.UpdateTips({ max_this_game: 3, used_this_game: 0, cooldown: -10000, cooldown_duration: 30 });
+	assert.ok(!hudClasses.has("TipsBlock"), "fresh player can tip");
+	console.log("PASS scoreboard tips: cooldown, per-game cap survives cooldown, fresh state");
+}
+
+// End screen: tips-received badge sits before the MVP crown and only shows when tipped.
+{
+	const endScreenSource = fs.readFileSync(path.join(scripts, "end_screen/end_screen.js"), "utf8");
+	const start = endScreenSource.indexOf("function CreateTipsBadge");
+	const badgeSource = endScreenSource.slice(start, endScreenSource.indexOf("\nfunction ", start + 1));
+	class EndPanel extends Panel {
+		constructor(id, type, parent, props = {}) { super(id, type, parent); Object.assign(this, props); }
+		SetDialogVariableInt(name, value) { this.vars[name] = value; }
+		MoveChildBefore(child, before) {
+			this.children.splice(this.children.indexOf(child), 1);
+			this.children.splice(this.children.indexOf(before), 0, child);
+		}
+	}
+	const dispatched = [];
+	const dollar = {
+		CreatePanel: (type, parent, id, props) => new EndPanel(id, type, parent, props),
+		Localize: (key, panel) => `${key}:${panel.vars.tips_received}`,
+		DispatchEvent: (...args) => dispatched.push(args),
+	};
+	const context = vm.createContext({ $: dollar });
+	vm.runInContext(badgeSource, context);
+	const basic = new EndPanel("BasicPlayerRoot_0");
+	new EndPanel("EG_HeroIcon", "Image", basic);
+	new EndPanel("EG_PSB_MVP_Icon", "Panel", basic);
+	context.CreateTipsBadge(basic, { tips_received: 0 });
+	context.CreateTipsBadge(basic, undefined);
+	assert.equal(basic.FindChildTraverse("EG_PSB_Tips"), null, "no badge without tips");
+	context.CreateTipsBadge(basic, { tips_received: 4 });
+	const badge = basic.FindChildTraverse("EG_PSB_Tips");
+	assert.deepEqual(basic.children.map(child => child.id), ["EG_HeroIcon", "EG_PSB_Tips", "EG_PSB_MVP_Icon"]);
+	assert.equal(badge.children[1].text, "4");
+	badge.events.onmouseover();
+	assert.deepEqual(dispatched[0], ["DOTAShowTextTooltip", badge, "#end_screen_tips_received:4"]);
+	console.log("PASS end screen tips: badge only when tipped, placed before MVP crown, localized tooltip");
+}
+
+// Chat: dark FFA team colours are lifted to a readable luminance, bright ones stay exact.
+{
+	const chatConst = fs.readFileSync(path.join(scripts, "custom_chat/custom_chat_const.js"), "utf8");
+	const teams = { 2: "#3dd296;", 3: "#F3C909;", 8: "#815336;", 9: "#8c2af4;", 10: "#3455FF;" };
+	const context = vm.createContext({
+		$: { GetContextPanel: () => new Panel("Chat") },
+		DOTATeam_t: { DOTA_TEAM_GOODGUYS: 2, DOTA_TEAM_BADGUYS: 3 },
+		MAP_BASE_NAME: "ot3_necropolis_ffa",
+		GameUI: { GetTeamColor: team => teams[team] },
+		Players: { GetTeam: id => id },
+	});
+	vm.runInContext(chatConst, context);
+	const luminance = hex => {
+		const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.substr(i, 2), 16));
+		return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+	};
+	const readable = id => vm.runInContext(`C_CHAT_ACTIONS[C_CHAT_ENUM.PLAYER_COLOR_READABLE](${id})`, context);
+	assert.equal(readable(2), "#3dd296", "bright teal unchanged");
+	assert.equal(readable(3), "#F3C909", "bright yellow unchanged");
+	for (const id of [8, 9, 10]) {
+		const color = readable(id);
+		assert.match(color, /^#[0-9a-f]{6}$/);
+		assert.ok(Math.abs(luminance(color) - 0.45) < 0.01, `team ${id} lifted to the readable minimum`);
+	}
+	const [r, g, b] = [1, 3, 5].map(i => parseInt(readable(9).substr(i, 2), 16));
+	assert.ok(b > r && r > g, "purple keeps its hue order");
+	assert.equal(vm.runInContext("ReadableChatColor('')", context), "");
+	console.log("PASS chat tip colours: dark team colours readable, bright colours exact, hue kept");
+}
+
+// Tip toast: player strips, bot name fallback, highlight for the tipped player, coin pop, at most three at once.
+{
+	const toastsSource = fs.readFileSync(path.join(scripts, "toasts/toasts.js"), "utf8");
+	class ToastPanel extends Panel {
+		constructor(id, type, parent, props = {}) { super(id, type, parent); Object.assign(this, props); this.valid = true; }
+		SetDialogVariableInt(name, value) { this.vars[name] = value; }
+		AddClass(name) { this.classes.push(name); }
+		SetHasClass(name, value) { if (value) this.classes.push(name); else this.classes = this.classes.filter(c => c !== name); }
+		GetChild(index) { return this.children[index]; }
+		FindChild(id) { return this.children.find(child => child.id === id) || null; }
+		IsValid() { return this.valid; }
+		DeleteAsync() { this.valid = false; this.parent.children = this.parent.children.filter(child => child !== this); }
+		BLoadLayoutSnippet(name) {
+			this.snippet = name;
+			const player = () => { const c = new ToastPanel("", "Panel", this, {}); new ToastPanel("", "Image", c); new ToastPanel("", "DOTAUserName", c); return c; };
+			player();
+			const value = new ToastPanel("", "Panel", this);
+			value.classes.push("TipValueContainer");
+			new ToastPanel("", "Label", value);
+			new ToastPanel("", "Panel", value).classes.push("TipCurrencyContainer");
+			player();
+		}
+	}
+	const root = new ToastPanel("toast_notifications");
+	let scheduled = [];
+	const sounds = [];
+	const dollar = {
+		GetContextPanel: () => root,
+		CreatePanel: (type, parent, id, props) => new ToastPanel(id, type, parent, props),
+		Localize: key => key,
+		Schedule: (delay, fn) => { scheduled.push({ delay, fn }); return scheduled.length; },
+		CancelScheduled: () => undefined,
+	};
+	const infos = {
+		0: { player_name: "Me", player_steamid: "76561190000000000", player_selected_hero: "npc_dota_hero_sven" },
+		1: { player_name: "Tip Bot 1", player_steamid: "0", player_selected_hero: "npc_dota_hero_pudge" },
+		2: { player_name: "Tip Bot 2", player_steamid: "0", player_selected_hero: "npc_dota_hero_techies" },
+	};
+	const context = vm.createContext({
+		$: dollar,
+		Game: { EmitSound: name => sounds.push(name), GetPlayerInfo: id => infos[id], GetLocalPlayerID: () => 0 },
+		GameUI: { GetTeamColor: team => ({ 2: "#3dd296;", 8: "#815336;" })[team] },
+		Players: { GetTeam: id => (id === 0 ? 8 : 2) },
+		GetPortraitImage: (id, hero) => `portrait:${hero}`,
+	});
+	vm.runInContext(toastsSource.slice(0, toastsSource.lastIndexOf("(() => {")), context);
+	const tip = (source, target) => context.NewToast({ toast_type: "player_tip", data: { source_player_id: source, target_player_id: target, currency: 50 } });
+
+	tip(1, 0);
+	const first = root.children[0];
+	assert.equal(first.snippet, "player_tip");
+	assert.equal(first.vars.value, 50);
+	const [source, value, target] = first.children;
+	assert.equal(source.children[0].image, "portrait:npc_dota_hero_pudge");
+	assert.equal(source.children[0].style.borderBottom, "3px solid #3dd296");
+	assert.equal(target.children[0].style.borderBottom, "3px solid #815336");
+	assert.equal(source.children[1].style.visibility, "collapse", "empty DOTAUserName hidden for bots");
+	assert.equal(source.children[2].text, "Tip Bot 1", "bot name shown as a label");
+	assert.equal(source.children[2].class, "TipPlayerName", "bot name styled by toasts.css");
+	assert.equal(target.children[1].steamid, "76561190000000000", "real players keep DOTAUserName");
+	assert.equal(target.children.length, 2);
+	assert.ok(first.classes.includes("TipToLocalPlayer"), "tipped local player gets the gold frame class");
+	assert.deepEqual(sounds, ["General.Coins", "Loot_Drop_Sfx_Minor"]);
+	assert.deepEqual(value.children[1].style, {}, "coin pop is a toasts.css animation");
+	assert.ok(scheduled.some(s => s.delay === 6), "tip toast lasts 6 seconds");
+
+	sounds.length = 0;
+	tip(0, 2);
+	assert.ok(!root.children[1].classes.includes("TipToLocalPlayer"), "no frame when someone else is tipped");
+	assert.deepEqual(sounds, ["General.Coins"]);
+	tip(2, 1);
+	tip(1, 2);
+	assert.equal(root.children.length, 3, "at most three tip toasts on screen");
+	assert.ok(!first.valid, "oldest tip toast removed first");
+
+	// each expiry removes its own toast (it used to pass the newest id instead)
+	const expiries = scheduled.filter(s => s.delay === 6);
+	const [second, third, fourth] = root.children;
+	expiries[1].fn();
+	assert.ok(!second.valid && third.valid && fourth.valid);
+	assert.equal(vm.runInContext("tip_toasts.length", context), 2, "expired toast leaves the cap list");
+	tip(0, 1);
+	assert.ok(third.valid && fourth.valid, "a new tip under the cap removes nothing");
+	console.log("PASS tip toast: colour strips, bot names, tipped-player class and chime, three-toast cap");
+}

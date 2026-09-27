@@ -377,3 +377,59 @@ clients remain manual checks.
   and escape is kept; no unescaped quotes.
 - `run_tests.js` parity check now covers English, Russian and Ukrainian (3362 tokens
   each). Full offline suite passes. Not checked in game with a Ukrainian client.
+
+## 2026-09-27: Player tips
+
+- Offline: `test_tips.lua` (new, in `run_tests.js`) runs the production `tips.lua`,
+  `custom_chat.lua`, `toasts.lua` and `end_game_stats.lua`. It checks the toast/chat
+  payloads, the tally, the 3-per-game cap (still enforced after the cooldown), the
+  30 s cooldown per tipper, ignored self/invalid tips and that no HTTP requests are
+  made. `panorama_test.js` adds scoreboard Tip-button blocking (cooldown; the cap
+  survives the cooldown, which the previous client code got wrong) and the
+  end-screen badge (only when tipped, before the MVP crown, localized tooltip).
+  Panorama rebuild/verify: 28 scripts. Full offline suite passes (3364 tokens in
+  each language).
+- Dota Tools (`tips_smoke.lua`, player 0 plus Pudge/Techies bot players on separate
+  FFA teams): all seven checks `ok`, including zero HTTP requests. Screenshots with
+  a Ukrainian client showed the top-right toast (Techies → «дякує» → coin 5 →
+  Sven) and the chat line «Tip Bot 2 дарує <name> 5 Слави!». The end screen showed
+  the Glory badge with the correct counts (Pudge 2, Sven 5, Techies 1), after the
+  hero name and left of the MVP crown.
+- Not checked: clicking the scoreboard Tip button and hovering over the tooltip (no simulated mouse
+  input), English/Russian clients, real multiplayer.
+
+## 2026-09-27: Tip toast and chat line polish
+
+- `toasts.js` is now editable in `panorama_sources`; the original container is backed up
+  in `panorama_backups`. Tip toast: player-colour strips under the portraits, a plain-text
+  name when there's no Steam ID, a gold frame and second chime for the tipped player,
+  a coin pop, and at most three tip toasts on screen.
+  Fixed an existing bug: each toast's expiry passed the newest toast id instead of its
+  own.
+- Chat line: 19 px Glory coin icon; names use the new `PLAYER_COLOR_READABLE`
+  action.
+- Offline: `panorama_test.js` adds tests for the readable chat colours and the tip
+  toast, including the expiry-id fix. `test_tips.lua` checks the new colour action.
+  29 Panorama scripts rebuilt and verified. The full suite passes.
+- Not checked in the client: the user will check it in-game. Inline styles
+  set from JS (`borderBottom`, `boxShadow`, the `preTransformScale2d`
+  transition) and the chat `<img>` size still need a visual check.
+
+## 2026-09-27: Compiled tip toast style, amount 50
+
+- `toasts.css` was recovered from the compiled `toasts.vcss_c`, whose original is backed up.
+  Recompiling it unchanged with `resourcecompiler.exe` gave byte-identical CSS. Using
+  `file://{images}` URLs gives empty `s2r://` paths, so the sources keep `s2r://` URLs.
+  The compiler accepted a bogus property; it does not validate property names.
+- Restyle, tip rules only: compact dark gradient card with a gold top hairline, flush
+  112×63 portraits, names underneath, 6 px stacking gap. `TipArrive` glint,
+  `TipCoinPop` and `TipLocalArrive` pulse are CSS keyframes. The tipped-you frame is now
+  the `TipToLocalPlayer` class and bot names use the `TipPlayerName` class; the inline
+  styles are gone. Amount changed to 50 (`TIPS_CURRENCY_PER_TIP`).
+- `panorama_resources.js build`/`verify` now compile and check `.css` sources. There are
+  29 scripts and 1 style; the full offline suite passes.
+- Dota Tools, fresh session: `tips_smoke.lua` finished with DONE. A screenshot showed two
+  stacked cards: the tip to player 0 with the gold frame, and the bot-to-bot tip without it.
+  Both showed 50, and chat read «… 50 Слави!». The client log had no CSS or texture
+  errors for the toast. The sub-second glint and coin pop could not be caught by
+  `jpeg_screenshot`, so they need a human look.

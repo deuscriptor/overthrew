@@ -83,6 +83,40 @@ function FillPlayerStats(root, player_id, stats) {
 	if (stats.rating_change != 0) root.AddClass(stats.rating_change > 0 ? "MmrInc" : "MmrDec");
 }
 
+function CreateTipsBadge(root, stats) {
+	const tips_received = (stats && stats.tips_received) || 0;
+	if (tips_received <= 0) return;
+
+	const badge = $.CreatePanel("Panel", root, "EG_PSB_Tips");
+	badge.style.flowChildren = "right";
+	badge.style.horizontalAlign = "right";
+	badge.style.verticalAlign = "center";
+	badge.style.marginRight = "4px";
+
+	const icon = $.CreatePanel("Image", badge, "");
+	icon.SetImage("file://{images}/custom_game/collection/currency_icon_small.png");
+	icon.style.width = "17px";
+	icon.style.height = "17px";
+	icon.style.verticalAlign = "center";
+
+	const count = $.CreatePanel("Label", badge, "", { text: `${tips_received}` });
+	count.style.color = "#f9d014";
+	count.style.fontSize = "14px";
+	count.style.marginLeft = "2px";
+	count.style.verticalAlign = "center";
+
+	const mvp_icon = root.FindChildTraverse("EG_PSB_MVP_Icon");
+	if (mvp_icon && mvp_icon.GetParent() == root) root.MoveChildBefore(badge, mvp_icon);
+
+	badge.SetDialogVariableInt("tips_received", tips_received);
+	badge.SetPanelEvent("onmouseover", () => {
+		$.DispatchEvent("DOTAShowTextTooltip", badge, $.Localize("#end_screen_tips_received", badge));
+	});
+	badge.SetPanelEvent("onmouseout", () => {
+		$.DispatchEvent("DOTAHideTextTooltip", badge);
+	});
+}
+
 function _SortByParam(a, b, param, b_reverse, default_param) {
 	let result = (a[param] || 0) - (b[param] || 0);
 	if (result == 0) result = a[default_param] - b[default_param];
@@ -745,6 +779,7 @@ function _EndScreenPhase4(data) {
 			/****** Basic numbers values (using for sort) ******/
 			FillPlayerStats(basic_player, player_id, player_stats);
 			FillPlayerStats(row, player_id, player_stats);
+			CreateTipsBadge(basic_player, player_stats);
 			if (MAP_BASE_NAME == "ot3_necropolis_ffa") {
 				FillPlayerStats(team_root, player_id, player_stats);
 				FillPlayerStats(team_full_rows_container, player_id, player_stats);

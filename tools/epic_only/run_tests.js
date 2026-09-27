@@ -108,3 +108,13 @@ assert.equal(backpackItems.error, undefined);
 assert.equal(backpackItems.status, 0);
 assert.equal((backpackItems.stderr || '').trim(), '');
 assert.match(backpackItems.stdout, /PASS backpack items:/);
+const tips = spawnSync(process.execPath, [
+  path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
+  'tools/epic_only/test_tips.lua',
+], { cwd: root, encoding: 'utf8' });
+if (tips.stdout) process.stdout.write(tips.stdout);
+if (tips.stderr) process.stderr.write(tips.stderr);
+assert.equal(tips.error, undefined);
+assert.equal(tips.status, 0);
+assert.equal((tips.stderr || '').trim(), '');
+assert.match(tips.stdout, /PASS tips:/);

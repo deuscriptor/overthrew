@@ -366,3 +366,41 @@ match, including a Scythe of Vyse cast from out of range.
 separate FFA teams: casts between players, Linken's Sphere / Aeon Disk / Lotus Orb,
 invisibility and fountain protection, hero swaps, illusions and Tempest Double
 (`backpack_items_multiplayer_off_smoke.lua` runs it with the option off).
+
+## Player tips
+
+Tipping works like Dota Plus / Battle Pass tipping, but no currency is moved.
+Every player row on the scoreboard except your own has a **Tip** button. Allies
+and enemies can both be tipped. A tip:
+
+- shows a 6 second toast to all players: tipper portrait, the Glory icon with
+  "50", target portrait (the original Overthrow 3.0 `player_tip` toast), restyled after
+  Dota's own tip notification as a compact dark card (`toasts.css`). Each
+  portrait has a player-colour strip underneath; players without a Steam account
+  (bots) show their name as plain text. The card glints once as it slides in
+  and the coin pops (CSS keyframes). The tipped player sees a gold frame with a single
+  pulse (`TipToLocalPlayer`) and hears a
+  second chime (`Loot_Drop_Sfx_Minor` after `General.Coins`). At most three tip
+  toasts are on screen at once; the oldest leaves early;
+- posts a chat line to all players, worded like Valve's `DOTA_Tip_Chat`:
+  "<tipper> has tipped <target> [coin] 50 Glory!". Names use
+  `C_CHAT_ENUM.PLAYER_COLOR_READABLE`, which lifts dark player colours (FFA
+  Brown, Blue, Purple) towards white to a luminance of 0.45 so they stay readable
+  on the chat background. Brighter colours are unchanged;
+- adds one to the target's `tips_received` stat. On the end screen, each tipped
+  player's row shows a Glory icon and the count, with a "Tips received" tooltip.
+
+Nobody gains or loses Glory; "50" is display only (`TIPS_CURRENCY_PER_TIP`).
+There is no reason field and no way to refuse a tip, so what a tip means depends on
+when it is sent. Each player can send 3 tips per match (`TIPS_PER_GAME_MAX`), with a
+30 second cooldown between them (`TIPS_COOLDOWN`). The server enforces both and
+shows the existing error messages; the Tip button is greyed out while either limit
+applies. Self tips are ignored. Tipping is always on, on all maps.
+
+Tips never reach the original backend. The daily and subscription-tier limits,
+the `api/lua/match/tip` request, which sent both players' Steam IDs, and the
+developer bypass were removed.
+`test_tips.lua` covers the rules and the absence of HTTP requests, and
+`panorama_test.js` covers the button state and the end-screen badge.
+`tips_smoke.lua` checks tips between player 0 and two bot players in a tools match,
+then shows a toast, a chat line and the end screen for screenshots.
