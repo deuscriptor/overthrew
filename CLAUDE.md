@@ -22,14 +22,14 @@ Dota 2 custom game addon `overthrew`, a fork of Overthrow 3.0. Work branch `map-
 - `scripts/vscripts/game/` — `single_draft.lua`, `turbo_rewards.lua`, `hero_swaps.lua`, `host_items.lua`, `backpack_items.lua`, `game_loop.lua`, `neutral_item_drop.lua`
 - **Panorama:** runtime uses compiled `.vjs_c`. Editable JS lives in `tools/epic_only/panorama_sources/` and must be rebuilt (below). Originals in `tools/epic_only/panorama_backups/`. XML/CSS containers are not modified.
 - **Docs:** `tools/epic_only/README.md` (authoritative feature spec), `panorama_README.md`, `TEST_RESULTS.md`, `PUBLISHING_CHECK.md`, `NEUTRAL_TIMINGS_INVESTIGATION.md`.
-- **Localization:** English only — `resource/addon_english.txt`. Non-English files were removed; non-English clients fall back to English.
+- **Localization:** English (`resource/addon_english.txt`, default/fallback for other client languages) and Russian (`resource/addon_russian.txt`). Every token change goes into **both** files, with a real Russian translation (item/hero/game-mode names stay English, as in the Russian Dota client). `run_tests.js` fails if the two token sets differ.
 
 ### Adding a host option (a boolean match flag)
 
 One toggle touches five places — keep them in sync:
 1. `host_options.lua` — add the name to `MATCH_FLAGS`; add it to `DEFAULT_ON_FLAGS` only if it should start checked (absent = default off). `ApplyRules` validates every flag as 0/1/false/true and publishes through the `match_rules` net table.
 2. Panorama source `tools/epic_only/panorama_sources/.../custom_loading_screen/custom_loading_screen.js` — add `"<name>"` to the right category in the `categories` array (`core`/`other`/`items`); array position = on-screen order. Then rebuild (see Testing).
-3. Localization — add `"host_rules_<name>" "<Label>"` to `resource/addon_english.txt`. Category headings are `host_rules_category_<id>`.
+3. Localization — add `"host_rules_<name>" "<Label>"` and its hover tooltip `"host_rules_<name>_tip"` to `resource/addon_english.txt` **and** translated to `resource/addon_russian.txt`. Category headings are `host_rules_category_<id>`.
 4. Consumer code — read the flag where its effect applies, via `HostOptions:GetOption("<name>")`, guarded by `HostOptions.locked` / `UsesHostRules()`. Existing consumers: `core_declarations.lua` (single_draft, epic_orbs, turbo), `host_items.lua` (divine_rapier, dagon), `game/upgrades/rerolls.lua` (infinite_rerolls), `host_options.lua` (all_vision → fog), `game/backpack_items.lua` (backpack_items; applied from `HostOptions:ApplyRules`, casts hooked in `filters/order.lua`).
 5. Tests — update `tools/epic_only/test_host_rules.lua` (defaults + apply payloads list every flag) and `panorama_test.js` (category order assertions). `ApplyRules` rejects a payload missing any flag, so also add the flag to every `ApplyRules({...})` call in `scripts/vscripts/*_smoke.lua`.
 

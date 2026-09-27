@@ -67,6 +67,14 @@ Only the original FFA map is registered now. The three older variant VPKs have
 been removed; the configurable mode uses the original VPK and overview.
 Historical build tools remain available.
 
+Localization: the addon ships English (`resource/addon_english.txt`, the default
+and fallback for every other client language) and Russian
+(`resource/addon_russian.txt`). Every token added, renamed or removed in one file
+must be changed in the other in the same commit, with a Russian translation
+rather than copied English text. Item, hero and game-mode names (Divine Rapier,
+Dagon, Single Draft, Turbo) stay in English, as in the Russian Dota client.
+`run_tests.js` fails when the two files' token sets differ.
+
 Validation: `test_host_rules.lua` covers all eight rule combinations, host changes,
 invalid values, locking, and repeated Apply. `panorama_test.js` covers delayed
 settings arrival, read-only controls, the Apply payload, Epic-linked reroll costs,
