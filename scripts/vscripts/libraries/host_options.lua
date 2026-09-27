@@ -15,7 +15,11 @@ HOST_OPTION = {
 }
 
 local HOST_CLAIM_FALLBACK_DELAY = 30
+-- Fall back even if a player never finishes loading, so setup cannot stall.
+local HOST_CLAIM_FALLBACK_MAX_WAIT = 120
 local HOST_CLAIM_MAX_FAILURES = 5
+-- Registered only by client.dll: present when a game client shares the server process.
+local CLIENT_ONLY_CONVAR = "dota_camera_distance"
 
 function HostOptions:Init()
 	HostOptions.options = {}
@@ -97,9 +101,14 @@ end
 -- and GetListenServerHost() follow client connection order (the first client to load).
 -- The lobby owner's client runs inside the server process and shares its convars, so
 -- only its client VM can read this random token and claim host (libraries/host_claim).
+-- Local Host lobbies can report IsDedicatedServer(), so check for an in-process client.
 function HostOptions:InitHostClaim()
 	-- Keep an accepted claim across script reloads; the owner's client claims only once.
-	if IsDedicatedServer() or self.claim_token then return end
+	if self.claim_token then return end
+	if Convars:GetStr(CLIENT_ONLY_CONVAR) == nil then
+		print("[Host Options] no game client in the server process, using native host privileges")
+		return
+	end
 	if Convars:GetStr(HOST_CLAIM_CONVAR) == nil then
 		Convars:RegisterConvar(HOST_CLAIM_CONVAR, "0", "Local Host owner verification token", 0)
 	end
@@ -116,6 +125,7 @@ function HostOptions:InitHostClaim()
 	self.claim_fallback = false
 	self.owner_id = nil
 	Convars:SetInt(HOST_CLAIM_CONVAR, self.claim_token)
+	print("[Host Options] waiting for the Local Host owner's claim")
 end
 
 function HostOptions:ClaimHost(player, token)
@@ -129,15 +139,35 @@ function HostOptions:ClaimHost(player, token)
 		return false
 	end
 	self.owner_id = id
+	print("[Host Options] Local Host owner claimed host: player", id)
 	self:UpdateHostPlayer()
 	if UsesHostRules() then self:PublishRules() end
 	return true
 end
 
+function HostOptions:AllPlayersLoaded()
+	for id = 0, DOTA_MAX_TEAM_PLAYERS - 1 do
+		if PlayerResource:IsValidPlayerID(id)
+			and PlayerResource:GetConnectionState(id) == DOTA_CONNECTION_STATE_NOT_YET_CONNECTED then
+			return false
+		end
+	end
+	return true
+end
+
 function HostOptions:ScheduleClaimFallback()
 	if not self.claim_token or self.owner_id then return end
-	Timers:CreateTimer({useGameTime = false, endTime = HOST_CLAIM_FALLBACK_DELAY, callback = function()
-		if self.owner_id or self.locked then return end
+	local started, loaded_since = Time(), nil
+	Timers:CreateTimer({useGameTime = false, callback = function()
+		if self.owner_id or self.locked or GameRules:State_Get() ~= DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then return end
+		-- The owner may still be loading: count down only once everyone has loaded,
+		-- or the first loader would take over through native privileges.
+		if self:AllPlayersLoaded() then loaded_since = loaded_since or Time() else loaded_since = nil end
+		local now = Time()
+		if now - started < HOST_CLAIM_FALLBACK_MAX_WAIT
+			and (not loaded_since or now - loaded_since < HOST_CLAIM_FALLBACK_DELAY) then
+			return 1
+		end
 		-- Never leave setup without a host if the owner's client could not claim.
 		print("[Host Options] no Local Host owner claim received, using native host privileges")
 		self.claim_fallback = true
