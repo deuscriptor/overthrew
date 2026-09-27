@@ -128,3 +128,13 @@ assert.equal(earlyConsumables.error, undefined);
 assert.equal(earlyConsumables.status, 0);
 assert.equal((earlyConsumables.stderr || '').trim(), '');
 assert.match(earlyConsumables.stdout, /PASS early consumables:/);
+const fountainSmoke = spawnSync(process.execPath, [
+  path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
+  'tools/epic_only/test_fountain_smoke.lua',
+], { cwd: root, encoding: 'utf8' });
+if (fountainSmoke.stdout) process.stdout.write(fountainSmoke.stdout);
+if (fountainSmoke.stderr) process.stderr.write(fountainSmoke.stderr);
+assert.equal(fountainSmoke.error, undefined);
+assert.equal(fountainSmoke.status, 0);
+assert.equal((fountainSmoke.stderr || '').trim(), '');
+assert.match(fountainSmoke.stdout, /PASS fountain smoke:/);

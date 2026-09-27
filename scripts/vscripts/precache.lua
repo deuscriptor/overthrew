@@ -4,6 +4,7 @@ PrecacheManager = {}
 
 PrecacheManager.particles = {
 	"particles/leader/leader_overhead.vpcf",
+	"particles/items2_fx/smoke_of_deceit_buff.vpcf",
 	"particles/orb_common.vpcf",
 	"particles/orb_rare.vpcf",
 	"particles/orb_epic.vpcf",

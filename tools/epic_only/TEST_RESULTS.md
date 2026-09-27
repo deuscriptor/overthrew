@@ -451,3 +451,18 @@ clients remain manual checks.
 - Dota Tools: `kill_goal_lock_smoke.lua` printed `KGLOCK PASS goal 40, time limit 1600`. No
   menu state was sent, and the vote and token left the goal and time unchanged. A screenshot showed
   the Ukrainian error «Мету вбивств задав хост, її не можна змінити» and no menu at 0:02.
+
+## 2026-09-27: Fountain smoke with All Vision
+
+- With All Vision on, the fountain aura's effect modifier makes units on their own fountain
+  invisible, immune to true sight and hidden from the enemy minimap. The owning team sees
+  a smoke particle. The All Vision tooltip is updated in EN/RU/UK.
+- Offline: new `test_fountain_smoke.lua` (in `run_tests.js`). The full suite passes.
+- Dota Tools (`fountain_smoke_smoke.lua`, player 0 plus an enemy bot): all 10 checks `ok`:
+  - both heroes smoked on their own fountains, and neither side can see the other's;
+  - a Sentry Ward with true sight placed 150 units from the smoked bot did not reveal it;
+  - Sven visible to the enemy after leaving and smoked again after returning.
+
+  Screenshots: Sven translucent on his fountain; the enemy fountain centred on the bot's
+  position appears empty. Bot players added mid-game spawn at the map centre, so the
+  smoke moves the bot to its fountain first.

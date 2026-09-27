@@ -22,6 +22,7 @@ modifier_fountain_rejuvenation_effect_lua.interval = 0.5
 modifier_fountain_rejuvenation_effect_lua.mana_regen = 25 -- %
 modifier_fountain_rejuvenation_effect_lua.health_regen = 25 -- %
 modifier_fountain_rejuvenation_effect_lua.status_res = 50 -- %
+FOUNTAIN_SMOKE_PARTICLE = "particles/items2_fx/smoke_of_deceit_buff.vpcf"
 
 function modifier_fountain_rejuvenation_effect_lua:GetTexture() return "filler_ability" end
 
@@ -43,7 +44,21 @@ function modifier_fountain_rejuvenation_effect_lua:OnCreated()
 
 	if parent:GetUnitName() == "npc_dota_hero_lich" then self.interval = 0.1 end
 
+	-- All Vision removes fog, so on the configurable FFA map units on their own fountain are smoked instead:
+	-- hidden from enemies (true sight and minimap included), with the Smoke of Deceit look for their own team.
+	-- The stack count carries the decision to clients, which evaluate CheckState too.
+	if UsesHostRules() and HostOptions.locked and HostOptions:GetOption("all_vision") then
+		self:SetStackCount(1)
+		self.smoke_particle = ParticleManager:CreateParticleForTeam(FOUNTAIN_SMOKE_PARTICLE, PATTACH_ABSORIGIN_FOLLOW, parent, parent:GetTeamNumber())
+	end
+
 	self:StartIntervalThink(self.interval)
+end
+
+function modifier_fountain_rejuvenation_effect_lua:OnDestroy()
+	if IsClient() or not self.smoke_particle then return end
+	ParticleManager:DestroyParticle(self.smoke_particle, false)
+	ParticleManager:ReleaseParticleIndex(self.smoke_particle)
 end
 
 function modifier_fountain_rejuvenation_effect_lua:OnIntervalThink()
@@ -66,9 +81,15 @@ function modifier_fountain_rejuvenation_effect_lua:RefillBottle(target)
 end
 
 function modifier_fountain_rejuvenation_effect_lua:CheckState()
-	return {
+	local state = {
 		[MODIFIER_STATE_DEBUFF_IMMUNE] = true,
 	}
+	if self:GetStackCount() == 1 then
+		state[MODIFIER_STATE_INVISIBLE] = true
+		state[MODIFIER_STATE_TRUESIGHT_IMMUNE] = true
+		state[MODIFIER_STATE_NOT_ON_MINIMAP_FOR_ENEMIES] = true
+	end
+	return state
 end
 
 function modifier_fountain_rejuvenation_effect_lua:DeclareFunctions()
@@ -76,6 +97,7 @@ function modifier_fountain_rejuvenation_effect_lua:DeclareFunctions()
 		MODIFIER_PROPERTY_HEALTH_REGEN_PERCENTAGE, -- GetModifierHealthRegenPercentage
 		MODIFIER_PROPERTY_MANA_REGEN_TOTAL_PERCENTAGE, -- GetModifierTotalPercentageManaRegen
 		MODIFIER_PROPERTY_STATUS_RESISTANCE_STACKING, -- GetModifierStatusResistanceStacking
+		MODIFIER_PROPERTY_INVISIBILITY_LEVEL, -- GetModifierInvisibilityLevel
 	}
 end
 
@@ -92,4 +114,9 @@ end
 
 function modifier_fountain_rejuvenation_effect_lua:GetModifierStatusResistanceStacking()
 	return self.status_res
+end
+
+
+function modifier_fountain_rejuvenation_effect_lua:GetModifierInvisibilityLevel()
+	return self:GetStackCount()
 end

@@ -414,3 +414,23 @@ developer bypass were removed.
 `panorama_test.js` covers the button state and the end-screen badge.
 `tips_smoke.lua` checks tips between player 0 and two bot players in a tools match,
 then shows a toast, a chat line and the end screen for screenshots.
+
+## Fountain smoke (All Vision)
+
+All Vision turns off the engine's fog everywhere, so enemies could watch every
+fountain. With All Vision on (configurable FFA map only), a team's heroes and units
+inside their own fountain zone (the fountain aura, radius 1,194 around the tower)
+are smoked:
+
+- invisible to enemies, including true sight (Gem, Sentry Wards) and the minimap;
+- the smoke never breaks while inside, even with enemies nearby;
+- the owning team sees the Smoke of Deceit particle (`smoke_of_deceit_buff`,
+  created per team) and the usual translucency;
+- couriers are not covered.
+
+The effect ends about 0.5 s after leaving the zone (aura linger). It lives in
+`modifier_fountain_rejuvenation_effect_lua`. The server decides in `OnCreated`
+and passes the decision to clients through the stack count, which `CheckState` and
+the invisibility level read. `test_fountain_smoke.lua` covers the rules;
+`fountain_smoke_smoke.lua` checks it in a tools match with an enemy bot.
+
