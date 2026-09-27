@@ -466,3 +466,31 @@ clients remain manual checks.
   Screenshots: Sven translucent on his fountain; the enemy fountain centred on the bot's
   position appears empty. Bot players added mid-game spawn at the map centre, so the
   smoke moves the bot to its fountain first.
+
+## 2026-09-27: Hero swap menu restyle and pre-game stun fix
+
+- Bug: after a pre-game swap, `modifier_pregame_stunned` stayed on the hero but still
+  counted as coming from the old team. On the new team's fountain, the aura's debuff
+  immunity suppressed it, so the hero could walk until it left the fountain.
+  `swap_pregame_stun_smoke.lua` reproduced this: `IsStunned` false on the fountain and true
+  outside it. `HeroSwaps:Assign` now re-creates the stun after the team change with its
+  remaining time. After the fix, the smoke shows both swapped heroes stunned on their new
+  fountains, with the same remaining time, and outside them. `test_hero_swaps.lua` covers
+  the re-creation.
+- Menu restyle in `utils.js`: host-settings palette, toast-style player cards, green/red/neutral
+  buttons; IDs and behaviour unchanged. `panorama_test.js` checks button looks, the colour
+  strip and the incoming-request accent. The full suite passes.
+- Dota Tools, Ukrainian client, with simulated clicks: `hero_swaps_look_smoke.lua` gave
+  incoming, sent and plain rows. The first build squeezed names under the long Ukrainian
+  button labels, so the panel was widened to 420 px with single-line names; re-checked.
+  Hover brightened the row. A real click on Accept swapped the heroes (player 0 became Lina)
+  and showed the gold status line.
+- Toggle polish, measured from 1600x900 client screenshots with a pixel script:
+  - The request count now fills a 19 px gold circle (16 screen px) and is centred with
+    text-align plus 2 px top padding. Digit ink boxes for 1/2/3 are centred vertically and
+    within 0.5 px horizontally; before, the count was about 1 px left, and a 15 px circle
+    could only get within 0.5 px. Margins on a centred child did not move it at this scale.
+  - The title is centred inside its own label: Panorama sized it ~5 px wider than the
+    uppercase text it draws, which left 11 px of space before the text and 16 px after.
+    Now 14 px and 13 px. The gap before the badge sits on the title only while the badge
+    shows. The user confirmed the result in the client.

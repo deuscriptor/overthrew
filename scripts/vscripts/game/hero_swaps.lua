@@ -202,6 +202,14 @@ function HeroSwaps:Assign(hero, player_id, position)
 	hero:SetOwner(player)
 	hero:SetPlayerID(player_id)
 	hero:SetTeam(PlayerResource:GetTeam(player_id))
+	-- The pre-game stun still counts as coming from the old team, so the new fountain's debuff
+	-- immunity suppresses it (the hero could walk until it left the fountain). Re-create it.
+	local stun = hero:FindModifierByName("modifier_pregame_stunned")
+	if stun then
+		local remaining = stun:GetRemainingTime()
+		stun:Destroy()
+		hero:AddNewModifier(hero, nil, "modifier_pregame_stunned", {duration = remaining})
+	end
 	hero:SetControllableByPlayer(player_id, true)
 	player:SetAssignedHeroEntity(hero)
 	hero:SetRespawnPosition(position)

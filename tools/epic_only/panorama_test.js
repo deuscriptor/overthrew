@@ -77,7 +77,8 @@ class Panel {
 		NewProtectedFrame: () => ({SubscribeProtected: (name, fn) => {events[name] = fn;}}),
 		Subscribe: (name, fn) => {events[name] = fn;},
 		SendToServerEnsured: (name, payload) => sent.push({name, payload}),
-	}, DOTA_GameState: {DOTA_GAMERULES_STATE_PRE_GAME: 8}, CustomNetTables: {
+	}, GameUI: {GetTeamColor: team => ({2: "#3dd296;", 3: "#F3C909;"})[team]}, Players: {GetTeam: id => id + 2},
+	DOTA_GameState: {DOTA_GAMERULES_STATE_PRE_GAME: 8}, CustomNetTables: {
 		GetTableValue: () => data,
 		SubscribeNetTableListener: (table, fn) => {listener = fn;},
 	}});
@@ -88,6 +89,11 @@ class Panel {
 	container.FindChildTraverse("RequestSwap_1").events.onactivate();
 	assert.equal(sent[0].name, "HeroSwaps:request");
 	assert.equal(sent[0].payload.target, 1);
+	// Host-settings styling: green primary action, player-colour strip under the portrait.
+	assert.equal(container.FindChildTraverse("RequestSwap_1").style.border, "1px solid #9cc07f");
+	const swapRow = container.FindChildTraverse("HeroSwapPlayer_1");
+	assert.equal(swapRow.children[1].style.borderBottom, "3px solid #F3C909");
+	assert.equal(swapRow.children[1].image, "file://{images}/heroes/npc_dota_hero_lina.png");
 	data.requests = {5: {id: 5, from: 1, to: 0}};
 	listener("game_options", "hero_swaps", data);
 	const swapBody = container.FindChildTraverse("HeroSwapsBody");
@@ -95,7 +101,7 @@ class Panel {
 	const swapBadge = container.FindChildTraverse("HeroSwapRequestBadge");
 	assert.equal(swapBody.visible, false, "Incoming request must not open the menu");
 	assert.equal(swapBadge.visible, true);
-	assert.equal(swapBadge.text, "1");
+	assert.equal(swapBadge.children[0].text, "1", "count label centred inside the badge circle");
 	assert.ok(!swapBody.children.some(panel => panel.text === "#hero_swaps_hint"), "Explanatory description removed");
 	swapToggle.events.onactivate();
 	assert.equal(swapBody.visible, true, "Player can open request controls");
@@ -105,6 +111,10 @@ class Panel {
 	container.FindChildTraverse("AcceptSwap_1").events.onactivate();
 	assert.equal(sent[1].name, "HeroSwaps:accept");
 	assert.equal(sent[1].payload.request_id, 5);
+	assert.equal(container.FindChildTraverse("AcceptSwap_1").style.border, "1px solid #9cc07f");
+	assert.equal(container.FindChildTraverse("DeclineSwap_1").style.border, "1px solid #d66b62");
+	assert.equal(container.FindChildTraverse("HeroSwapPlayer_1").children[0].style.backgroundColor, "#d4bb86",
+		"incoming request marked with the gold accent");
 	container.FindChildTraverse("DeclineSwap_1").events.onactivate();
 	assert.equal(sent[2].name, "HeroSwaps:decline");
 	data.requests = {6: {id: 6, from: 0, to: 1}};

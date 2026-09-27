@@ -267,6 +267,18 @@ orbs are returned as upgrade choices of their original rarities to the player
 who used them; unspent choices remain queued. Refunds do not rerun lucky-trinket
 rolls or grant new starting rewards. Non-orb account bonuses stay with the player.
 
+A swapped hero keeps its pre-game stun. The stun is re-created under the hero's new team
+with the time it had left. The old stun still counted as coming from the previous team,
+so the new fountain's debuff immunity suppressed it: the hero could walk until it left
+the fountain and was then stunned. `swap_pregame_stun_smoke.lua` reproduces this in
+Tools (which skips the production stun) and checks the fix.
+
+The menu uses the host settings' style: a dark gradient panel with a gold hairline and
+gold title. Rows are cards with portraits and player-colour strips, as on the tip toast.
+The row accent is gold for an incoming request and faint gold for one you sent. Accept
+and Request are green, Decline red and Cancel neutral; names stay on one line.
+`hero_swaps_look_smoke.lua` fills it with every row state for screenshots.
+
 The regression runner includes server request/consent tests and Panorama panel
 tests. `hero_swaps_smoke.lua` checks engine reassignment and refund behavior in a
 disposable local Tools session with a synthetic second player;

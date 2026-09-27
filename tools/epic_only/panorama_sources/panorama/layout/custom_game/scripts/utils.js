@@ -19,74 +19,92 @@ const MAP_BASE_NAME = IS_EPIC_ONLY_MAP || IS_SINGLE_DRAFT_MAP ? "ot3_necropolis_
 const B_LOCAL_LOBBY = true;
 
 // Shared by the hero-selection overlay and the in-game HUD during preparation.
+// Styled like the host settings (dark gradient panel, gold accents, green primary action).
 function CreateHeroSwapPanel() {
 	if (MAP_NAME !== "ot3_necropolis_ffa") return;
+	const GOLD = "#d4bb86";
+	function css(target, styles) {
+		for (const key in styles) target.style[key] = styles[key];
+		return target;
+	}
 	// The top bar itself is only as tall as its portraits. Mount on its full-screen
 	// custom-UI container so the expanded menu is not clipped by the top bar.
-	const root = $.CreatePanel("Panel", $.GetContextPanel().GetParent(), "HeroSwaps");
-	root.style.horizontalAlign = "right";
-	root.style.verticalAlign = "top";
-	root.style.marginTop = "130px";
-	root.style.marginRight = "24px";
-	root.style.width = "fit-children";
-	root.style.flowChildren = "down";
-	root.style.zIndex = "100";
+	const root = css($.CreatePanel("Panel", $.GetContextPanel().GetParent(), "HeroSwaps"), {
+		horizontalAlign: "right", verticalAlign: "top", marginTop: "130px", marginRight: "24px",
+		width: "fit-children", flowChildren: "down", zIndex: "100",
+	});
 	let expanded = false, signature = "";
 	const localID = Game.GetLocalPlayerID();
-	function label(parent, text) {
+	function label(parent, text, styles) {
 		const panel = $.CreatePanel("Label", parent, "");
 		panel.text = text;
-		panel.style.fontSize = "16px";
-		panel.style.color = "#e1e8ef";
-		panel.style.verticalAlign = "center";
-		return panel;
+		return css(panel, Object.assign({fontSize: "16px", color: "#e1e8ef", verticalAlign: "center"}, styles || {}));
 	}
-	function button(parent, id, text, action) {
-		const panel = $.CreatePanel("Button", parent, id);
-		panel.style.padding = "6px 10px";
-		panel.style.backgroundColor = "#2b4258";
-		panel.style.border = "1px solid #56728d";
-		panel.style.marginLeft = "4px";
-		label(panel, $.Localize("#hero_swaps_" + text));
+	const BUTTON_LOOKS = {
+		primary: {backgroundColor: "gradient(linear, 0% 0%, 0% 100%, from(#5e8f4f), to(#335230))", border: "1px solid #9cc07f", color: "#ffffff"},
+		secondary: {backgroundColor: "#1f2f3f", border: "1px solid #5b7a95", color: "#c9d6e0"},
+		danger: {backgroundColor: "#2a1a1c", border: "1px solid #d66b62", color: "#f0c2bd"},
+	};
+	function button(parent, id, text, action, kind) {
+		const look = BUTTON_LOOKS[kind];
+		const panel = css($.CreatePanel("Button", parent, id), {
+			padding: "5px 8px", marginLeft: "6px", borderRadius: "3px", backgroundColor: look.backgroundColor,
+			border: look.border, boxShadow: "#00000099 0px 1px 3px 0px",
+			transitionProperty: "brightness", transitionDuration: "0.12s",
+		});
+		label(panel, $.Localize("#hero_swaps_" + text), {fontSize: "12px", fontWeight: "bold", letterSpacing: "0.5px",
+			textTransform: "uppercase", color: look.color, textShadow: "0px 1px 2px 1.0 #000000aa"});
+		panel.SetPanelEvent("onmouseover", () => { panel.style.brightness = "1.3"; });
+		panel.SetPanelEvent("onmouseout", () => { panel.style.brightness = "1"; });
 		panel.SetPanelEvent("onactivate", action);
 		return panel;
 	}
-	const toggle = button(root, "HeroSwapsToggle", "title", function() {
+	const toggle = css($.CreatePanel("Button", root, "HeroSwapsToggle"), {
+		horizontalAlign: "right", flowChildren: "right", padding: "6px 12px", borderRadius: "3px",
+		backgroundColor: "gradient(linear, 0% 0%, 100% 100%, from(#1a2835), to(#0b121a))",
+		border: "1px solid #415465", boxShadow: "#000000aa 0px 2px 6px 0px",
+		transitionProperty: "brightness, border", transitionDuration: "0.12s",
+	});
+	function styleToggle(hovered) {
+		css(toggle, {border: "1px solid " + (expanded || hovered ? GOLD : "#415465"), brightness: hovered ? "1.2" : "1"});
+	}
+	// Panorama sizes this label wider than the uppercase text it draws (measured ~5px at 1600x900),
+	// so centre the text inside its own box to keep equal space on both sides of the button.
+	const title = label(toggle, $.Localize("#hero_swaps_title"), {fontSize: "14px", fontWeight: "bold", letterSpacing: "1.5px",
+		textAlign: "center", textTransform: "uppercase", color: "#f3dfae", textShadow: "0px 1px 2px 1.0 #000000aa"});
+	toggle.SetPanelEvent("onactivate", function() {
 		expanded = !expanded;
 		body.visible = expanded;
+		styleToggle(true);
 	});
-	toggle.style.horizontalAlign = "right";
-	toggle.style.flowChildren = "right";
-	toggle.style.padding = "4px 8px";
-	toggle.Children()[0].style.fontSize = "14px";
-	const badge = $.CreatePanel("Label", toggle, "HeroSwapRequestBadge");
-	badge.style.width = "18px";
-	badge.style.height = "18px";
-	badge.style.marginLeft = "6px";
-	badge.style.verticalAlign = "center";
-	badge.style.textAlign = "center";
-	badge.style.fontSize = "12px";
-	badge.style.fontWeight = "bold";
-	badge.style.color = "#101c29";
-	badge.style.backgroundColor = "#e7c58a";
-	badge.style.borderRadius = "9px";
+	toggle.SetPanelEvent("onmouseover", () => styleToggle(true));
+	toggle.SetPanelEvent("onmouseout", () => styleToggle(false));
+	const badge = css($.CreatePanel("Panel", toggle, "HeroSwapRequestBadge"), {
+		width: "19px", height: "19px", verticalAlign: "center",
+		backgroundColor: GOLD, borderRadius: "50%", boxShadow: "#d4bb8699 0px 0px 6px 0px",
+	});
+	// The count fills the circle and is centred by text-align, so only one rounding step applies.
+	// A label's line box reserves room for descenders, so the top padding lowers the digits.
+	const badgeCount = label(badge, "", {width: "100%", height: "100%", paddingTop: "2px", textAlign: "center",
+		fontSize: "12px", fontWeight: "bold", color: "#101c29"});
 	badge.visible = false;
-	const body = $.CreatePanel("Panel", root, "HeroSwapsBody");
-	body.style.width = "350px";
-	body.style.flowChildren = "down";
-	body.style.backgroundColor = "#101c29";
-	body.style.border = "1px solid #3c5268";
-	body.style.padding = "12px";
+	const body = css($.CreatePanel("Panel", root, "HeroSwapsBody"), {
+		width: "420px", marginTop: "4px", flowChildren: "down", padding: "10px 12px 8px 12px",
+		backgroundColor: "gradient(linear, 0% 0%, 100% 100%, from(#1a2835), to(#0b121a))",
+		border: "1px solid #415465", boxShadow: "inset #00000088 0px 0px 24px 0px",
+	});
 	body.visible = false;
-	const status = label(body, "");
-	status.style.width = "100%";
-	status.style.color = "#e7c58a";
-	status.style.fontSize = "14px";
-	const rows = $.CreatePanel("Panel", body, "HeroSwapsRows");
-	rows.style.width = "100%";
-	rows.style.flowChildren = "down";
-	rows.style.maxHeight = "490px";
-	rows.style.overflow = "squish scroll";
+	const status = label(body, "", {width: "100%", color: "#dfc58b", fontSize: "14px", marginBottom: "6px"});
+	status.visible = false;
+	function setStatus(text) {
+		status.text = text;
+		status.visible = text !== "";
+	}
+	css($.CreatePanel("Panel", body, "HeroSwapsDivider"), {width: "100%", height: "1px", marginBottom: "8px",
+		backgroundColor: "gradient(linear, 0% 0%, 100% 0%, from(#d4bb8699), to(#d4bb8600))"});
+	const rows = css($.CreatePanel("Panel", body, "HeroSwapsRows"), {
+		width: "100%", flowChildren: "down", maxHeight: "490px", overflow: "squish scroll",
+	});
 	function send(action, payload) {
 		GameEvents.SendToServerEnsured("HeroSwaps:" + action, payload);
 	}
@@ -100,51 +118,54 @@ function CreateHeroSwapPanel() {
 		if (!root.visible) return;
 		const requests = Object.values(value.requests || {});
 		const incoming = requests.filter(request => request.to === localID);
-		badge.text = String(incoming.length);
+		badgeCount.text = String(incoming.length);
 		badge.visible = incoming.length > 0;
-		if (me.busy !== 1 && requests.some(request => request.from === localID || request.to === localID)) status.text = "";
-		if (me.busy === 1) status.text = $.Localize("#hero_swaps_accepted");
+		// The gap before the badge lives on the title, so it disappears with the badge.
+		title.style.marginRight = badge.visible ? "8px" : "0px";
+		if (me.busy !== 1 && requests.some(request => request.from === localID || request.to === localID)) setStatus("");
+		if (me.busy === 1) setStatus($.Localize("#hero_swaps_accepted"));
 		let count = 0;
 		Object.keys(value.players).forEach(function(key) {
 			const id = Number(key), player = value.players[key];
 			if (id === localID) return;
 			count++;
-			const row = $.CreatePanel("Panel", rows, "HeroSwapPlayer_" + id);
-			row.style.width = "100%";
-			row.style.flowChildren = "down";
-			row.style.padding = "8px 0px";
-			row.style.borderBottom = "1px solid #304456";
-			const identity = $.CreatePanel("Panel", row, "");
-			identity.style.flowChildren = "right";
-			const portrait = $.CreatePanel("Image", identity, "");
-			portrait.SetImage("file://{images}/heroes/" + player.hero + ".png");
-			portrait.style.width = "48px";
-			portrait.style.height = "27px";
-			portrait.style.marginRight = "8px";
-			const info = Game.GetPlayerInfo(id);
-			const name = label(identity, info ? info.player_name : String(id));
-			name.style.width = "245px";
-			name.style.textOverflow = "ellipsis";
-			label(row, $.Localize("#" + player.hero)).style.fontSize = "14px";
-			const actions = $.CreatePanel("Panel", row, "");
-			actions.style.horizontalAlign = "right";
-			actions.style.flowChildren = "right";
 			const received = incoming.find(request => request.from === id);
 			const sent = requests.find(request => request.from === localID && request.to === id);
+			// Row card like a host setting; the gold accent marks a pending request with this player.
+			const rest = {backgroundColor: received ? "#213347" : "#16222e", border: "1px solid " + (received ? "#3d5770" : "#26394a")};
+			const row = css($.CreatePanel("Panel", rows, "HeroSwapPlayer_" + id), Object.assign({
+				width: "100%", height: "48px", flowChildren: "right", marginBottom: "4px", paddingRight: "8px",
+				transitionProperty: "background-color, border", transitionDuration: "0.12s",
+			}, rest));
+			css($.CreatePanel("Panel", row, ""), {width: "3px", height: "100%",
+				backgroundColor: received ? GOLD : sent ? "#d4bb8666" : "transparent"});
+			// Portrait with the player-colour strip, as on the tip toast.
+			const portrait = css($.CreatePanel("Image", row, ""), {width: "80px", height: "46px", marginRight: "10px"});
+			portrait.SetImage("file://{images}/heroes/" + player.hero + ".png");
+			const color = /#[0-9a-f]{6}/i.exec(GameUI.GetTeamColor(Players.GetTeam(id)) || "");
+			if (color) portrait.style.borderBottom = "3px solid " + color[0];
+			const identity = css($.CreatePanel("Panel", row, ""), {width: "fill-parent-flow(1.0)", flowChildren: "down", verticalAlign: "center"});
+			const info = Game.GetPlayerInfo(id);
+			label(identity, info ? info.player_name : String(id), {width: "100%", fontSize: "15px", fontWeight: "semi-bold",
+				color: "#f4f6f8", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: "0px 1px 2px 1.0 #000000aa"});
+			label(identity, $.Localize("#" + player.hero), {width: "100%", fontSize: "13px", color: "#8da6b5", textOverflow: "ellipsis", whiteSpace: "nowrap"});
+			const actions = css($.CreatePanel("Panel", row, ""), {flowChildren: "right", verticalAlign: "center"});
 			if (received) {
-				button(actions, "AcceptSwap_" + id, "accept", () => send("accept", {request_id: received.id}));
-				button(actions, "DeclineSwap_" + id, "decline", () => send("decline", {request_id: received.id}));
+				button(actions, "AcceptSwap_" + id, "accept", () => send("accept", {request_id: received.id}), "primary");
+				button(actions, "DeclineSwap_" + id, "decline", () => send("decline", {request_id: received.id}), "danger");
 			} else if (sent) {
-				button(actions, "CancelSwap_" + id, "cancel", () => send("cancel", {request_id: sent.id}));
+				button(actions, "CancelSwap_" + id, "cancel", () => send("cancel", {request_id: sent.id}), "secondary");
 			} else if (me.busy !== 1 && player.busy !== 1 && player.hero !== me.hero) {
-				button(actions, "RequestSwap_" + id, "request", () => send("request", {target: id}));
+				button(actions, "RequestSwap_" + id, "request", () => send("request", {target: id}), "primary");
 			}
+			row.SetPanelEvent("onmouseover", () => css(row, {backgroundColor: "#1f2f3f", border: "1px solid #5b7a95"}));
+			row.SetPanelEvent("onmouseout", () => css(row, rest));
 		});
-		if (!count) label(rows, $.Localize("#hero_swaps_waiting"));
+		if (!count) label(rows, $.Localize("#hero_swaps_waiting"), {fontSize: "14px", color: "#8da6b5", margin: "4px 2px"});
 	}
 	const protectedFrame = GameEvents.NewProtectedFrame($.GetContextPanel());
 	protectedFrame.SubscribeProtected("HeroSwaps:status", function(event) {
-		status.text = $.Localize("#hero_swaps_" + event.status);
+		setStatus($.Localize("#hero_swaps_" + event.status));
 	});
 	CustomNetTables.SubscribeNetTableListener("game_options", function(table, key, value) {
 		if (key === "hero_swaps") render(value);

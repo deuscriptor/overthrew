@@ -159,4 +159,31 @@ assert(not Upgrades.favorites_upgrades[0].old_hero and Upgrades.favorites_upgrad
 assert(new_hero.upgrades.generic.account_bonus.count == 2)
 HeroSwaps:RefreshPlayer(0, new_hero)
 assert(#Upgrades.queued_selection[0] == 6, "Second swap must not duplicate refunds")
+-- A swapped hero's pre-game stun is re-created under its new team with the time it had left
+-- (the old one would be suppressed by the new fountain's debuff immunity).
+local stun = {remaining = 7.5}
+function stun:GetRemainingTime() return self.remaining end
+function stun:Destroy() self.destroyed = true end
+local added = nil
+local swapped = {modifiers = {modifier_pregame_stunned = stun}}
+for _, method in ipairs({"SetOwner", "SetPlayerID", "SetControllableByPlayer", "SetRespawnPosition"}) do
+	swapped[method] = function() end
+end
+function swapped:SetTeam(team) self.team = team end
+function swapped:FindModifierByName(name) return self.modifiers[name] end
+function swapped:AddNewModifier(caster, ability, name, data)
+	added = {caster = caster, name = name, duration = data.duration, team = self.team}
+end
+players[1].SetAssignedHeroEntity = function() end
+FindClearSpaceForUnit = function() end
+GameLoop.hero_by_player_id = {}
+GetDummyInventory = function() end
+HeroSwaps:Assign(swapped, 1, {x = 0})
+assert(stun.destroyed and added.name == "modifier_pregame_stunned" and added.caster == swapped)
+assert(added.duration == 7.5 and added.team == 3, "stun re-created after the team change, same remaining time")
+local unstunned = {}
+for key, value in pairs(swapped) do unstunned[key] = value end
+unstunned.modifiers, added = {}, nil
+HeroSwaps:Assign(unstunned, 1, {x = 0})
+assert(added == nil, "no stun added after the horn")
 output("PASS hero swaps: sender authentication, recipient consent, cross-team requests, phase limits, expiry, cancellation, disconnects, stale heroes, concurrent requests, deferred execution, exact orb ledger")
