@@ -348,3 +348,17 @@ the local session: `net_fakelag 150` does not delay the host's own loopback clie
 so a click while viewing an enemy portrait was not exercised (the click handler
 requires a controllable portrait unit). Physical mouse clicks and real remote
 clients remain manual checks.
+
+## 2026-09-27: Russian localization restored
+
+- `resource/addon_russian.txt` reinstated (byte-identical to its state before the
+  2026-09-26 removal); `addon_schinese.txt` stays removed. Dota loads it by client
+  language; no registration is needed.
+- Brought up to date: added the 20 tokens introduced since (Backpack Items label,
+  errors and tooltip, all `host_rules_*_tip` tooltips, `host_rules_time_limit`,
+  `kill_voting_description_no_token`, four Local Host notices), translated the
+  host-option labels that had been copied in English, and aligned Hero Swaps
+  wording with the file's orb term («осколки»).
+- `run_tests.js` now asserts `addon_english.txt` and `addon_russian.txt` define the
+  same token set (3362 tokens). Full offline suite passes. Not checked in game
+  with a Russian client.
