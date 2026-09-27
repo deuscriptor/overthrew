@@ -134,7 +134,13 @@ assert(not HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, all_vision=0,
 -- First loader owns native privileges and the listen-server slot, but only the client
 -- that reads the server's convar token (the Local Host lobby owner) may edit/start.
 state = DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP
-dedicated, host = false, 0
+-- Valve servers have no game client in the process: native privileges, no waiting.
+HostOptions:Init()
+HostOptions:PublishRules()
+assert(HostOptions.claim_token == nil and publishedRules.host_id == host, "server without a local client must not wait for a claim")
+-- Local Host lobbies can report a dedicated server; the in-process client is what counts.
+dedicated, host = true, 0
+convars.dota_camera_distance = "1200"
 HostOptions:Init()
 assert(convars[HOST_CLAIM_CONVAR] == "123456", "claim token must be published in a server convar")
 HostOptions:PublishRules()
@@ -183,19 +189,45 @@ for token = 1, 5 do claim(0, token) end
 claim(0, 123456)
 HostOptions:PublishRules()
 assert(publishedRules.host_id == -1, "claim accepted after repeated wrong tokens")
--- Without any claim, setup falls back to native privileges instead of stalling.
+-- Without any claim, setup falls back to native privileges instead of stalling, but only
+-- after everyone has loaded: a still-loading owner must not lose host to the first loader.
+local now, connection = 0, {}
+Time = function() return now end
+DOTA_CONNECTION_STATE_NOT_YET_CONNECTED = DOTA_CONNECTION_STATE_NOT_YET_CONNECTED or 1
+PlayerResource.GetConnectionState = function(_, id) return connection[id] or 2 end
 HostOptions.claim_token = nil
 HostOptions:Init()
 fallback = nil
+connection[1] = DOTA_CONNECTION_STATE_NOT_YET_CONNECTED
 HostOptions:ScheduleClaimFallback()
-assert(fallback and fallback.useGameTime == false and fallback.endTime > 0)
+assert(fallback and fallback.useGameTime == false)
+now = 10
+assert(fallback.callback() == 1, "fell back while a player was still loading")
+connection[1] = nil
+assert(fallback.callback() == 1)
+now = 39
+assert(fallback.callback() == 1)
 HostOptions:PublishRules()
 assert(publishedRules.host_id == -1)
-fallback.callback()
+now = 40
+assert(fallback.callback() == nil)
 HostOptions:PublishRules()
 assert(publishedRules.host_id == 0, "fallback must use native host privileges")
 claim(1, 123456)
 assert(publishedRules.host_id == 1, "late owner claim must replace the fallback host")
+-- A player stuck loading cannot stall setup forever.
+HostOptions.claim_token = nil
+HostOptions:Init()
+now = 0
+connection[1] = DOTA_CONNECTION_STATE_NOT_YET_CONNECTED
+HostOptions:ScheduleClaimFallback()
+now = 119
+assert(fallback.callback() == 1)
+now = 120
+assert(fallback.callback() == nil)
+HostOptions:PublishRules()
+assert(publishedRules.host_id == 0, "stuck loader stalled the fallback")
+connection[1] = nil
 dedicated = true
 map = "ot3_gardens_duo"
 assert(not IsEpicOnlyMap() and not IsSingleDraftMap() and not IsFlatRerollMap())

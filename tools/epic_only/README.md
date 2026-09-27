@@ -34,10 +34,17 @@ process, so only its client Lua VM can read the token
 with the console command `overthrew_claim_host`. The engine attributes the
 command to the issuing player. Panorama cannot read Lua-registered convars, so
 the claim goes through the client VM. The first valid claim is final. Each
-player gets five wrong guesses. Until a claim arrives, nobody receives settings access. If no
-claim arrives within 30 seconds of setup starting, native privileges are used so
-that setup cannot stall. Dedicated servers continue using native custom-game host
-privileges.
+player gets five wrong guesses. Until a claim arrives, nobody receives settings access.
+If no claim arrives within 30 seconds of every player having loaded, native
+privileges are used so that setup cannot stall. The countdown waits for loading so
+that a slow owner does not lose host to the first loader. After 120 seconds of
+setup, native privileges are used regardless, in case a player never finishes
+loading. The claim path is chosen by whether a game client shares the server
+process (the client-only convar `dota_camera_distance` exists), not by
+`IsDedicatedServer()`, since Local Host lobbies can report a dedicated server.
+Valve servers have no in-process client and use native custom-game host
+privileges immediately. The server logs which path it took (`[Host Options]`
+lines).
 Everyone sees the host's current settings; only the current host can
 change them. The server rejects changes after setup and duplicate start requests.
 Non-host players see a soft white **Waiting for host...** message in place of

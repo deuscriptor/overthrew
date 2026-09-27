@@ -205,6 +205,15 @@ requires a map reload; a running user game was not interrupted to test it.
 - Fresh map restart: `host_claim_smoke.lua` printed `HOST_CLAIM_PASS owner 0` with no fallback. The screenshot shows Apply & Start and the Add Bots host option for the owner.
 - Real multi-client load order remains untested: no second client is available.
 
+## 2026-09-28: Local Host lobbies reporting a dedicated server
+
+- Field report (published build of 2026-09-27, a friend's Local Host lobby): a non-owner who loaded first got settings access while others were still loading. Only the native path grants access during loading, and it ran only when `IsDedicatedServer()` was true. So real Local Host lobbies most likely report a dedicated server, unlike `dota_launch_custom_game` in Tools.
+- Claim gating now checks for a game client in the server process (client.dll-only convar `dota_camera_distance`; absent from server/engine DLLs). Tools: the server VM sees it (`1200`) with `IsDedicatedServer()` false.
+- The fallback countdown now starts once every player has loaded (no `NOT_YET_CONNECTED` player), with a 120-second cap from setup start.
+- `test_host_rules.lua`: a server without a local client resolves native immediately. A Local Host lobby reporting dedicated takes the claim path. The fallback waits while a player is loading, fires 30 seconds after the last load, and caps at 120 seconds with a stuck loader.
+- Tools map restart: `[Host Options] waiting for the Local Host owner's claim`, then `Local Host owner claimed host: player 0`. `host_claim_smoke.lua`: `HOST_CLAIM_PASS owner 0`.
+- Not verified: a real Local Host lobby. Tools cannot create lobbies ("Cannot start matchmaking with -insecure, -dev or -tools"). Whether the lobby server shares the owner's process is untested; if it runs as a separate process, the claim cannot work and native privileges are used immediately (logged as `no game client in the server process`).
+
 ## 2026-09-24: All Vision and settings order
 
 - Core order: Turbo, Single Draft, Epic-Only, Kill Goal. Other order: Infinite Rerolls, Longer Wards, Invincible Wards, All Vision.
