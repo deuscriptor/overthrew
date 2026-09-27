@@ -433,3 +433,21 @@ clients remain manual checks.
   Both showed 50, and chat read «… 50 Слави!». The client log had no CSS or texture
   errors for the toast. The sub-second glint and coin pop could not be caught by
   `jpeg_screenshot`, so they need a human look.
+
+## 2026-09-27: Early "+1 kill goal" menu hidden
+
+- `EarlyConsumables:SendEarlyConsumablesState` returns early when
+  `GameLoop:HasFixedKillGoal()`, so the menu, which only appears on that state event,
+  never shows. `PlayerVoteAdditionalGoal` ignores votes there, because a vote still
+  extended the host's time limit. Other maps are unchanged.
+- Offline: new `test_early_consumables.lua` (in `run_tests.js`) covers both cases. The full
+  suite passes.
+- Dota Tools: on a fresh FFA match, a screenshot at 0:04 match time, inside the
+  20-second window, showed no menu.
+- GG Token: `WebInventory:ItemConsumeEvent` refuses `bp_gg_token` while the kill goal is
+  host-fixed, before consuming it, and shows the new
+  `dota_hud_error_gg_token_fixed_kill_goal` error (EN/RU/UK). `test_free_collection.lua`
+  covers refusal and other maps.
+- Dota Tools: `kill_goal_lock_smoke.lua` printed `KGLOCK PASS goal 40, time limit 1600`. No
+  menu state was sent, and the vote and token left the goal and time unchanged. A screenshot showed
+  the Ukrainian error «Мету вбивств задав хост, її не можна змінити» and no menu at 0:02.

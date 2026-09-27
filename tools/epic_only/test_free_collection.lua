@@ -30,6 +30,19 @@ assert(sent["WebInventory:update"].items.hat.count == 1)
 local used = false
 WebInventory:ConsumeItem(0, "treat", 1, function() used = true end)
 assert(used and WebInventory:GetItemCount(0,"treat") == 999)
+-- The GG token is refused (before it is consumed) while the host has fixed the kill goal.
+ITEM_DEFINITIONS.bp_gg_token = {type=1, rarity=1, on_consume=function(player_id) used = player_id end}
+GetMapName = function() return "ot3_necropolis_ffa" end
+local fixed, errors = true, {}
+GameLoop = {HasFixedKillGoal = function() return fixed end}
+DisplayError = function(player_id, message) table.insert(errors, {player_id, message}) end
+ErrorTracking = {Try = function(fn, ...) return fn(...) end}
+used = false
+WebInventory:ItemConsumeEvent({PlayerID=0, item_name="bp_gg_token"})
+assert(not used and errors[1][1] == 0 and errors[1][2] == "#dota_hud_error_gg_token_fixed_kill_goal")
+fixed = false
+WebInventory:ItemConsumeEvent({PlayerID=0, item_name="bp_gg_token"})
+assert(used == 0 and #errors == 1, "other maps keep the GG token")
 WebInventory:SetPlayerItems(0, {})
 assert(WebInventory:HasItem(0,"hat"), "Backend refresh must not remove local access")
 WebPlayer:UseCurrency(0, 500, function() end)

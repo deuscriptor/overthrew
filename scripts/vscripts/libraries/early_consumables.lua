@@ -29,6 +29,8 @@ end
 
 function EarlyConsumables:SendEarlyConsumablesState(player_id)
 	if not player_id or not PlayerResource:IsValidPlayerID(player_id) then return end
+	-- the host set the kill goal, so there is nothing to vote on: the menu is never shown
+	if GameLoop:HasFixedKillGoal() then return end
 	if GameRules:GetDOTATime(false, false) >= GAME_DURATION_OPTIONAL_EARLY_CONSUMABLES_TIME then return end
 	if self.early_consumables_closed_ui[player_id] then return end
 
@@ -42,6 +44,8 @@ end
 
 function EarlyConsumables:PlayerVoteAdditionalGoal(player_id)
 	if not player_id or not PlayerResource:IsValidPlayerID(player_id) then return end
+	-- a vote would still extend the host's time limit
+	if GameLoop:HasFixedKillGoal() then return end
 
 	if GameRules:GetDOTATime(false, false) < GAME_DURATION_OPTIONAL_EARLY_CONSUMABLES_TIME then
 		if EarlyConsumables:IsPlayerVotedForExtraGoal(player_id) then return end

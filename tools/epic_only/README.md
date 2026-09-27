@@ -302,6 +302,16 @@ Kill Goal scales the starting match limit as DEFAULT_MATCH_LENGTH * (Kill Goal /
 DEFAULT_MATCH_LENGTH is 1200 seconds: 30 kills gives 20 minutes, 60 gives 40 minutes.
 The same limit is used by the server and published to the HUD.
 
+Because the host fixes the Kill Goal, the early-game "+1 kill goal" menu
+(`early_consumables_menu`: the vote, GG Token and Double MMR Token) is never shown on
+this map, and the server ignores a vote there. Before this change, a vote left the goal
+unchanged but still extended the time limit. Other maps keep the menu.
+`test_early_consumables.lua` covers both cases.
+Using a GG Token (e.g. from the collection) is refused before it is consumed, with
+"The host set the Kill Goal, so it can't be changed"
+(`WebInventory:ItemConsumeEvent`, covered in `test_free_collection.lua`).
+`kill_goal_lock_smoke.lua` checks the vote, the menu state and the token in a tools match.
+
 ## Free local collection
 
 Premium benefits (tier 2) and all 269 bundled collection items are available in

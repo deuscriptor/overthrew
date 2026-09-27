@@ -10,7 +10,7 @@ Dota 2 custom game addon `overthrew`, a fork of Overthrow 3.0. Work branch `map-
 - Earlier separate-map variants (`ot3_ffa_epic`, `ot3_ffa_draft`, `ot3_ffa_epic_draft`) were removed; `tools/epic_only/Build-Map.ps1` is historical. No Hammer map source exists — VPKs are compiled only.
 
 **Host settings** (lobby host only, before hero pick; shown instead of guides/videos; **Apply & Start** locks them and begins picking):
-- Core: Single Draft (on), Turbo (on; 2x earned gold/XP), Epic-Only orbs (off; rerolls cost 1), Backpack Items (off; backpack slots keep working, see README), Kill Goal (default 50; match time = 1200s × goal/30)
+- Core: Single Draft (on), Turbo (on; 2x earned gold/XP), Epic-Only orbs (off; rerolls cost 1), Backpack Items (off; backpack slots keep working, see README), Kill Goal (default 50; match time = 1200s × goal/30); the early "+1 kill goal" voting menu is suppressed server-side and GG Tokens are refused
 - Other, in menu order: All Vision (on), Infinite Rerolls (on; 999), Longer Wards (on), Invincible Wards (on)
 - Items: Divine Rapier (on), Dagon (on); off = item disabled/disassembled
 - Also: cross-team Hero Swaps; free local premium/collection (backend writes blocked); scoreboard player tips (always on, local only: toast + chat + end-screen tally, 3/match, 30s cooldown, no currency moved; `libraries/webapi/tips.lua`).
@@ -46,7 +46,7 @@ Environment (verified 2026-09-26): Node.js v24 at `C:\Program Files\nodejs` (on 
 
 **2. In-game (Dota 2 Workshop Tools):**
 - Launch Dota with `-tools`, pick addon `overthrew`, then console: `dota_launch_custom_game overthrew ot3_necropolis_ffa` (Local Host lobby; host settings appear pre-pick).
-- Smoke scripts `scripts/vscripts/*_smoke.lua` run in a disposable tools session via `script_reload_code <name>` (e.g. `host_rules_smoke`, `turbo_smoke`, `host_settings_smoke`, `host_items_smoke`, `hero_swaps_smoke`, `hero_swaps_ui_smoke`, `invincible_wards_smoke`, `all_vision_smoke`, `free_collection_smoke`, `single_draft_smoke`, `backpack_items_smoke`, `host_claim_smoke`, `tips_smoke`). They print `..._PASS` markers or assert. Some mutate state — use fresh sessions.
+- Smoke scripts `scripts/vscripts/*_smoke.lua` run in a disposable tools session via `script_reload_code <name>` (e.g. `host_rules_smoke`, `turbo_smoke`, `host_settings_smoke`, `host_items_smoke`, `hero_swaps_smoke`, `hero_swaps_ui_smoke`, `invincible_wards_smoke`, `all_vision_smoke`, `free_collection_smoke`, `single_draft_smoke`, `backpack_items_smoke`, `host_claim_smoke`, `tips_smoke`, `kill_goal_lock_smoke`). They print `..._PASS` markers or assert. Some mutate state — use fresh sessions.
 - Send console commands from a terminal via VConsole (port 29000): `node tools/epic_only/vconsole.js 'script_reload_code host_rules_smoke'` (options `--port --wait-ms --listen-ms`).
 - Reloading: after Lua changes restart the map (`disconnect`, then `dota_launch_custom_game ...`); `script_reload` mid-match re-runs init and resets host options. HUD Panorama scripts reload on map restart, but the loading screen (host settings menu) only reloads after quitting and relaunching the client.
 - The Dota game window must be in the foreground, or Panorama stops laying out and screenshots are stale. `jpeg_screenshot <name>` writes to `game/dota/screenshots/`.

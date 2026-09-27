@@ -2847,6 +2847,7 @@ If you do not send us your steam URL or steamID we wont be adle to grant you ben
 		"reroll_tooltip_consumable"			"Reroll selection using <font color='#DF0101'>CONSUMABLE REROLLS</font>.<br>Rerolling a Common / <font color='#007cff'>Rare</font> / <font color='#e400ff'>Epic</font> Upgrade costs 1 / <font color='#007cff'>2</font> / <font color='#e400ff'>4</font> rerolls."
 		"dota_hud_error_cant_equip_unowned_item"	"Can't equip item you don't own!"
 		"dota_hud_error_cannot_use_consumables_in_demo_mode"	"Cannot use Consumable items in Demo mode!"
+		"dota_hud_error_gg_token_fixed_kill_goal"	"The host set the Kill Goal, so it can't be changed"
 
 		"banner_battle_pass_header"	"BATTLE PASS"
 		"banner_battle_pass_header_arrived"	"HAS ARRIVED!"

@@ -118,3 +118,13 @@ assert.equal(tips.error, undefined);
 assert.equal(tips.status, 0);
 assert.equal((tips.stderr || '').trim(), '');
 assert.match(tips.stdout, /PASS tips:/);
+const earlyConsumables = spawnSync(process.execPath, [
+  path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
+  'tools/epic_only/test_early_consumables.lua',
+], { cwd: root, encoding: 'utf8' });
+if (earlyConsumables.stdout) process.stdout.write(earlyConsumables.stdout);
+if (earlyConsumables.stderr) process.stderr.write(earlyConsumables.stderr);
+assert.equal(earlyConsumables.error, undefined);
+assert.equal(earlyConsumables.status, 0);
+assert.equal((earlyConsumables.stderr || '').trim(), '');
+assert.match(earlyConsumables.stdout, /PASS early consumables:/);
