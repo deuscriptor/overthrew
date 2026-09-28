@@ -14,12 +14,8 @@ HOST_OPTION = {
 	BOTS = "fill_with_bots"
 }
 
-local HOST_CLAIM_FALLBACK_DELAY = 30
--- Fall back even if a player never finishes loading, so setup cannot stall.
-local HOST_CLAIM_FALLBACK_MAX_WAIT = 120
-local HOST_CLAIM_MAX_FAILURES = 5
--- Registered only by client.dll: present when a game client shares the server process.
-local CLIENT_ONLY_CONVAR = "dota_camera_distance"
+-- Stop waiting for a lobby owner who never finishes loading, so setup cannot stall.
+local HOST_LOADING_MAX_WAIT = 120
 
 function HostOptions:Init()
 	HostOptions.options = {}
@@ -28,7 +24,7 @@ function HostOptions:Init()
 	}
 	HostOptions.host = nil
 	HostOptions.locked = false
-	HostOptions:InitHostClaim()
+	HostOptions.leader_wait_expired = false
 	if UsesHostRules() then
 		HostOptions.available_options.kill_goal = true
 		HostOptions.options.kill_goal = 50
@@ -58,7 +54,7 @@ function HostOptions:Init()
 	EventDriver:Listen("Events:state_changed", function(event)
 		if event.state == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
 			HostOptions:UpdateHostPlayer()
-			HostOptions:ScheduleClaimFallback()
+			HostOptions:WatchHostLoading()
 		end
 
 		if event.state == DOTA_GAMERULES_STATE_HERO_SELECTION then
@@ -97,95 +93,45 @@ function HostOptions:SetOptionState(option_name, state)
 	if UsesHostRules() then self:PublishRules() end
 end
 
--- Scripts cannot see the lobby owner, and on Local Host both native host privileges
--- and GetListenServerHost() follow client connection order (the first client to load).
--- The lobby owner's client runs inside the server process and shares its convars, so
--- only its client VM can read this random token and claim host (libraries/host_claim).
--- Local Host lobbies can report IsDedicatedServer(), so check for an in-process client.
-function HostOptions:InitHostClaim()
-	-- Keep an accepted claim across script reloads; the owner's client claims only once.
-	if self.claim_token then return end
-	if Convars:GetStr(CLIENT_ONLY_CONVAR) == nil then
-		print("[Host Options] no game client in the server process, using native host privileges")
-		return
-	end
-	if Convars:GetStr(HOST_CLAIM_CONVAR) == nil then
-		Convars:RegisterConvar(HOST_CLAIM_CONVAR, "0", "Local Host owner verification token", 0)
-	end
-	if not self.claim_command_registered then
-		self.claim_command_registered = true
-		Convars:RegisterCommand(HOST_CLAIM_COMMAND, function(_, token)
-			local pawn = Convars:GetCommandClient()
-			local player = IsValidEntity(pawn) and pawn:GetController() or nil
-			if IsValidEntity(player) then HostOptions:ClaimHost(player, tonumber(token)) end
-		end, "Local Host owner verification", 0)
-	end
-	self.claim_token = RandomInt(1, 0x3FFFFFFF)
-	self.claim_failures = {}
-	self.claim_fallback = false
-	self.owner_id = nil
-	Convars:SetInt(HOST_CLAIM_CONVAR, self.claim_token)
-	print("[Host Options] waiting for the Local Host owner's claim")
+-- Scripts get no lobby owner from the engine. Native host privileges and
+-- GetListenServerHost() follow connection order, and a Local Host server does not always
+-- run on the owner's PC, so "shares the server process" finds the hosting machine, not the
+-- owner. Player IDs, however, come from lobby slots (the server logs "Initializing from
+-- lobby ... preferred PlayerID"), and the owner creates the lobby in its first slot.
+function HostOptions:IsRealPlayerID(id)
+	return PlayerResource:IsValidPlayerID(id) and not PlayerResource:IsFakeClient(id)
 end
 
-function HostOptions:ClaimHost(player, token)
-	if not self.claim_token or self.owner_id or self.locked then return false end
-	local id = player:GetPlayerID()
-	if not PlayerResource:IsValidPlayerID(id) then return false end
-	local failures = self.claim_failures[id] or 0
-	if failures >= HOST_CLAIM_MAX_FAILURES then return false end
-	if token ~= self.claim_token then
-		self.claim_failures[id] = failures + 1
-		return false
-	end
-	self.owner_id = id
-	print("[Host Options] Local Host owner claimed host: player", id)
-	self:UpdateHostPlayer()
-	if UsesHostRules() then self:PublishRules() end
-	return true
-end
-
-function HostOptions:AllPlayersLoaded()
+function HostOptions:WatchHostLoading()
 	for id = 0, DOTA_MAX_TEAM_PLAYERS - 1 do
-		if PlayerResource:IsValidPlayerID(id)
-			and PlayerResource:GetConnectionState(id) == DOTA_CONNECTION_STATE_NOT_YET_CONNECTED then
-			return false
+		if PlayerResource:IsValidPlayerID(id) then
+			local player = PlayerResource:GetPlayer(id)
+			-- Logged for comparison with the lobby's leader_id; not used to pick the host.
+			local native = IsValidEntity(player) and GameRules:PlayerHasCustomGameHostPrivileges(player)
+			print("[Host Options] player", id, "account", PlayerResource:GetSteamAccountID(id),
+				PlayerResource:GetPlayerName(id), "connection", PlayerResource:GetConnectionState(id),
+				"native host", native)
 		end
 	end
-	return true
-end
-
-function HostOptions:ScheduleClaimFallback()
-	if not self.claim_token or self.owner_id then return end
-	local started, loaded_since = Time(), nil
-	Timers:CreateTimer({useGameTime = false, callback = function()
-		if self.owner_id or self.locked or GameRules:State_Get() ~= DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then return end
-		-- The owner may still be loading: count down only once everyone has loaded,
-		-- or the first loader would take over through native privileges.
-		if self:AllPlayersLoaded() then loaded_since = loaded_since or Time() else loaded_since = nil end
-		local now = Time()
-		if now - started < HOST_CLAIM_FALLBACK_MAX_WAIT
-			and (not loaded_since or now - loaded_since < HOST_CLAIM_FALLBACK_DELAY) then
-			return 1
-		end
-		-- Never leave setup without a host if the owner's client could not claim.
-		print("[Host Options] no Local Host owner claim received, using native host privileges")
-		self.claim_fallback = true
+	Timers:CreateTimer({useGameTime = false, endTime = HOST_LOADING_MAX_WAIT, callback = function()
+		if self.locked or GameRules:State_Get() ~= DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then return end
+		self.leader_wait_expired = true
 		self:UpdateHostPlayer()
 	end})
 end
 
+-- The lowest real player ID is the lobby's first member: its owner. Load order plays no
+-- part: while that player is still loading, nobody is host.
 function HostOptions:ResolveHost()
-	if self.owner_id then
-		local player = PlayerResource:GetPlayer(self.owner_id)
-		return IsValidEntity(player) and player or nil
-	end
-	-- Wait for the Local Host owner's claim instead of trusting connection order.
-	if self.claim_token and not self.claim_fallback then return nil end
 	for id = 0, DOTA_MAX_TEAM_PLAYERS - 1 do
-		local player = PlayerResource:GetPlayer(id)
-		if IsValidEntity(player) and GameRules:PlayerHasCustomGameHostPrivileges(player) then
-			return player
+		if self:IsRealPlayerID(id) then
+			local state = PlayerResource:GetConnectionState(id)
+			if state == DOTA_CONNECTION_STATE_CONNECTED then
+				local player = PlayerResource:GetPlayer(id)
+				return IsValidEntity(player) and player or nil
+			end
+			if state == DOTA_CONNECTION_STATE_NOT_YET_CONNECTED and not self.leader_wait_expired then return nil end
+			-- Disconnected, abandoned or failed to load: the next member leads.
 		end
 	end
 end
@@ -195,7 +141,12 @@ function HostOptions:IsHost(player)
 end
 
 function HostOptions:PublishRules()
+	local previous = self.host
 	self.host = self:ResolveHost()
+	if self.host ~= previous and IsValidEntity(self.host) then
+		print("[Host Options] host is player", self.host:GetPlayerID())
+		CustomGameEventManager:Send_ServerToPlayer(self.host, "HostOptions:show", {available_options = self.available_options})
+	end
 	local host_id = IsValidEntity(self.host) and self.host:GetPlayerID() or -1
 	local rules = {
 		host_id = host_id, locked = self.locked and 1 or 0,
@@ -270,6 +221,7 @@ end
 
 function HostOptions:UpdateHostPlayer()
 	self.host = self:ResolveHost()
+	print("[Host Options] host is player", IsValidEntity(self.host) and self.host:GetPlayerID() or "none (lobby owner still loading)")
 	if IsValidEntity(self.host) then
 		CustomGameEventManager:Send_ServerToPlayer(self.host, "HostOptions:show", {
 			available_options = self.available_options,
