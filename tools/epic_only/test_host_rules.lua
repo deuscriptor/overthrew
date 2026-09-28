@@ -4,7 +4,6 @@ local map = "ot3_necropolis_ffa"
 GetMapName = function() return map end
 DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP = 2
 local state = DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP
-local host = 0
 local finished, initialized, bans = 0, 0, nil
 local fogDisabled
 GameRules.GetGameModeEntity = function() return {
@@ -12,26 +11,24 @@ GameRules.GetGameModeEntity = function() return {
 } end
 local players = {{id = 0}, {id = 1}}
 for _, player in ipairs(players) do player.GetPlayerID = function(self) return self.id end end
-local dedicated = true
-IsDedicatedServer = function() return dedicated end
 -- Connection-order signals must not decide the host.
-GetListenServerHost = function() return {GetController = function() return players[1] end} end
-local convars, commands, commandClient = {}, {}, nil
-Convars = {
-    GetStr = function(_, name) return convars[name] end,
-    RegisterConvar = function(_, name, value) convars[name] = value end,
-    SetInt = function(_, name, value) convars[name] = tostring(value) end,
-    RegisterCommand = function(_, name, callback) commands[name] = callback end,
-    GetCommandClient = function() return commandClient end,
-}
-RandomInt = function() return 123456 end
+GetListenServerHost = function() return {GetController = function() return players[2] end} end
 local fallback
 Timers = {CreateTimer = function(_, args) fallback = args end}
 PlayerResource.IsValidPlayerID = function(_, id) return id == 0 or id == 1 end
 PlayerResource.GetPlayer = function(_, id) return players[id + 1] end
 IsValidEntity = function(p) return p ~= nil end
 GameRules.State_Get = function() return state end
-GameRules.PlayerHasCustomGameHostPrivileges = function(_, p) return p.id == host end
+-- Native privileges follow load order; player 1 loaded first. They must be ignored.
+GameRules.PlayerHasCustomGameHostPrivileges = function(_, p) return p.id == 1 end
+local now, connection, fake = 0, {}, {}
+Time = function() return now end
+DOTA_CONNECTION_STATE_NOT_YET_CONNECTED, DOTA_CONNECTION_STATE_CONNECTED = 1, 2
+DOTA_CONNECTION_STATE_DISCONNECTED, DOTA_CONNECTION_STATE_ABANDONED = 3, 4
+PlayerResource.GetConnectionState = function(_, id) return connection[id] or DOTA_CONNECTION_STATE_CONNECTED end
+PlayerResource.IsFakeClient = function(_, id) return fake[id] == true end
+PlayerResource.GetPlayerName = function(_, id) return "player" .. id end
+PlayerResource.GetSteamAccountID = function(_, id) return 1000 + id end
 GameRules.SetCustomGameBansPerTeam = function(_, n) bans = n end
 GameRules.FinishCustomGameSetup = function() finished = finished + 1 end
 local listeners = {}
@@ -47,8 +44,6 @@ SingleDraft.Init = function() if IsSingleDraftMap() then initialized = initializ
 HostItems = {ApplyRules = function() end}
 local backpackApplied = 0
 BackpackItems = {ApplyRules = function() backpackApplied = backpackApplied + 1 end}
-IsClient = function() return false end
-dofile("scripts/vscripts/libraries/host_claim.lua")
 dofile("scripts/vscripts/libraries/host_options.lua")
 GameLoop.current_layout = TEAMS_LAYOUTS.ot3_necropolis_ffa
 for draft = 0, 1 do for epic = 0, 1 do for turbo = 0, 1 do
@@ -119,8 +114,9 @@ for _, name in ipairs({"backpack_items", "infinite_rerolls", "all_vision", "invi
     assert(HostOptions:GetOption(name) == (value == 1), "locked new flag changed")
 end
 assert(backpackApplied > 0, "Applying rules must configure Backpack Items")
+-- Lobby order: when the lobby's first member (player 0) has left, the next one leads.
 HostOptions:Init()
-host = 1
+connection[0] = DOTA_CONNECTION_STATE_ABANDONED
 assert(not HostOptions:ApplyRules({PlayerID=0, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, kill_goal=30}))
 for _, invalid in ipairs({0, -1, 1.5, "30", false, math.huge, 2147483648}) do
     assert(not HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, kill_goal=invalid}))
@@ -128,134 +124,62 @@ for _, invalid in ipairs({0, -1, 1.5, "30", false, math.huge, 2147483648}) do
     assert(HostOptions.options.kill_goal == 50)
 end
 assert(HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, kill_goal=30}))
+connection[0] = nil
 HostOptions:Init()
 state = DOTA_GAMERULES_STATE_HERO_SELECTION
-assert(not HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=1, epic_orbs=1, turbo=1, backpack_items=0, kill_goal=30}))
--- First loader owns native privileges and the listen-server slot, but only the client
--- that reads the server's convar token (the Local Host lobby owner) may edit/start.
+assert(not HostOptions:ApplyRules({PlayerID=0, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=1, epic_orbs=1, turbo=1, backpack_items=0, kill_goal=30}))
 state = DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP
--- Valve servers have no game client in the process: native privileges, no waiting.
+-- The lowest player ID (the lobby's first slot) leads. The first loader (player 1, who
+-- holds native privileges and the listen-server slot) gains nothing.
 HostOptions:Init()
+connection[0] = DOTA_CONNECTION_STATE_NOT_YET_CONNECTED
 HostOptions:PublishRules()
-assert(HostOptions.claim_token == nil and publishedRules.host_id == host, "server without a local client must not wait for a claim")
--- Local Host lobbies can report a dedicated server; the in-process client is what counts.
-dedicated, host = true, 0
-convars.dota_camera_distance = "1200"
-HostOptions:Init()
-assert(convars[HOST_CLAIM_CONVAR] == "123456", "claim token must be published in a server convar")
+assert(publishedRules.host_id == -1, "first loader became host while the lobby owner was loading")
+assert(not HostOptions:IsHost(players[2]))
+connection[0] = nil
 HostOptions:PublishRules()
-assert(publishedRules.host_id == -1, "must wait for local owner, not fall back to first loader")
-assert(not HostOptions:IsHost(players[1]))
--- The engine attributes the claim command to the issuing client's pawn.
-local function claim(id, token)
-    commandClient = {GetController = function() return players[id + 1] end}
-    commands[HOST_CLAIM_COMMAND](HOST_CLAIM_COMMAND, tostring(token))
-end
-claim(0, 1)
-commandClient = nil
-commands[HOST_CLAIM_COMMAND](HOST_CLAIM_COMMAND, "123456")
-assert(publishedRules.host_id == -1, "wrong or unattributed claim accepted")
-claim(1, 123456)
-assert(publishedRules.host_id == 1 and HostOptions.host == players[2])
-claim(0, 123456)
-assert(publishedRules.host_id == 1, "owner claim must survive later failed claims")
-HostOptions:Init()
+assert(publishedRules.host_id == 0, "lobby owner did not get host once loaded")
+fake[0] = true
 HostOptions:PublishRules()
-assert(publishedRules.host_id == 1, "script reload lost the owner claim")
+assert(publishedRules.host_id == 1, "bot treated as lobby owner")
+fake[0] = nil
+connection[0] = DOTA_CONNECTION_STATE_DISCONNECTED
+HostOptions:PublishRules()
+assert(publishedRules.host_id == 1, "disconnected owner must pass host to the next member")
+connection[0] = nil
+HostOptions:PublishRules()
+assert(publishedRules.host_id == 0, "reconnected owner must get host back")
 local edits = listeners["HostOptions:set_option_state"]
-edits({PlayerID=0, name="kill_goal", state=70}, 0)
-edits({PlayerID=1, name="kill_goal", state=70}, 0)
+edits({PlayerID=1, name="kill_goal", state=70}, 1)
+edits({PlayerID=0, name="kill_goal", state=70}, 1)
 assert(HostOptions.options.kill_goal == 50, "non-owner or forged edit accepted")
-edits({PlayerID=1, name="kill_goal", state=60}, 1)
+edits({PlayerID=0, name="kill_goal", state=60}, 0)
 assert(HostOptions.options.kill_goal == 60)
 local apply = listeners["HostOptions:apply_rules"]
-local event = {PlayerID=0, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, kill_goal=60}
-apply(event, 0)
-assert(not HostOptions.locked, "first loader started match")
-event.PlayerID = 1
-apply(event, 0)
-assert(not HostOptions.locked, "forged owner started match")
+local event = {PlayerID=1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, kill_goal=60}
 apply(event, 1)
-assert(HostOptions.locked, "actual local owner could not start match")
-local owner = players[2]
-players[2] = nil
-HostOptions:PublishRules()
-assert(publishedRules.host_id == -1 and HostOptions.host == nil, "stale owner retained")
-players[2] = owner
--- Guessing is capped per player.
-HostOptions.claim_token = nil
+assert(not HostOptions.locked, "first loader started match")
+event.PlayerID = 0
+apply(event, 1)
+assert(not HostOptions.locked, "forged owner started match")
+apply(event, 0)
+assert(HostOptions.locked, "lobby owner could not start match")
+-- A lobby owner who never finishes loading cannot stall setup.
 HostOptions:Init()
-for token = 1, 5 do claim(0, token) end
-claim(0, 123456)
-HostOptions:PublishRules()
-assert(publishedRules.host_id == -1, "claim accepted after repeated wrong tokens")
--- Without any claim, setup falls back to native privileges instead of stalling, but only
--- after everyone has loaded: a still-loading owner must not lose host to the first loader.
-local now, connection = 0, {}
-Time = function() return now end
-DOTA_CONNECTION_STATE_NOT_YET_CONNECTED = DOTA_CONNECTION_STATE_NOT_YET_CONNECTED or 1
-PlayerResource.GetConnectionState = function(_, id) return connection[id] or 2 end
-HostOptions.claim_token = nil
-HostOptions:Init()
+connection[0] = DOTA_CONNECTION_STATE_NOT_YET_CONNECTED
 fallback = nil
-connection[1] = DOTA_CONNECTION_STATE_NOT_YET_CONNECTED
-HostOptions:ScheduleClaimFallback()
-assert(fallback and fallback.useGameTime == false)
-now = 10
-assert(fallback.callback() == 1, "fell back while a player was still loading")
-connection[1] = nil
-assert(fallback.callback() == 1)
-now = 39
-assert(fallback.callback() == 1)
+HostOptions:WatchHostLoading()
+assert(fallback and fallback.useGameTime == false and fallback.endTime == 120)
 HostOptions:PublishRules()
 assert(publishedRules.host_id == -1)
-now = 40
-assert(fallback.callback() == nil)
+fallback.callback()
 HostOptions:PublishRules()
-assert(publishedRules.host_id == 0, "fallback must use native host privileges")
-claim(1, 123456)
-assert(publishedRules.host_id == 1, "late owner claim must replace the fallback host")
--- A player stuck loading cannot stall setup forever.
-HostOptions.claim_token = nil
+assert(publishedRules.host_id == 1, "stuck lobby owner stalled setup")
+connection[0] = nil
 HostOptions:Init()
-now = 0
-connection[1] = DOTA_CONNECTION_STATE_NOT_YET_CONNECTED
-HostOptions:ScheduleClaimFallback()
-now = 119
-assert(fallback.callback() == 1)
-now = 120
-assert(fallback.callback() == nil)
 HostOptions:PublishRules()
-assert(publishedRules.host_id == 0, "stuck loader stalled the fallback")
-connection[1] = nil
-dedicated = true
+assert(publishedRules.host_id == 0, "script reload must restore lobby order")
 map = "ot3_gardens_duo"
 assert(not IsEpicOnlyMap() and not IsSingleDraftMap() and not IsFlatRerollMap())
--- Client VM: only a client that can read the server's token convar sends the claim.
-local sent, stateListener = {}, nil
-IsClient = function() return true end
--- The real client VM lacks the DOTA_GAMERULES_STATE_* constants.
-local setupState = DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP
-DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP = nil
-SendToConsole = function(command) table.insert(sent, command) end
-ListenToGameEvent = function(name, callback) if name == "game_rules_state_change" then stateListener = callback end end
-convars[HOST_CLAIM_CONVAR] = nil
-state = setupState
-dofile("scripts/vscripts/libraries/host_claim.lua")
-assert(#sent == 0, "remote clients cannot read the server token")
-convars[HOST_CLAIM_CONVAR] = "0"
-stateListener()
-assert(#sent == 0, "unset token claimed")
-convars[HOST_CLAIM_CONVAR] = "123456"
-state = setupState + 1
-stateListener()
-assert(#sent == 0, "claim sent outside setup")
-state = setupState
-stateListener()
-assert(sent[1] == HOST_CLAIM_COMMAND .. " 123456", "setup did not trigger the claim")
-dofile("scripts/vscripts/libraries/host_claim.lua")
-assert(sent[2] == HOST_CLAIM_COMMAND .. " 123456", "client VM loaded during setup did not claim")
-DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP = setupState
-IsClient = function() return false end
 dofile("tools/epic_only/test_turbo.lua")
 output("PASS host rules: all eight combinations, Epic-linked rerolls, host authorization, migration, validation, locking and one-time start")

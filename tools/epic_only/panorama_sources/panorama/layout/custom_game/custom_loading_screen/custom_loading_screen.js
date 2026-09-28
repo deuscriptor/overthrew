@@ -278,8 +278,8 @@ function InitMatchRules() {
 	}
 	const categories = [
 		{ id: "core", options: ["single_draft", "turbo", "epic_orbs", "backpack_items", "kill_goal"] },
-		{ id: "other", options: ["all_vision", "infinite_rerolls", "longer_wards", "invincible_wards"] },
 		{ id: "items", options: ["divine_rapier", "dagon"] },
+		{ id: "other", options: ["all_vision", "infinite_rerolls", "longer_wards", "invincible_wards"] },
 	];
 	// Category tabs replace the per-page heading; unvisited pages glow until opened.
 	const tabBar = $.CreatePanel("Panel", panel, "MatchRulesTabs");
@@ -437,23 +437,35 @@ function InitMatchRules() {
 	}
 	start.SetPanelEvent("onmouseover", function() { startHovered = true; styleStart(); });
 	start.SetPanelEvent("onmouseout", function() { startHovered = false; styleStart(); });
-	const waiting = $.CreatePanel("Label", panel, "WaitingForHost");
-	waiting.style.horizontalAlign = "center";
-	waiting.style.marginTop = "16px";
-	waiting.style.padding = "10px 26px";
-	waiting.style.fontFamily = "Radiance";
-	waiting.style.fontSize = "18px";
-	waiting.style.color = "#f0f2f5cc";
-	waiting.style.textShadow = "0px 1px 3px #00000066";
-	waiting.style.width = "240px";
-	waiting.style.textAlign = "center";
+	// Non-hosts get a status card in Apply & Start's place and footprint, so the five rows still fit.
+	const waiting = $.CreatePanel("Panel", panel, "WaitingForHost");
+	css(waiting, {horizontalAlign: "center", marginTop: "12px", minWidth: "220px", height: "42px", padding: "0px 22px 0px 12px",
+		flowChildren: "right", backgroundColor: "gradient(linear, 0% 0%, 100% 100%, from(#1a2835), to(#0b121a))",
+		border: "1px solid #415465", borderRadius: "3px", boxShadow: "#000000aa 0px 2px 8px 0px"});
 	waiting.hittest = false;
-	let waitingDots = 0;
+	// Gold dots pulse in turn, like the pager's current-page pill. Panels clip their children, so the
+	// padding leaves room for the lifted dot and its glow.
+	const waitingDots = $.CreatePanel("Panel", waiting, "WaitingForHostDots");
+	css(waitingDots, {flowChildren: "right", verticalAlign: "center", padding: "6px", marginRight: "8px"});
+	for (let i = 0; i < 3; i++) {
+		css($.CreatePanel("Panel", waitingDots, ""), {width: "8px", height: "8px", marginLeft: i ? "5px" : "0px", borderRadius: "4px",
+			backgroundColor: GOLD, transitionProperty: "opacity, box-shadow, transform", transitionDuration: "0.25s"});
+	}
+	const waitingText = $.CreatePanel("Panel", waiting, "");
+	css(waitingText, {flowChildren: "down", verticalAlign: "center"});
+	css(label(waitingText, "#host_rules_waiting"), {marginBottom: "0px", fontSize: "15px", fontWeight: "bold",
+		letterSpacing: "1.5px", textTransform: "uppercase", color: "#f3dfae", textShadow: "0px 1px 2px 1.0 #000000aa"});
+	css(label(waitingText, "#host_rules_waiting_detail"), {marginBottom: "0px", fontSize: "13px", color: "#8da6b5"});
+	let waitingStep = 0;
 	function animateWaiting() {
 		if (!waiting.IsValid()) return;
-		waitingDots = waitingDots % 3 + 1;
-		waiting.text = $.Localize("#host_rules_waiting") + ".".repeat(waitingDots);
-		$.Schedule(0.6, animateWaiting);
+		waitingDots.Children().forEach(function(dot, index) {
+			const lit = index === waitingStep;
+			css(dot, {opacity: lit ? "1" : "0.3", boxShadow: lit ? "#d4bb8699 0px 0px 6px 0px" : "#00000000 0px 0px 0px 0px",
+				transform: lit ? "translate3d(0px, -2px, 0px)" : "translate3d(0px, 0px, 0px)"});
+		});
+		waitingStep = (waitingStep + 1) % 3;
+		$.Schedule(0.3, animateWaiting);
 	}
 	animateWaiting();
 	start.SetPanelEvent("onactivate", function() {

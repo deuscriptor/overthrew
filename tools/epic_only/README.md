@@ -24,31 +24,26 @@ and navigation remain for future settings pages. The menu shows category
 tabs, options, and the apply button; it omits explanatory paragraphs. Each option
 row shows an on/off switch and a one-line hover tooltip (`host_rules_<name>_tip`),
 and Kill Goal shows the resulting base time limit (40 seconds per kill).
-**Apply & Start** freezes the settings and begins hero selection. On Local Host,
-native custom-game privileges and `GetListenServerHost()` both follow connection
-order (the first client to load), and scripts cannot see the lobby owner. The
-server therefore publishes a random token in the non-replicated convar
-`overthrew_host_claim`. Only the lobby owner's client runs inside the server
-process, so only its client Lua VM can read the token
-(`libraries/host_claim.lua`). When setup begins, that VM sends the token back
-with the console command `overthrew_claim_host`. The engine attributes the
-command to the issuing player. Panorama cannot read Lua-registered convars, so
-the claim goes through the client VM. The first valid claim is final. Each
-player gets five wrong guesses. Until a claim arrives, nobody receives settings access.
-If no claim arrives within 30 seconds of every player having loaded, native
-privileges are used so that setup cannot stall. The countdown waits for loading so
-that a slow owner does not lose host to the first loader. After 120 seconds of
-setup, native privileges are used regardless, in case a player never finishes
-loading. The claim path is chosen by whether a game client shares the server
-process (the client-only convar `dota_camera_distance` exists), not by
-`IsDedicatedServer()`, since Local Host lobbies can report a dedicated server.
-Valve servers have no in-process client and use native custom-game host
-privileges immediately. The server logs which path it took (`[Host Options]`
-lines).
+**Apply & Start** freezes the settings and begins hero selection. The host is the
+lobby owner, chosen by **lobby order**. Player IDs come from lobby slots (the server
+logs `Initializing from lobby ... preferred PlayerID`), and the owner creates the
+lobby in its first slot. So the host is the lowest-ID human (non-bot) player. Load
+order plays no part: while that player is still loading, nobody is host. If they
+disconnect, abandon or fail to load, the next member leads until they return. After
+120 seconds of setup, players who have not finished loading are skipped, so setup
+cannot stall. The server logs every player's ID, account and connection state at
+setup, and each host change (`[Host Options]` lines, visible with `-condebug`).
+
+Rejected signals: native custom-game host privileges and `GetListenServerHost()`
+follow connection order. Proving that a client shares the server process (a convar
+token read by the client VM) works in live Local Host lobbies, but it identifies the
+machine running the server. Dota does not always host on the lobby owner's PC.
+
 Everyone sees the host's current settings; only the current host can
 change them. The server rejects changes after setup and duplicate start requests.
-Non-host players see a soft white **Waiting for host...** message in place of
-Apply & Start, with dots cycling every 0.6 seconds.
+Non-host players see a **Waiting for the host** status card in place of Apply &
+Start, with the same size and position, so all five rows still fit. Its three gold
+dots pulse in turn every 0.3 seconds.
 
 **Invincible Wards**, last on the Other page, defaults on. It
 protects placed Observer and Sentry wards from attacks and damage without
@@ -292,10 +287,10 @@ disposable local Tools session with a synthetic second player;
 `hero_swaps_ui_smoke.lua` checks acceptance through the actual client button.
 These checks do not replace an online multiplayer test.
 
-## Other and Items settings
+## Items and Other settings
 
-The setup menu has one category per page: Core, Other, Items. Clickable
-Core/Other/Items tabs switch pages, and unvisited tabs glow gold. Apply & Start is
+The setup menu has one category per page: Core, Items, Other. Clickable
+Core/Items/Other tabs switch pages, and unvisited tabs glow gold. Apply & Start is
 available on every page.
 
 Below the panel, the loading screen's own arrows and page bullets are regrouped into a

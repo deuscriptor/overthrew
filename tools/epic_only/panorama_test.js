@@ -187,7 +187,7 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	const context = vm.createContext({LOADING_HUD: {CONTEXT: root, MOVIE_CONTAINER: root, BULLETS_ROOT: bulletsRoot}, hints: [], InitHints: initHints,
 		SetHint: index => pagesRequested.push(index),
 		$: {CreatePanel: (type, parent, id) => new Panel(id, type, parent), Localize: value => value,
-			Schedule: (delay, callback) => { if (delay === 0.6) waitingFrames.push(callback); }},
+			Schedule: (delay, callback) => { if (delay === 0.3) waitingFrames.push(callback); }},
 		Game: {GetLocalPlayerID: () => 0},
 		GameEvents: {SendToServerEnsured: (name, args) => requests.push({name, args})},
 		CustomNetTables: {GetTableValue: () => data, SubscribeNetTableListener: (table, fn) => { listener = fn; }},
@@ -233,7 +233,8 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	assert.equal(root.FindChildTraverse("MatchRules_core").visible, true);
 	assert.equal(root.FindChildTraverse("MatchRules_other").visible, false);
 	assert.deepEqual(root.FindChildTraverse("MatchRules_other").children.filter(p => p.paneltype === "ToggleButton").map(p => p.id), ["Rule_all_vision", "Rule_infinite_rerolls", "Rule_longer_wards", "Rule_invincible_wards"]);
-	const tabs = ["core", "other", "items"].map(id => root.FindChildTraverse("MatchRulesTab_" + id));
+	assert.deepEqual(root.FindChildTraverse("MatchRulesTabs").children.map(p => p.id), ["MatchRulesTab_core", "MatchRulesTab_items", "MatchRulesTab_other"], "tab order: Core, Items, Other");
+	const tabs = ["core", "items", "other"].map(id => root.FindChildTraverse("MatchRulesTab_" + id));
 	assert.equal(tabs[1].caption.style.color, "#dfc58b", "unvisited tab glows");
 	tabs[1].events.onactivate();
 	assert.deepEqual(pagesRequested, [1], "tabs open their settings page");
@@ -246,14 +247,14 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	assert.equal(tabs[0].caption.style.color, "#7f95a6", "visited tab no longer glows");
 	assert.equal(tabs[2].caption.style.color, "#dfc58b");
 	assert.equal(root.FindChildTraverse("MatchRules_core").visible, false);
-	assert.equal(root.FindChildTraverse("MatchRules_other").visible, true);
+	assert.equal(root.FindChildTraverse("MatchRules_items").visible, true);
 	assert.equal(arrowLeft.enabled, true, "both arrows available on a middle page");
 	assert.equal(arrowLeft.style.border, "1px solid #dfc58b", "untouched previous arrow glows once available");
 	assert.deepEqual(bullets().map(b => b.style.width), ["8px", "22px", "8px"]);
 	assert.equal(bullets()[0].style.backgroundColor, "#7f95a6", "visited page bullet stops glowing");
 	assert.equal(bullets()[2].style.backgroundColor, "#dfc58b");
 	vm.runInContext("matchRulesPageChanged(2)", context);
-	assert.equal(root.FindChildTraverse("MatchRules_items").visible, true);
+	assert.equal(root.FindChildTraverse("MatchRules_other").visible, true);
 	assert.equal(arrowRight.enabled, false, "no next page on the last page");
 	assert.equal(vm.runInContext("hints[0][0]", context), "settings");
 	const start = root.FindChildTraverse("ApplyMatchRules");
@@ -278,10 +279,17 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	listener("game_options", "match_rules");
 	assert.equal(start.visible, false, "non-host cannot start");
 	assert.equal(waiting.visible, true);
-	assert.equal(waiting.text, "#host_rules_waiting.");
-	for (const dots of ["..", "...", "."]) {
+	// Status card in Apply & Start's footprint (42px + 12px margin), so the five rows still fit.
+	assert.equal(waiting.style.height, start.style.height);
+	assert.equal(waiting.style.marginTop, start.style.marginTop);
+	const waitingLabels = waiting.children[1].children.map(p => p.text);
+	assert.deepEqual(waitingLabels, ["#host_rules_waiting", "#host_rules_waiting_detail"], "no dots appended to the text");
+	const litDots = () => root.FindChildTraverse("WaitingForHostDots").children.map(dot => dot.style.opacity === "1");
+	assert.deepEqual(litDots(), [true, false, false]);
+	assert.equal(root.FindChildTraverse("WaitingForHostDots").style.padding, "6px", "room for the lifted dot's glow, not clipped");
+	for (const lit of [[false, true, false], [false, false, true], [true, false, false]]) {
 		waitingFrames.shift()();
-		assert.equal(waiting.text, "#host_rules_waiting" + dots);
+		assert.deepEqual(litDots(), lit, "gold dots pulse in turn");
 	}
 	assert.equal(root.FindChildTraverse("Rule_single_draft").enabled, false);
 	assert.equal(goal.enabled, false);

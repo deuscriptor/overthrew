@@ -214,6 +214,41 @@ requires a map reload; a running user game was not interrupted to test it.
 - Tools map restart: `[Host Options] waiting for the Local Host owner's claim`, then `Local Host owner claimed host: player 0`. `host_claim_smoke.lua`: `HOST_CLAIM_PASS owner 0`.
 - Not verified: a real Local Host lobby. Tools cannot create lobbies ("Cannot start matchmaking with -insecure, -dev or -tools"). Whether the lobby server shares the owner's process is untested; if it runs as a separate process, the claim cannot work and native privileges are used immediately (logged as `no game client in the server process`).
 
+## 2026-09-28: settings pages reordered to Core, Items, Other
+
+- `panorama_test.js` checks the tab order and that page 2 is Items, page 3 Other. Full offline suite and Panorama build/verify passed.
+- Tools client: tabs read Core, Items, Other. Clicking Items opened Divine Rapier and Dagon.
+
+## 2026-09-28: waiting-for-host status card
+
+- Non-host footer is now a status card in Apply & Start's footprint (42px high, 12px margin): pulsing gold dots, **Waiting for the host** title and a detail line. The old three-line label pushed the Kill Goal row out of view. It also showed `rules....`, because the localized sentence ended with a period before the animated dots.
+- Duplicate `host_rules_waiting` tokens removed in all three languages; new `host_rules_waiting_detail`.
+- `panorama_test.js`: card height and margin match Apply & Start, two labels with no appended dots, dots light in turn, dots container padded so the lifted dot is not clipped. Full offline suite and Panorama build/verify passed.
+- Tools client: a temporary script made nobody the host, as while the owner loads. Screenshots show the card centred under five visible rows and the lit dot round with its glow; before the padding, the lifted dot was clipped flat at the top.
+
+## 2026-09-28 (night): live Local Host lobby findings, lobby order only
+
+- Field report on build 125: a non-owner who loaded first still got host in a friend's Local Host lobby.
+- Live solo test (normal client via `steam -applaunch 570 -condebug`, private Local Host lobby of published 125):
+  - Only one `dota2.exe` ran. The server logged in-process: `ActivateServerFromLobby - IsLan: YES, IsDedicatedServer: NO`, `Connected to 'loopback:1'`.
+  - 125 took the claim path, and the claim arrived at setup start: `Local Host owner claimed host: player 0`. The mechanism works live.
+  - At match start the log tears off to `game/dota/console.<match_id>.log`. It begins with a CSODOTALobby dump that includes `leader_id` (the owner's SteamID64), `all_members[n]` with team/slot, `lan: true` and `lan_host_ping_location`. Then `CDOTA_PlayerResource: Initializing from lobby (main), player SteamID ... slot 1 preferred PlayerID 0`: player IDs come from lobby slots. No script API exposes `leader_id`.
+- Conclusion: the claim is valid only for a client in the server process. So in the field report the non-owner's PC most likely ran the server: Dota does not always host on the lobby owner's PC. The claim therefore identifies the hosting machine, not the owner, and it overrode lobby order.
+- Build 126: host is the lowest-ID human player (lobby order) only. The claim (convar, console command, client VM `libraries/host_claim.lua`, `host_claim_smoke.lua`) is removed. At setup the server logs each player's ID, account ID, name and connection, and each host change.
+- `test_host_rules.lua`: the first loader (native privileges, listen-server slot) is ignored. The owner waits while loading, then is host. Bots are skipped. A disconnected owner passes host to the next member and gets it back on return. Edits and Apply are authorized for the owner only, with forged senders rejected. The 120-second cap unblocks a stuck owner, and script reload restores lobby order.
+- To verify in a real multi-player lobby: with `-condebug` on the machine that runs the server, compare `CSODOTALobby.leader_id` and the `preferred PlayerID` lines with `[Host Options] host is player N`.
+- Searched for a way to read the lobby owner, with none found. The Panorama `Game` API has no lobby/leader accessor, and no script method mentions a lobby leader. Custom UI is sandboxed: the HUD root is `DotaHud` and the loading screen root is `DotaLoadingScreen`. Neither reaches the dashboard's custom-lobby panel (no `LobbyLeader` class panels, no dashboard IDs). The setup log also records each player's native `PlayerHasCustomGameHostPrivileges` value (Tools: `native host true` for the single player), so one multi-player game can show whether native privileges follow `leader_id`.
+
+## 2026-09-28 (later): lobby-order host and ID-carrying claim
+
+- Field report on build 124 (`overthrew_clean_124`, published 00:25): in a friend's Local Host lobby, a non-owner who loaded first still got host. No server log was captured. Likely causes: the lobby server runs outside the owner's process, so the claim is skipped and native privileges apply; or the owner's console command was attributed to server slot 0, the first client to connect.
+- Server Lua file writes (`InitLogFile`, `AppendToLogFile`) are deprecated stubs, so a cross-process file handshake is not possible.
+- Native privileges removed. Fallback and no-client host is the lowest-ID human player (the lobby's first member; IDs are assigned from the lobby before loading). Nobody is host while that player is loading; disconnected, abandoned or failed players are skipped; after 120 seconds of setup, still-loading players are skipped.
+- The claim now carries the claimant's player ID (client VM `GetLocalPlayerID()`); command attribution is ignored. The failure cap is 20 wrong tokens in total and only disables claims.
+- `test_host_rules.lua`: native privileges (held by the first loader) are ignored. Lobby order waits for a loading owner, skips bots and disconnected or abandoned players, and ends the wait at the cap. The claim follows the named ID, not the command client, and rejects invalid, bot or unknown IDs. The client sends `<token> <id>` only once its ID is known.
+- Tools map (fresh client): `waiting for the Local Host owner's claim`, `player 0 … connection 2`, `Local Host owner claimed host: player 0`. `host_claim_smoke.lua`: `HOST_CLAIM_PASS owner 0 lobby leader 0`.
+- Unverified: that player ID 0 is the lobby creator in a real lobby (check that the owner appears first in the loading-screen player list), and which path a real Local Host lobby takes (the owner's `-condebug` log shows it).
+
 ## 2026-09-24: All Vision and settings order
 
 - Core order: Turbo, Single Draft, Epic-Only, Kill Goal. Other order: Infinite Rerolls, Longer Wards, Invincible Wards, All Vision.
