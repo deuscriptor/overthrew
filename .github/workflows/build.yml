@@ -39,6 +39,15 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
+      - name: Install luacheck
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/luacheck" https://github.com/lunarmodules/luacheck/releases/download/v1.2.0/luacheck
+          echo "d68da17fca0697d9e2fb04201f3884abd259fa558b3a449bccaed47f1390defc  $RUNNER_TEMP/luacheck" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/luacheck"
+
+      - name: Lint Lua
+        run: '"$RUNNER_TEMP/luacheck" scripts/vscripts'
+
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 24

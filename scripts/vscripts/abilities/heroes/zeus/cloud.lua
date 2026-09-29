@@ -75,7 +75,7 @@ function modifier_zuus_cloud_custom:LightningBolt(target)
 	local particle = ParticleManager:CreateParticle("particles/units/heroes/hero_zuus/zuus_lightning_bolt.vpcf", PATTACH_WORLDORIGIN, target)
 	local target_point = target:GetAbsOrigin()
 	local nimbus_origin = self:GetParent():GetAbsOrigin()
-	EmitSoundOnLocationWithCaster(target_point, "Hero_Zuus.LightningBolt", caster)
+	EmitSoundOnLocationWithCaster(target_point, "Hero_Zuus.LightningBolt", self.caster)
 
 	-- Renders the particle on the ground target
 	ParticleManager:SetParticleControl(particle, 0, Vector(target_point.x, target_point.y, target_point.z))

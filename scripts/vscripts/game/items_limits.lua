@@ -45,8 +45,6 @@ function CDOTA_BaseNPC:CheckPersonalCooldown(item)
 		CustomGameEventManager:Send_ServerToPlayer(PlayerResource:GetPlayer(playerID), "display_custom_error", { message = "#fast_buy_items" })
 		return false
 	end
-
-	return true
 end
 
 -------------------------------------------------------------------------

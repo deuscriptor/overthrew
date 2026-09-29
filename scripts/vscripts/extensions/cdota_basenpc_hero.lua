@@ -21,12 +21,6 @@ function CDOTA_BaseNPC_Hero:QueueMadstones(count)
 				return 0.2
 			end
 
-			-- Madstones can sometimes interrupt invisibility, so check for invisibility
-			-- Ignore the check if the player is riki, since his invis doesn't get interrupted
-			if self:IsInvisible() and not self:GetUnitName() == "npc_dota_hero_riki" then
-				return 0.2
-			end
-
 			-- Sometimes bundles dont get consumed for some reason ???
 			-- So we check if the player has an existing bundle and then consume it
 			local existing_bundle = self:GetItemInSlot(DOTA_ITEM_TRANSIENT_CAST_ITEM)
