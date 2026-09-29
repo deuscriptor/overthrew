@@ -13,7 +13,7 @@ Dota 2 custom game addon `overthrew`, a fork of Overthrow 3.0. Work branch `map-
 - Core: Single Draft (on), Turbo (on; 2x earned gold/XP), Epic-Only orbs (off; rerolls cost 1), Backpack Items (off; backpack slots keep working, see README), Kill Goal (default 50; match time = 1200s × goal/30); the early "+1 kill goal" voting menu is suppressed server-side and GG Tokens are refused
 - Items: Divine Rapier (on), Dagon (on); off = item disabled/disassembled
 - Other, in menu order: All Vision (on; units on their own fountain are smoked: invisible to enemies incl. true sight/minimap), Infinite Rerolls (on; 999), Longer Wards (on), Invincible Wards (on)
-- Also: cross-team Hero Swaps; free local premium/collection (backend writes blocked); scoreboard player tips (always on, local only: toast + chat + end-screen tally, 3/match, 30s cooldown, no currency moved; `libraries/webapi/tips.lua`).
+- Also: cross-team Hero Swaps; free local premium/collection (backend writes blocked; Misc-slot gameplay boosts are not granted; the Collection shows Cosmetics only, without Chat Wheel/Treasures/Misc tabs); scoreboard player tips (always on, local only: toast + chat + end-screen tally, 3/match, 30s cooldown, no currency moved; `libraries/webapi/tips.lua`).
 
 ## Key code
 

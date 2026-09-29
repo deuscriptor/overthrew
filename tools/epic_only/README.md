@@ -9,7 +9,9 @@ for both modes: 2:01, 4:31, 7:01, 9:31 and 15:01. The experimental Turbo
 config and accelerated grant schedule have been removed. Native neutral
 crafting timings and recraft costs remain unchanged.
 Aghanim's Shard becomes available at 1:00 in Turbo, versus 2:00 otherwise.
-Gift-orb buttons and their popovers are removed from the minimap overlay.
+Gifting orbs is removed: the minimap gift-orb buttons are gone, and Legendary
+Lagresse and Breathtaking Benefaction are Misc items (see the free collection
+below), so no rare/epic orb can be gifted to every team.
 The top-left menu keeps Dashboard, Dota Settings, Scoreboard and Collection; the
 In-Game Settings, Inbox, Leaderboard, Feedback and Promo Events buttons (and the
 new-mail banner) are hidden on every map. Randomed heroes receive Faerie Fire and
@@ -340,11 +342,20 @@ Using a GG Token (e.g. from the collection) is refused before it is consumed, wi
 
 ## Free local collection
 
-Premium benefits (tier 2) and all 269 bundled collection items are available in
+Premium benefits (tier 2) and all bundled vanity items are available in
 this addon without purchases or currency. Vanity items can be equipped directly;
 consumable collection items have a reusable local supply. The shop displays
 "Premium & Vanity - Free" and omits currency, subscription and gift-code purchase
 controls. Host-configured orb reroll allowances are unchanged.
+
+Misc items are not part of the free collection, because they are gameplay
+boosts: Lucky Trinkets, Early Bird Charm, Power Crystal, Conqueror's Presence,
+Teamwork Enhancer, rerolls, GG and Double MMR tokens, the trial subscription and
+the gift orbs. Nobody owns them, even with a backend balance, so their bonuses are
+0 and they cannot be used. Chat wheel entries share the Misc slot and stay free.
+The Collection shows cosmetics only: the Chat Wheel page is hidden (its layout
+still loads, and the in-game chat wheel works), and the Cosmetics page hides the
+Treasures and Misc tabs, opening on Auras.
 
 Unlocks and equipment selections are local to the running match. Account
 subscription data and balances are not rewritten. Equipment sync, payments,

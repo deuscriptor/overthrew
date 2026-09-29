@@ -141,9 +141,18 @@ function WebInventory:_HasItem(player_id, item_name)
 end
 
 
+-- free collection unlocks vanity only: Misc items (battle pass boosts, rerolls, tokens, gift orbs)
+-- grant gameplay bonuses, so nobody owns them; chat wheel entries share the Misc slot and stay free
+function WebInventory:IsFreeCollectionItem(item_name)
+	local definition = ITEM_DEFINITIONS[item_name]
+	if not definition then return false end
+	return definition.slot ~= INVENTORY_SLOTS.MISC or definition.chat_wheel_details ~= nil
+end
+
+
 function WebInventory:HasItem(player_id, item_name)
 	local definition = WebInventory:GetItemDefinition(item_name)
-	if LOCAL_FREE_COLLECTION then return definition ~= nil end
+	if LOCAL_FREE_COLLECTION then return definition ~= nil and self:IsFreeCollectionItem(item_name) end
 
 	-- check optional ways to unlock item usage
 	-- aka "ephemeral" items
@@ -161,6 +170,8 @@ end
 
 function WebInventory:GetItem(player_id, item_name)
 	if LOCAL_FREE_COLLECTION and ITEM_DEFINITIONS[item_name] then
+		-- backend-owned Misc items are ignored too, so paid boosts give nobody an edge
+		if not self:IsFreeCollectionItem(item_name) then return end
 		return {count = ITEM_DEFINITIONS[item_name].type == ITEM_TYPES.CONSUMABLE and 999 or 1}
 	end
 	if not WebInventory.players_items[player_id] then return end
@@ -350,6 +361,11 @@ function WebInventory:ItemConsumeEvent(event)
 
 	local definition = WebInventory:GetItemDefinition(item_name)
 	if not definition then return end
+
+	if definition.consume_disabled then
+		print("[WebInventory] consuming this item is disabled", player_id, item_name)
+		return
+	end
 
 	if not WebInventory:HasItem(player_id, item_name) then
 		print("[WebInventory] player doesn't own item it's trying to consume!", player_id, item_name)

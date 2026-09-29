@@ -215,6 +215,23 @@ requires a map reload; a running user game was not interrupted to test it.
 - Follow-up: read-only viewers get greyed-out switches (track `saturation 0`, `opacity 0.5`; the host keeps full colour). `panorama_test.js` checks the host, waiting and new-host states. Tools capture with a staged host: waiting players' switches are grey, and after a real claim the same switches are green for the host.
 - Not tested: several real clients claiming at once, and a real host leaving mid-setup. Bots stay `NOT_YET_CONNECTED` during setup, so they cannot hold the role.
 
+## 2026-09-29: Gift orbs removed from the Collection shop
+
+- Field report: after the minimap gift-orb buttons were removed, the Collection shop still offered Legendary Lagresse / Breathtaking Benefaction with a Use button. Free collection gives every player 999 of each, so any player could gift unlimited rare/epic orbs to every team.
+- Both definitions (`item_definitions/misc.lua`) lost `on_consume` and gained `is_hidden`, `is_hidden_owned` (the shop collapses `BHiddenOwned` even for owned items) and `consume_disabled`. `WebInventory:ItemConsumeEvent` refuses `consume_disabled` items before anything is spent, which also covers crafted `WebInventory:consume` events and the developer `use_item` chat command. The `BattlePass` gift handlers were deleted.
+- `run_tests.js` passes (exit 0): `test_orbs.lua` checks the gift handlers are gone; `test_free_collection.lua` loads the real `misc.lua` and asserts both items are hidden, have no consume handler, and are refused without consuming. `panorama_test.js` passes. No Panorama rebuild needed (the shop reads the flags from the server).
+- Not tested in Dota: the shop hiding both items in a live session (superseded below).
+
+## 2026-09-29: Misc boosts removed from the free collection, Treasures/Misc tabs hidden
+
+- Free collection made every player own every Misc item (non-consumables at 1, consumables at 999), which gave everyone unintended paid boosts: Lucky Trinkets (1% extra orb selection), Early Bird Charm (a common upgrade at spawn), Power Crystal (stat boost level), Conqueror's Presence (+1% capture), Teamwork Enhancer (+1% common orb rate), the GG token vote on original maps, and the gift orbs.
+- `WebInventory:IsFreeCollectionItem`: under `LOCAL_FREE_COLLECTION`, Misc-slot items are not owned (`HasItem` false, `GetItem` nil, count 0), including backend-owned counts. Chat wheel entries (Misc slot, `chat_wheel_details`) stay free. Consuming a Misc item fails the ownership check, so it is refused before anything is spent.
+- `cosmetics.js` `InitTabs`: the Treasures and Misc tabs are not shown and cannot be opened; the first visible tab (Auras) opens by default. Rebuilt and verified (`panorama_resources.js build`/`verify`: 29 scripts).
+- `test_free_collection.lua` loads the real `misc.lua`: all 18 Misc definitions unowned with count 0 despite backend counts (Lucky Trinket 50, Power Crystal 20), refused on consume, absent from the client inventory update; a chat wheel entry stays owned. `run_tests.js` and `panorama_test.js` pass.
+- Tools (fresh client): `free_collection_smoke` printed `FREE_COLLECTION_ACCESS_PASS 251 items, 18 Misc boosts not owned` and `FREE_COLLECTION_EQUIP_PASS high_five_midas`. A simulated click opened the Collection: the Cosmetics list shows Auras (active) through Hero Effects, no Treasures or Misc; chat wheel emoticons show Owned.
+- Unchanged: free Golden Supporter perks (third upgrade choice, instant delivery, courier speed) apply to every player equally.
+- Follow-up: the Collection's Chat Wheel tab is hidden (`collection.js` `InitContent`); its layout still loads (compiled only, no source) and Cosmetics opens by default. Rebuilt and verified; both suites pass. Tools (fresh map, random Single Draft hero): the Collection shows only the Cosmetics header and opens on Auras; holding L still opens the in-game chat wheel.
+
 ## 2026-09-28: Local Host lobbies reporting a dedicated server
 
 - Field report (published build of 2026-09-27, a friend's Local Host lobby): a non-owner who loaded first got settings access while others were still loading. Only the native path grants access during loading, and it ran only when `IsDedicatedServer()` was true. So real Local Host lobbies most likely report a dedicated server, unlike `dota_launch_custom_game` in Tools.

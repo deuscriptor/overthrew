@@ -9,10 +9,11 @@ CustomGameEventManager = {Send_ServerToPlayer = function(_, _, event, data) sent
 CreateHTTPRequest = function() error("Unexpected backend request") end
 local originalRequire = require
 require = function() end
-ITEM_TYPES = {EQUIPMENT=1, CONSUMABLE=2}
+ITEM_TYPES = {EQUIPMENT=1, CONSUMABLE=2, PASSIVE=3}
+INVENTORY_SLOTS = {TREASURES="98", MISC="99"}
 ITEM_DEFINITIONS = {
     hat={slot="2", type=1, rarity=1, unlocked_with={currency=500}},
-    treat={slot="99", type=2, rarity=1},
+    treat={slot="98", type=2, rarity=1},
 }
 BattlePass = {ApplyItemFilters = function() end}
 dofile("scripts/vscripts/libraries/webapi/webapi.lua")
@@ -43,6 +44,35 @@ assert(not used and errors[1][1] == 0 and errors[1][2] == "#dota_hud_error_gg_to
 fixed = false
 WebInventory:ItemConsumeEvent({PlayerID=0, item_name="bp_gg_token"})
 assert(used == 0 and #errors == 1, "other maps keep the GG token")
+-- Misc items (battle pass boosts, rerolls, tokens, gift orbs) are not part of the free collection:
+-- nobody owns them, even with backend counts, so their gameplay bonuses read 0 and cannot be consumed.
+local production_definitions, misc_consumed = ITEM_DEFINITIONS, false
+ITEM_DEFINITIONS = {}
+ITEM_RARITIES = setmetatable({}, {__index = function(_, rarity) return rarity end})
+Resolve = function() return function() end end
+dofile("scripts/vscripts/libraries/webapi/item_definitions/misc.lua")
+ITEM_DEFINITIONS.chat_wheel_test = {slot="99", type=3, rarity=1, chat_wheel_details={}}
+WebInventory:SetPlayerItems(0, {{name="bp_lucky_trinket_epic", count=50}, {name="bp_power_crystal", count=20}})
+local originalConsumeItem = WebInventory.ConsumeItem
+WebInventory.ConsumeItem = function() misc_consumed = true end
+local misc_count = 0
+for name, definition in pairs(ITEM_DEFINITIONS) do
+    if definition.slot == INVENTORY_SLOTS.MISC and not definition.chat_wheel_details then
+        misc_count = misc_count + 1
+        assert(not WebInventory:HasItem(0, name) and WebInventory:GetItemCount(0, name) == 0, name .. " must not be owned")
+        WebInventory:ItemConsumeEvent({PlayerID=0, item_name=name})
+    end
+end
+assert(misc_count >= 15, "every Misc definition is checked")
+assert(not misc_consumed and #errors == 1, "Misc items must be refused before consuming")
+for _, name in ipairs({"bp_legendary_lagresse", "bp_breathtaking_benefaction"}) do
+    local definition = ITEM_DEFINITIONS[name]
+    assert(definition.consume_disabled and not definition.on_consume, name .. " must stay disabled")
+end
+assert(WebInventory:HasItem(0, "chat_wheel_test") and WebInventory:GetItemCount(0, "chat_wheel_test") == 1, "chat wheel entries stay free")
+WebInventory:UpdateClient(0)
+assert(sent["WebInventory:update"].items.bp_reroll == nil and sent["WebInventory:update"].items.chat_wheel_test.count == 1)
+WebInventory.ConsumeItem, ITEM_DEFINITIONS = originalConsumeItem, production_definitions
 WebInventory:SetPlayerItems(0, {})
 assert(WebInventory:HasItem(0,"hat"), "Backend refresh must not remove local access")
 WebPlayer:UseCurrency(0, 500, function() end)
@@ -52,9 +82,9 @@ for _, path in ipairs({"inventory/purchase_item", "inventory/set_equipped_items"
     WebApi:Send("api/lua/" .. path, {}, function() error("Must not report backend success") end)
 end
 Timers = {CreateTimer = function() error("Equipment must not schedule backend writes") end}
-INVENTORY_SLOTS = {PET="5", SPRAY="1", COSMETIC_SKILL="6"}
+INVENTORY_SLOTS.PET, INVENTORY_SLOTS.SPRAY, INVENTORY_SLOTS.COSMETIC_SKILL = "5", "1", "6"
 dofile("scripts/vscripts/libraries/webapi/inventory/equipment.lua")
 MatchEvents = {event_handlers = {}}
 dofile("scripts/vscripts/libraries/webapi/payments.lua")
 require = originalRequire
-print("PASS free collection: local premium, all items, zero cost, reusable consumables, unchanged account data and blocked backend writes")
+print("PASS free collection: local premium, all vanity items, no Misc boosts, zero cost, reusable consumables, unchanged account data and blocked backend writes")
