@@ -1,0 +1,122 @@
+# Manual release: validate the version, run the offline suite, package the runtime
+# addon files, tag the selected branch's latest commit and publish a GitHub release.
+# Package contents match the local overthrew_clean_<N> builds (see PUBLISHING_CHECK.md):
+# only the nine runtime entries below; .git, tools/, AGENTS.md, CLAUDE.md and editor
+# caches are left out. The zip is built from the committed tree, not a working copy.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Release version (semantic version, e.g. 1.2.0 or 1.3.0-beta.1; a leading v is optional)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  PACKAGE_ENTRIES: addoninfo.txt maps materials models panorama particles resource scripts soundevents
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate version
+        id: version
+        env:
+          RELEASE: ${{ inputs.release }}
+        run: |
+          version="${RELEASE#v}"
+          # Semantic Versioning 2.0.0 (semver.org), as a POSIX ERE.
+          semver='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?$'
+          if [[ ! "$version" =~ $semver ]]; then
+            echo "::error::'$RELEASE' is not a semantic version (MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD])"
+            exit 1
+          fi
+          prerelease=false
+          [[ -n "${BASH_REMATCH[4]}" ]] && prerelease=true
+          # Workshop Tools addon folders use lowercase letters, digits and underscores.
+          folder="overthrew_v$(tr 'A-Z' 'a-z' <<< "$version" | tr -c 'a-z0-9\n' '_')"
+          {
+            echo "version=$version"
+            echo "tag=v$version"
+            echo "prerelease=$prerelease"
+            echo "folder=$folder"
+            echo "asset=$folder.zip"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v5
+
+      - name: Check that the tag is new
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
+            echo "::error::Tag $TAG already exists"
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: tools/epic_only/runtime/package-lock.json
+
+      - name: Install offline test runner
+        run: npm ci --prefix tools/epic_only/runtime --ignore-scripts --no-audit --no-fund
+
+      - name: Offline tests
+        run: node tools/epic_only/run_tests.js
+
+      - name: Verify Panorama resources match their sources
+        run: node tools/epic_only/panorama_resources.js verify
+
+      - name: Package
+        env:
+          FOLDER: ${{ steps.version.outputs.folder }}
+          ASSET: ${{ steps.version.outputs.asset }}
+        run: |
+          for entry in $PACKAGE_ENTRIES; do
+            [[ -n "$(git ls-files -- "$entry")" ]] || { echo "::error::Missing package entry $entry"; exit 1; }
+          done
+          git archive --format=zip -9 --prefix="$FOLDER/" -o "$RUNNER_TEMP/$ASSET" HEAD -- $PACKAGE_ENTRIES
+          count=$(git ls-files -- $PACKAGE_ENTRIES | wc -l)
+          packed=$(unzip -Z1 "$RUNNER_TEMP/$ASSET" | grep -vc '/$')
+          [[ "$count" == "$packed" ]] || { echo "::error::Packed $packed files, expected $count"; exit 1; }
+          echo "Packed $packed files into $ASSET ($(du -h "$RUNNER_TEMP/$ASSET" | cut -f1))"
+
+      - name: Tag commit
+        id: tag
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG" "$GITHUB_SHA"
+          git push origin "refs/tags/$TAG"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          ASSET: ${{ steps.version.outputs.asset }}
+          FOLDER: ${{ steps.version.outputs.folder }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
+        run: |
+          flags=()
+          [[ "$PRERELEASE" == true ]] && flags+=(--prerelease)
+          notes="Workshop package: extract \`$ASSET\` into \`dota 2 beta/game/dota_addons/\` and publish the \`$FOLDER\` addon with Workshop Tools."
+          gh release create "$TAG" "$RUNNER_TEMP/$ASSET" --verify-tag --title "$TAG" \
+            --notes "$notes" --generate-notes "${flags[@]}"
+
+      - name: Remove tag after a failed release
+        if: failure() && steps.tag.outcome == 'success'
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: git push origin ":refs/tags/$TAG"

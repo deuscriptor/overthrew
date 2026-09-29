@@ -48,5 +48,10 @@ Reference: https://developer.valvesoftware.com/wiki/Dota_2_Workshop_Tools/Addon_
   certify original account, leaderboard or online-service features.
 - Local Host ownership resolution is implemented. Dedicated-region lobby-owner
   behavior and a downloaded Workshop package have not been tested.
+- The manual GitHub **Release** workflow (`.github/workflows/release.yml`) builds the
+  same nine-entry package from the committed tree with `git archive` and attaches it to
+  the release. Local builds copy the working tree instead; a comparison on 2026-09-29
+  found all 3,646 files identical except 53 inherited text files that the working tree
+  holds with CRLF line endings and git stores with LF.
 - The final validation is the publisher's own validation followed by a subscribed
   copy running in ordinary Dota. No upload or publication was performed.
