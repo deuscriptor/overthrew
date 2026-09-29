@@ -185,36 +185,36 @@ hero bonus icons, and both time/kill progress bars in the client.
 With Node.js available:
 
 ```text
-node tools/epic_only/run_tests.js
-node tools/epic_only/panorama_resources.js verify
-node tools/epic_only/panorama_test.js
+node tools/run_tests.js
+node tools/panorama_resources.js verify
+node tools/panorama_test.js
 ```
 
 The Lua test harness executes production code with mocked engine services. Its
 pinned development-only runner can be restored with
-`npm ci --prefix tools/epic_only/runtime --ignore-scripts --no-audit --no-fund`.
+`npm ci --prefix tools/runtime --ignore-scripts --no-audit --no-fund`.
 Panorama resources, sources and regeneration are described in
 [panorama_README.md](panorama_README.md). Regenerate the variant shop/item files
-with `node tools/epic_only/build_shop.js` after editing the original FFA items.
+with `node tools/build_shop.js` after editing the original FFA items.
 
 ## Map package
 
 Run from PowerShell:
 
 ```powershell
-& ./tools/epic_only/Build-Map.ps1
-& ./tools/epic_only/Build-Map.ps1 -VerifyOnly
-& ./tools/epic_only/Build-Map.ps1 -TargetMap ot3_ffa_epic_draft
-& ./tools/epic_only/Build-Map.ps1 -TargetMap ot3_ffa_epic_draft -VerifyOnly
-& ./tools/epic_only/Build-Map.ps1 -TargetMap ot3_ffa_draft
-& ./tools/epic_only/Build-Map.ps1 -TargetMap ot3_ffa_draft -VerifyOnly
+& ./tools/Build-Map.ps1
+& ./tools/Build-Map.ps1 -VerifyOnly
+& ./tools/Build-Map.ps1 -TargetMap ot3_ffa_epic_draft
+& ./tools/Build-Map.ps1 -TargetMap ot3_ffa_epic_draft -VerifyOnly
+& ./tools/Build-Map.ps1 -TargetMap ot3_ffa_draft
+& ./tools/Build-Map.ps1 -TargetMap ot3_ffa_draft -VerifyOnly
 ```
 
 If local PowerShell execution policy disables scripts, use a process-local
 invocation (this does not change the machine's policy):
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ./tools/epic_only/Build-Map.ps1 -VerifyOnly
+powershell -NoProfile -ExecutionPolicy Bypass -File ./tools/Build-Map.ps1 -VerifyOnly
 ```
 
 The builder creates `maps/ot3_ffa_epic.vpk` from the existing

@@ -1,6 +1,6 @@
 dofile("scripts/vscripts/game/host_items.lua")
 HostItems.QueueInventoryCheck = function() end -- Covered by test_host_settings.lua.
--- Run from the addon root: lua tools/epic_only/test_orbs.lua
+-- Run from the addon root: lua tools/test_orbs.lua
 -- Executes production Lua; only engine/services and the upgrade rendering boundary
 -- are mocked. This does not replace a Dota playtest of particles or compiled maps.
 local real_print = print
@@ -354,5 +354,5 @@ test("ordinary maps retain rarity pricing and pending selection price", function
     end
 end)
 
-dofile("tools/epic_only/test_single_draft.lua")
+dofile("tools/test_single_draft.lua")
 real_print(string.format("%d orb regression cases passed", passed))

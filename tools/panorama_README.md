@@ -5,9 +5,9 @@ are backed up in `panorama_backups/`.
 Run with Node.js:
 
 ```
-node tools/epic_only/panorama_resources.js build
-node tools/epic_only/panorama_resources.js verify
-node tools/epic_only/panorama_test.js
+node tools/panorama_resources.js build
+node tools/panorama_resources.js verify
+node tools/panorama_test.js
 ```
 
 The resource script preserves non-DATA blocks and validates JavaScript syntax,

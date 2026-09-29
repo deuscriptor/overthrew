@@ -1,10 +1,10 @@
 // Run with Node from any directory. Install the pinned optional Lua runner with:
-// npm ci --prefix tools/epic_only/runtime --ignore-scripts --no-audit --no-fund
+// npm ci --prefix tools/runtime --ignore-scripts --no-audit --no-fund
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const root = path.resolve(__dirname, '../..');
+const root = path.resolve(__dirname, '..');
 const read = name => fs.readFileSync(path.join(root, name), 'utf8');
 const baseOverview = read('resource/overviews/ot3_necropolis_ffa.txt');
 const registeredMaps = [...read('addoninfo.txt').matchAll(/"(ot3_ffa_[^"]+)"/g)].map(match => match[1]);
@@ -47,7 +47,7 @@ console.log('PASS actual shop definitions retain prices/rules and use epic visua
 
 const result = spawnSync(process.execPath, [
   path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
-  'tools/epic_only/test_host_rules.lua',
+  'tools/test_host_rules.lua',
 ], { cwd: root, encoding: 'utf8' });
 if (result.stdout) process.stdout.write(result.stdout);
 if (result.stderr) process.stderr.write(result.stderr);
@@ -60,7 +60,7 @@ assert.equal((result.stderr || '').trim(), '', 'Lua stderr');
 require('./panorama_test');
 const swaps = spawnSync(process.execPath, [
   path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
-  'tools/epic_only/test_hero_swaps.lua',
+  'tools/test_hero_swaps.lua',
 ], { cwd: root, encoding: 'utf8' });
 if (swaps.stdout) process.stdout.write(swaps.stdout);
 if (swaps.stderr) process.stderr.write(swaps.stderr);
@@ -70,7 +70,7 @@ assert.equal((swaps.stderr || '').trim(), '');
 assert.match(swaps.stdout, /PASS hero swaps:/);
 const hostSettings = spawnSync(process.execPath, [
   path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
-  'tools/epic_only/test_host_settings.lua',
+  'tools/test_host_settings.lua',
 ], { cwd: root, encoding: 'utf8' });
 if (hostSettings.stdout) process.stdout.write(hostSettings.stdout);
 if (hostSettings.stderr) process.stderr.write(hostSettings.stderr);
@@ -80,7 +80,7 @@ assert.equal((hostSettings.stderr || '').trim(), '');
 assert.match(hostSettings.stdout, /PASS host settings:/);
 const freeCollection = spawnSync(process.execPath, [
   path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
-  'tools/epic_only/test_free_collection.lua',
+  'tools/test_free_collection.lua',
 ], { cwd: root, encoding: 'utf8' });
 if (freeCollection.stdout) process.stdout.write(freeCollection.stdout);
 if (freeCollection.stderr) process.stderr.write(freeCollection.stderr);
@@ -90,7 +90,7 @@ assert.equal((freeCollection.stderr || '').trim(), '');
 assert.match(freeCollection.stdout, /PASS free collection:/);
 const turboItems = spawnSync(process.execPath, [
   path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
-  'tools/epic_only/test_turbo_items.lua',
+  'tools/test_turbo_items.lua',
 ], { cwd: root, encoding: 'utf8' });
 if (turboItems.stdout) process.stdout.write(turboItems.stdout);
 if (turboItems.stderr) process.stderr.write(turboItems.stderr);
@@ -100,7 +100,7 @@ assert.equal((turboItems.stderr || '').trim(), '');
 assert.match(turboItems.stdout, /PASS Turbo items:/);
 const backpackItems = spawnSync(process.execPath, [
   path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
-  'tools/epic_only/test_backpack_items.lua',
+  'tools/test_backpack_items.lua',
 ], { cwd: root, encoding: 'utf8' });
 if (backpackItems.stdout) process.stdout.write(backpackItems.stdout);
 if (backpackItems.stderr) process.stderr.write(backpackItems.stderr);
@@ -110,7 +110,7 @@ assert.equal((backpackItems.stderr || '').trim(), '');
 assert.match(backpackItems.stdout, /PASS backpack items:/);
 const tips = spawnSync(process.execPath, [
   path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
-  'tools/epic_only/test_tips.lua',
+  'tools/test_tips.lua',
 ], { cwd: root, encoding: 'utf8' });
 if (tips.stdout) process.stdout.write(tips.stdout);
 if (tips.stderr) process.stderr.write(tips.stderr);
@@ -120,7 +120,7 @@ assert.equal((tips.stderr || '').trim(), '');
 assert.match(tips.stdout, /PASS tips:/);
 const earlyConsumables = spawnSync(process.execPath, [
   path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
-  'tools/epic_only/test_early_consumables.lua',
+  'tools/test_early_consumables.lua',
 ], { cwd: root, encoding: 'utf8' });
 if (earlyConsumables.stdout) process.stdout.write(earlyConsumables.stdout);
 if (earlyConsumables.stderr) process.stderr.write(earlyConsumables.stderr);
@@ -130,7 +130,7 @@ assert.equal((earlyConsumables.stderr || '').trim(), '');
 assert.match(earlyConsumables.stdout, /PASS early consumables:/);
 const fountainSmoke = spawnSync(process.execPath, [
   path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
-  'tools/epic_only/test_fountain_smoke.lua',
+  'tools/test_fountain_smoke.lua',
 ], { cwd: root, encoding: 'utf8' });
 if (fountainSmoke.stdout) process.stdout.write(fountainSmoke.stdout);
 if (fountainSmoke.stderr) process.stderr.write(fountainSmoke.stderr);

@@ -1,7 +1,7 @@
 // Regenerate the variant's item definitions and shop from the original FFA files.
 const fs = require('node:fs');
 const path = require('node:path');
-const root = path.resolve(__dirname, '../..');
+const root = path.resolve(__dirname, '..');
 const read = name => fs.readFileSync(path.join(root, name), 'utf8');
 const write = (name, value) => fs.writeFileSync(path.join(root, name), value);
 const items = read('scripts/npc/items/orbs.txt');

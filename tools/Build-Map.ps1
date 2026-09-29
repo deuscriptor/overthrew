@@ -5,7 +5,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$addonRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+$addonRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $sourceMap = 'ot3_necropolis_ffa'
 $sourcePackage = Join-Path $addonRoot "maps/$sourceMap.vpk"
 $targetPackage = Join-Path $addonRoot "maps/$targetMap.vpk"

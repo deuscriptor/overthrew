@@ -14,9 +14,9 @@ updates:
       github-actions:
         patterns: ["*"]
 
-  # Offline Lua test runner (Fengari) used by tools/epic_only/run_tests.js.
+  # Offline Lua test runner (Fengari) used by tools/run_tests.js.
   - package-ecosystem: "npm"
-    directory: "/tools/epic_only/runtime"
+    directory: "/tools/runtime"
     schedule:
       interval: "weekly"
     cooldown:
