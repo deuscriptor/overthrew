@@ -138,3 +138,13 @@ assert.equal(fountainSmoke.error, undefined);
 assert.equal(fountainSmoke.status, 0);
 assert.equal((fountainSmoke.stderr || '').trim(), '');
 assert.match(fountainSmoke.stdout, /PASS fountain smoke:/);
+const fountainProtection = spawnSync(process.execPath, [
+  path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
+  'tools/test_fountain_protection.lua',
+], { cwd: root, encoding: 'utf8' });
+if (fountainProtection.stdout) process.stdout.write(fountainProtection.stdout);
+if (fountainProtection.stderr) process.stderr.write(fountainProtection.stderr);
+assert.equal(fountainProtection.error, undefined);
+assert.equal(fountainProtection.status, 0);
+assert.equal((fountainProtection.stderr || '').trim(), '');
+assert.match(fountainProtection.stdout, /PASS fountain protection:/);

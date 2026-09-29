@@ -590,3 +590,54 @@ clients remain manual checks.
 - References updated in CLAUDE.md, the docs, `.gitignore`, `dependabot.yml` and `build.yml`.
 - `run_tests.js` (35 groups), `panorama_test.js`, `panorama_resources.js verify` (29 scripts,
   1 style, 1 alias) and `luacheck scripts/vscripts` (0 warnings) pass from the new paths.
+
+## 2026-09-29: Fountain protection
+
+- Offline: `test_fountain_protection.lua` covers:
+  - the aura: zone, team and unit types match fountain rejuvenation, 1.5 s linger;
+  - the effect: disarmed, untargetable by enemies and no damage taken until exposed; exposure only
+    while lingering, forgiven on return;
+  - the look: native status effect and priority, dark tint on the model and cosmetics (also ones equipped
+    later), removed on exposure, restored on return, ended with the effect;
+  - the filters: damage and enemy debuffs blocked from protected units, passive sources (behavior flag,
+    Radiance, Shiva's Guard aura), self and own-team harm and true sight never expose, FFA-only registration.
+- `run_tests.js` (36 groups), `panorama_resources.js verify` and `luacheck scripts/vscripts` (0 warnings) pass.
+- Engine probes (Dota Tools):
+  - Inside the zone the aura keeps the effect's remaining time at its full duration; it runs down
+    only after leaving. The stack count survives re-entry, so the effect resets it itself.
+  - Radiance, Shiva's Guard and Blade Mail lack the passive behavior flag; Assault Cuirass, Cloak of Flames,
+    Heartstopper Aura, Return and Great Cleave have it. Diabolic Edict, Pulse Nova and Rot don't.
+  - The modifier gained filter sees aura debuffs (`modifier_item_shivas_guard_aura`, 0.5 s) and cast
+    debuffs (`modifier_stunned` from Storm Bolt), each with its ability.
+  - Fountain rejuvenation's 0.5 s aura linger keeps debuff immunity, which also blocks pure and HP-removal
+    damage on an exposed unit until it ends (removing the rejuvenation effect let pure damage through).
+  - `client.dll` RTTI: `CDOTA_Modifier_FountainInvulnerabilityBuff` vtable slot 89 returns
+    `status_effect_dark_willow_shadow_realm.vpcf` (as Dark Willow's Shadow Realm buff does), slot 91 returns 20000.
+    The particle uses `colorwarp_icechrome.vtex` and `electric.vtex`. A status effect doesn't change after its
+    modifier is created, hence the separate look modifier.
+- Dota Tools, `fountain_protection_smoke.lua` on `ot3_necropolis_ffa` with Sven, a Pudge bot on another
+  team and two neutral dummies: all 35 checks ok (`FPROT DONE`). The earlier 1 s run had 32 checks, not 37 as
+  first noted.
+  - On the fountain: disarmed, untargetable by enemies, no damage either way (all types, HP removal,
+    self), no stun applied to a dummy, no exposure, dark look and tint 40.
+  - Passive exit with Radiance and Shiva's Guard: auras and Radiance damage blocked, not exposed, still dark;
+    the effect ended 1.53 s after leaving with the look and tint gone, then damage, debuffs and both auras
+    reached the dummy.
+  - Damage attempt: blocked and exposed, normal look at once; one frame later targetable, still disarmed; took
+    physical, magical, pure and HP-removal damage; still dealt none. Returning forgave the exposure and restored
+    the look.
+  - Debuff attempt: stun blocked and exposed. A real Storm Bolt cast right after leaving: no stun, no damage, exposed.
+- Look screenshots: the buff icon shows Guardian Angel while shielded and Decrepify with a countdown ring
+  and a "1" stack label once exposed. Side by side, a plain Sven, ours and the native modifier on Sven:
+  without the tint, ours and the native one matched (icy chrome); with the tint, ours turns black with light
+  streaks like a dark hero under the native effect. The user confirmed that look. The console log had no
+  script errors.
+- Fountain smoke without the translucent model (invisibility level 0, invisible state kept):
+  `fountain_smoke_smoke.lua` passed (`FSMOKE DONE`). Enemies still can't see smoked units, including with
+  sentry true sight next to them, and see them again after they leave.
+- Smoke particle removed too (no smoke visuals, invisible state kept): `fountain_smoke_smoke.lua` passed again
+  with the same checks. A screenshot of Sven on his fountain shows only the dark protection look.
+- Orb captures: `capture_point_area:ValidCapturingUnit` skips units with the protection effect, exposed or not.
+  `test_fountain_protection.lua` checks it offline. `fountain_protection_smoke.lua` gained a real-orb exit (E):
+  all 39 checks ok. Sven teleported onto a spawned orb straight from his fountain did not start a capture alone,
+  and did not contest the unprotected Pudge, who captured. Sven contested once his protection ended.

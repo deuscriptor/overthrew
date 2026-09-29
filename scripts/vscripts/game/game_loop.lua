@@ -429,6 +429,7 @@ function GameLoop:InitTowers()
 		-- fountain auras are placed on the tower to match the attack range, fountains are just props now
 		tower:AddNewModifier(tower, nil, "modifier_fountain_rejuvenation_lua", {duration = -1})
 		tower:AddNewModifier(tower, nil, "modifier_fountain_movespeed_lua", {duration = -1})
+		if UsesHostRules() then tower:AddNewModifier(tower, nil, "modifier_fountain_protection_lua", {duration = -1}) end
 
 		GameLoop.towers[tower:GetTeam()] = tower
 	end
