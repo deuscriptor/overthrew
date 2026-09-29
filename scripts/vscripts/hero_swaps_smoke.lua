@@ -6,6 +6,7 @@ if GameRules:State_Get() == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
 	end
 	PlayerDC.CheckEndGame = function() end
 	GameRules:SetPreGameTime(600)
+	HostOptions:ClaimHost(0) -- no automatic host: claim it as a player would
 	assert(HostOptions:ApplyRules({PlayerID=0, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, epic_orbs=0, single_draft=0, turbo=0, backpack_items=0, kill_goal=30}))
 	print("HERO_SWAPS_SMOKE_SETUP")
 	return

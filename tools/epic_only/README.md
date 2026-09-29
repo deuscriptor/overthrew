@@ -24,26 +24,28 @@ and navigation remain for future settings pages. The menu shows category
 tabs, options, and the apply button; it omits explanatory paragraphs. Each option
 row shows an on/off switch and a one-line hover tooltip (`host_rules_<name>_tip`),
 and Kill Goal shows the resulting base time limit (40 seconds per kill).
-**Apply & Start** freezes the settings and begins hero selection. The host is the
-lobby owner, chosen by **lobby order**. Player IDs come from lobby slots (the server
-logs `Initializing from lobby ... preferred PlayerID`), and the owner creates the
-lobby in its first slot. So the host is the lowest-ID human (non-bot) player. Load
-order plays no part: while that player is still loading, nobody is host. If they
-disconnect, abandon or fail to load, the next member leads until they return. After
-120 seconds of setup, players who have not finished loading are skipped, so setup
-cannot stall. The server logs every player's ID, account and connection state at
-setup, and each host change (`[Host Options]` lines, visible with `-condebug`).
+**Apply & Start** freezes the settings and begins hero selection. There is no
+automatic host: the settings stay hidden (the usual loading tips show instead) until
+setup has begun and every player has loaded, so nobody edits them before the others
+arrive. After 120 seconds of setup, players still loading are skipped, so setup cannot
+stall. Then every player sees the current settings read-only (switches greyed out:
+desaturated and half-transparent) and a gold-lit **Claim
+host** card in Apply & Start's place, with the same size and position. The first
+player to claim becomes the host (the server accepts one claim, and the button sends
+one request at a time). A host who disconnects or abandons before starting frees the
+role, and anyone can claim again; a returning player does not get it back. The rules
+lock with the host once started. Other maps keep native custom-game host privileges.
 
-Rejected signals: native custom-game host privileges and `GetListenServerHost()`
-follow connection order. Proving that a client shares the server process (a convar
-token read by the client VM) works in live Local Host lobbies, but it identifies the
-machine running the server. Dota does not always host on the lobby owner's PC.
+Only the host can change the settings and sees coloured switches; for everyone else,
+and for all players once the rules lock, the switches stay greyed out. The server rejects changes after setup and
+duplicate start requests. Other players see a **Waiting for the host** status card
+naming the host (`<name> is choosing the match rules`), also in Apply & Start's
+footprint, so all five rows still fit. Its three gold dots pulse in turn every 0.3
+seconds. The server logs claims and releases (`[Host Options]` lines).
 
-Everyone sees the host's current settings; only the current host can
-change them. The server rejects changes after setup and duplicate start requests.
-Non-host players see a **Waiting for the host** status card in place of Apply &
-Start, with the same size and position, so all five rows still fit. Its three gold
-dots pulse in turn every 0.3 seconds.
+Automatic selection was dropped. Native privileges and `GetListenServerHost()` follow
+connection order, the server process belongs to whoever Dota picks to host (not
+always the lobby owner), and scripts cannot read the lobby's owner.
 
 **Invincible Wards**, last on the Other page, defaults on. It
 protects placed Observer and Sentry wards from attacks and damage without

@@ -14,7 +14,7 @@ HOST_OPTION = {
 	BOTS = "fill_with_bots"
 }
 
--- Stop waiting for a lobby owner who never finishes loading, so setup cannot stall.
+-- Stop waiting for players who never finish loading, so setup cannot stall.
 local HOST_LOADING_MAX_WAIT = 120
 
 function HostOptions:Init()
@@ -23,8 +23,10 @@ function HostOptions:Init()
 		[HOST_OPTION.BOTS] = true,
 	}
 	HostOptions.host = nil
+	HostOptions.host_id = nil
 	HostOptions.locked = false
-	HostOptions.leader_wait_expired = false
+	HostOptions.players_ready = false
+	HostOptions.loading_wait_expired = false
 	if UsesHostRules() then
 		HostOptions.available_options.kill_goal = true
 		HostOptions.options.kill_goal = 50
@@ -51,10 +53,16 @@ function HostOptions:Init()
 		HostOptions:SetOptionState(event.name, event.name == "kill_goal" and event.state or toboolean(event.state))
 	end)
 
+	EventStream:Listen("HostOptions:claim_host", function(event, user_id)
+		local sender = EntIndexToHScript(user_id)
+		if not IsValidEntity(sender) or sender:GetPlayerID() ~= event.PlayerID then return end
+		HostOptions:ClaimHost(event.PlayerID)
+	end)
+
 	EventDriver:Listen("Events:state_changed", function(event)
 		if event.state == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
 			HostOptions:UpdateHostPlayer()
-			HostOptions:WatchHostLoading()
+			HostOptions:WatchLoading()
 		end
 
 		if event.state == DOTA_GAMERULES_STATE_HERO_SELECTION then
@@ -93,47 +101,68 @@ function HostOptions:SetOptionState(option_name, state)
 	if UsesHostRules() then self:PublishRules() end
 end
 
--- Scripts get no lobby owner from the engine. Native host privileges and
--- GetListenServerHost() follow connection order, and a Local Host server does not always
--- run on the owner's PC, so "shares the server process" finds the hosting machine, not the
--- owner. Player IDs, however, come from lobby slots (the server logs "Initializing from
--- lobby ... preferred PlayerID"), and the owner creates the lobby in its first slot.
+-- Scripts get no lobby owner from the engine, and native host privileges and
+-- GetListenServerHost() follow connection order. On configurable FFA, any player may claim
+-- the host role instead, once everyone has loaded. Other maps keep native privileges.
 function HostOptions:IsRealPlayerID(id)
-	return PlayerResource:IsValidPlayerID(id) and not PlayerResource:IsFakeClient(id)
+	return type(id) == "number" and PlayerResource:IsValidPlayerID(id) and not PlayerResource:IsFakeClient(id)
 end
 
-function HostOptions:WatchHostLoading()
-	for id = 0, DOTA_MAX_TEAM_PLAYERS - 1 do
-		if PlayerResource:IsValidPlayerID(id) then
-			local player = PlayerResource:GetPlayer(id)
-			-- Logged for comparison with the lobby's leader_id; not used to pick the host.
-			local native = IsValidEntity(player) and GameRules:PlayerHasCustomGameHostPrivileges(player)
-			print("[Host Options] player", id, "account", PlayerResource:GetSteamAccountID(id),
-				PlayerResource:GetPlayerName(id), "connection", PlayerResource:GetConnectionState(id),
-				"native host", native)
+-- Settings stay hidden and closed until setup has begun and every player has loaded, so
+-- nobody edits them before the rest arrive. Latches once true.
+function HostOptions:ArePlayersReady()
+	if self.players_ready then return true end
+	if GameRules:State_Get() ~= DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then return false end
+	if not self.loading_wait_expired then
+		for id = 0, DOTA_MAX_TEAM_PLAYERS - 1 do
+			if self:IsRealPlayerID(id)
+				and PlayerResource:GetConnectionState(id) == DOTA_CONNECTION_STATE_NOT_YET_CONNECTED then
+				return false
+			end
 		end
 	end
+	self.players_ready = true
+	print("[Host Options] all players loaded, host can be claimed")
+	return true
+end
+
+function HostOptions:WatchLoading()
 	Timers:CreateTimer({useGameTime = false, endTime = HOST_LOADING_MAX_WAIT, callback = function()
 		if self.locked or GameRules:State_Get() ~= DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then return end
-		self.leader_wait_expired = true
-		self:UpdateHostPlayer()
+		self.loading_wait_expired = true
+		if UsesHostRules() then self:PublishRules() end
 	end})
 end
 
--- The lowest real player ID is the lobby's first member: its owner. Load order plays no
--- part: while that player is still loading, nobody is host.
+function HostOptions:ClaimHost(player_id)
+	if not UsesHostRules() or self.locked or not self:ArePlayersReady() then return false end
+	if self:ResolveHost() or not self:IsRealPlayerID(player_id) then return false end
+	if PlayerResource:GetConnectionState(player_id) ~= DOTA_CONNECTION_STATE_CONNECTED then return false end
+	self.host_id = player_id
+	print("[Host Options] player", player_id, PlayerResource:GetPlayerName(player_id), "claimed host")
+	self:UpdateHostPlayer()
+	self:PublishRules()
+	return true
+end
+
 function HostOptions:ResolveHost()
-	for id = 0, DOTA_MAX_TEAM_PLAYERS - 1 do
-		if self:IsRealPlayerID(id) then
-			local state = PlayerResource:GetConnectionState(id)
-			if state == DOTA_CONNECTION_STATE_CONNECTED then
-				local player = PlayerResource:GetPlayer(id)
-				return IsValidEntity(player) and player or nil
-			end
-			if state == DOTA_CONNECTION_STATE_NOT_YET_CONNECTED and not self.leader_wait_expired then return nil end
-			-- Disconnected, abandoned or failed to load: the next member leads.
+	if not UsesHostRules() then
+		for id = 0, DOTA_MAX_TEAM_PLAYERS - 1 do
+			local player = PlayerResource:GetPlayer(id)
+			if IsValidEntity(player) and GameRules:PlayerHasCustomGameHostPrivileges(player) then return player end
 		end
+		return nil
 	end
+	if not self.host_id then return nil end
+	local player = PlayerResource:GetPlayer(self.host_id)
+	-- A host who leaves before starting frees the role for anyone to claim.
+	if not self.locked and (not IsValidEntity(player)
+		or PlayerResource:GetConnectionState(self.host_id) ~= DOTA_CONNECTION_STATE_CONNECTED) then
+		print("[Host Options] host player", self.host_id, "left, host can be claimed again")
+		self.host_id = nil
+		return nil
+	end
+	return IsValidEntity(player) and player or nil
 end
 
 function HostOptions:IsHost(player)
@@ -144,12 +173,12 @@ function HostOptions:PublishRules()
 	local previous = self.host
 	self.host = self:ResolveHost()
 	if self.host ~= previous and IsValidEntity(self.host) then
-		print("[Host Options] host is player", self.host:GetPlayerID())
 		CustomGameEventManager:Send_ServerToPlayer(self.host, "HostOptions:show", {available_options = self.available_options})
 	end
 	local host_id = IsValidEntity(self.host) and self.host:GetPlayerID() or -1
 	local rules = {
 		host_id = host_id, locked = self.locked and 1 or 0,
+		ready = (self.locked or self:ArePlayersReady()) and 1 or 0,
 		kill_goal = self.options.kill_goal,
 	}
 	for _, name in ipairs(MATCH_FLAGS) do rules[name] = self:GetOption(name) and 1 or 0 end
@@ -221,7 +250,6 @@ end
 
 function HostOptions:UpdateHostPlayer()
 	self.host = self:ResolveHost()
-	print("[Host Options] host is player", IsValidEntity(self.host) and self.host:GetPlayerID() or "none (lobby owner still loading)")
 	if IsValidEntity(self.host) then
 		CustomGameEventManager:Send_ServerToPlayer(self.host, "HostOptions:show", {
 			available_options = self.available_options,

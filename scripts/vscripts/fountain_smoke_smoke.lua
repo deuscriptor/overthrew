@@ -10,6 +10,7 @@ if state == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
 		if callback[1] == OT3Demo.OnNPCSpawned then EventDriver:CancelListener("Events:npc_spawned", id) end
 	end
 	PlayerDC.CheckEndGame = function() end
+	HostOptions:ClaimHost(0) -- no automatic host: claim it as a player would
 	assert(HostOptions:ApplyRules({PlayerID=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0,
 		kill_goal=50, infinite_rerolls=0, all_vision=1, invincible_wards=1, longer_wards=1, divine_rapier=1, dagon=1}))
 	print("FSMOKE setup applied")

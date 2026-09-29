@@ -1,5 +1,5 @@
 assert(IsInToolsMode() and LOCAL_FREE_COLLECTION)
-local id = HostOptions:ResolveHost():GetPlayerID()
+local id = 0 -- the only human player in a tools session
 assert(WebPlayer:GetSubscriptionTier(id) == 2)
 local count = 0
 for name in pairs(ITEM_DEFINITIONS) do
@@ -16,6 +16,7 @@ if GameRules:State_Get() == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
 	PlayerDC.CheckEndGame = function() end
 	local options = {PlayerID=id}
 	for name, value in pairs(HostOptions.options) do options[name] = value end
+	HostOptions:ClaimHost(0) -- no automatic host: claim it as a player would
 	assert(HostOptions:ApplyRules(options))
 	return
 end
