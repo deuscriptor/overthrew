@@ -62,7 +62,7 @@ function modifier_devour_enrage_attack_speed:OnDeath(kv)
 end
 
 -- TODO addon_english
-modifier_devour_enrage_attack_speed_buff = devour_enrage_attack_speed_buff or class({})
+modifier_devour_enrage_attack_speed_buff = modifier_devour_enrage_attack_speed_buff or class({})
 
 function modifier_devour_enrage_attack_speed_buff:IsHidden() return false end
 function modifier_devour_enrage_attack_speed_buff:IsPurgable() return true end
