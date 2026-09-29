@@ -251,28 +251,6 @@ function BattlePass:OnSubTierConsumableUsed(player_id, item_name, item_data, def
 end
 
 
-function BattlePass:OnLegendaryLagresseConsumed(player_id, item_name, item_data, definition)
-	for _, team in pairs(GameLoop.current_layout.teamlist) do
-        Upgrades:QueueSelectionForTeam(team, UPGRADE_RARITY_RARE)
-		EndGameStats:AddCapturedOrb(team, ORB_CAPTURE_TYPE.GIFT, ResolveOrbRarity(UPGRADE_RARITY_RARE))
-    end
-
-	local message = ResolveOrbRarity(UPGRADE_RARITY_RARE) == UPGRADE_RARITY_EPIC
-		and "legendary_lagresse_used_epic_only" or "legendary_lagresse_used"
-	CustomChat:MessageToAll(player_id, message, {})
-end
-
-
-function BattlePass:OnBreathtakingBenefactionUsed(player_id, item_name, item_data, definition)
-    for _, team in pairs(GameLoop.current_layout.teamlist) do
-        Upgrades:QueueSelectionForTeam(team, UPGRADE_RARITY_EPIC)
-		EndGameStats:AddCapturedOrb(team, ORB_CAPTURE_TYPE.GIFT, UPGRADE_RARITY_EPIC)
-    end
-
-	CustomChat:MessageToAll(player_id, "breathtaking_benefaction_used", {})
-end
-
-
 function BattlePass:OnGGTokenConsumed(player_id, item_name, item_data, definition)
 	if EarlyConsumables:IsPlayerVotedForExtraGoal(player_id) then return end
 

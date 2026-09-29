@@ -257,11 +257,14 @@ function FillCosmeticItems(items) {
 	b_items_filled = true;
 }
 GameUI.Cosmetics.OpenTab = {};
+// Treasures and Misc (battle pass boosts, rerolls, tokens, gift orbs) are not part of the free collection
+const HIDDEN_TABS = ["TREASURES", "MISC"];
 function InitTabs() {
 	TABS_ROOT.RemoveAndDeleteChildren();
 	CONTENT_ROOT.RemoveAndDeleteChildren();
 	let cosmetic_tabs = Object.keys(GameUI.Inventory.GetSlotsDefinition());
-	cosmetic_tabs.forEach((tab_name, index) => {
+	let b_first_tab = true;
+	cosmetic_tabs.forEach((tab_name) => {
 		const tab = $.CreatePanel("Button", TABS_ROOT, `CC_Tab_${tab_name}`);
 		tab.BLoadLayoutSnippet("Cosmetic_Tab");
 		tab.SetDialogVariableLocString("tab_name", tab_name);
@@ -278,7 +281,14 @@ function InitTabs() {
 			GameUI.ToggleSingleClassInParent(TABS_ROOT, tab, "BActive");
 			GameUI.ToggleSingleClassInParent(CONTENT_ROOT, content, "BActive");
 		};
-		if (index == 0) activate_content();
+		if (HIDDEN_TABS.includes(tab_name)) {
+			// the content panel stays so its items can be built, but it can never be opened
+			tab.visible = false;
+			GameUI.Cosmetics.OpenTab[tab_name] = () => {};
+			return;
+		}
+		if (b_first_tab) activate_content();
+		b_first_tab = false;
 
 		GameUI.Cosmetics.OpenTab[tab_name] = activate_content;
 		tab.SetPanelEvent("onactivate", activate_content);

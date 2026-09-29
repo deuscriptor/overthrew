@@ -28,11 +28,14 @@ function InitCurrencyButtons() {
 	});
 }
 
+// Chat Wheel still loads (it may back the in-game wheel), but its tab is hidden; the collection shows cosmetics only
+const HIDDEN_TABS = ["chat_wheel"];
 function InitContent() {
 	HUD.TABS_ROOT.RemoveAndDeleteChildren();
 	HUD.CONTENT_ROOT.RemoveAndDeleteChildren();
 
-	Object.entries(TABS).forEach(([tab_name, b_create], index) => {
+	let b_first_tab = true;
+	Object.entries(TABS).forEach(([tab_name, b_create]) => {
 		if (!b_create) return;
 		const tab = $.CreatePanel("Button", HUD.TABS_ROOT, `Tab_${tab_name}`);
 		tab.BLoadLayoutSnippet("Tab");
@@ -61,7 +64,12 @@ function InitContent() {
 			if (!b_skip_flag) tab.RemoveClass("BShowFlag");
 		};
 
-		if (index == 0) activate_content(true);
+		if (HIDDEN_TABS.includes(tab_name)) {
+			tab.visible = false;
+			return;
+		}
+		if (b_first_tab) activate_content(true);
+		b_first_tab = false;
 
 		tab.SetPanelEvent("onactivate", activate_content);
 		tab.Open = activate_content;

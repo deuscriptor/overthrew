@@ -70,6 +70,8 @@ ITEM_DEFINITIONS["bp_gg_token"] = {
 	on_consume = Resolve("OnGGTokenConsumed", "BattlePass")
 }
 
+-- gift orbs (a rare / epic orb for every team) are disabled: hidden from the collection
+-- (free collection owns every item) and refused by WebInventory:ItemConsumeEvent
 ITEM_DEFINITIONS["bp_legendary_lagresse"] = {
 	slot = INVENTORY_SLOTS.MISC,
 	type = ITEM_TYPES.CONSUMABLE,
@@ -78,7 +80,9 @@ ITEM_DEFINITIONS["bp_legendary_lagresse"] = {
 		currency = 350
 	},
 
-	on_consume = Resolve("OnLegendaryLagresseConsumed", "BattlePass"),
+	is_hidden = true,
+	is_hidden_owned = true,
+	consume_disabled = true,
 }
 
 ITEM_DEFINITIONS["bp_breathtaking_benefaction"] = {
@@ -90,7 +94,9 @@ ITEM_DEFINITIONS["bp_breathtaking_benefaction"] = {
 		currency = 700
 	},
 
-	on_consume = Resolve("OnBreathtakingBenefactionUsed", "BattlePass"),
+	is_hidden = true,
+	is_hidden_owned = true,
+	consume_disabled = true,
 }
 
 ITEM_DEFINITIONS["bp_early_bird_charm"] = {
