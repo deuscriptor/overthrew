@@ -581,3 +581,12 @@ clients remain manual checks.
     mouse events; `hittest = false` on the icon fixed hover and click.
   - A temporary `SetHint` stack log showed that the setup code does not open other pages
     (the grey tabs in one screenshot came from interaction). It was removed afterwards.
+
+## 2026-09-29: Dev tooling moved from `tools/epic_only/` to `tools/`
+
+- The folder name dated from when the addon only added Epic-Only orbs. Every file moved up
+  one level (git renames); scripts now resolve the addon root as `tools/..`. Feature names
+  (`*_epic_only` items, `orbs_epic_only.txt`, `IsEpicOnlyMap`, `epic_only_smoke`) are unchanged.
+- References updated in CLAUDE.md, the docs, `.gitignore`, `dependabot.yml` and `build.yml`.
+- `run_tests.js` (35 groups), `panorama_test.js`, `panorama_resources.js verify` (29 scripts,
+  1 style, 1 alias) and `luacheck scripts/vscripts` (0 warnings) pass from the new paths.

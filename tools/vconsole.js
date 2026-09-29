@@ -1,5 +1,5 @@
 // Local Source 2 console client. Usage:
-// node tools/epic_only/vconsole.js 'echo hello' 'script_reload_code epic_only_smoke'
+// node tools/vconsole.js 'echo hello' 'script_reload_code epic_only_smoke'
 // Options: --port 29000 --wait-ms 5000 --listen-ms 0
 // Protocol reference (independent framing implementation):
 // https://github.com/Demon673/dota2-mcp/blob/master/src/tools/vcon-bridge.ts
@@ -26,7 +26,7 @@ function run(commands, { port = 29000, waitMs = 5000, listenMs = 0 } = {}) {
     let acknowledged = false;
     let closeTimer;
     let sendTimer;
-    const marker = '__epic_only_vconsole_' + process.pid + '_' + Date.now() + '__';
+    const marker = '__overthrew_vconsole_' + process.pid + '_' + Date.now() + '__';
     const deadline = setTimeout(() => finish(new Error('Timed out waiting for console command echo')), waitMs + listenMs);
     function finish(error) {
       if (complete) return;
@@ -92,7 +92,7 @@ if (require.main === module) {
     }
   }
   if (!commands.length) {
-    console.error('Usage: node tools/epic_only/vconsole.js [--wait-ms 5000] [--listen-ms 0] "echo hello"');
+    console.error('Usage: node tools/vconsole.js [--wait-ms 5000] [--listen-ms 0] "echo hello"');
     process.exitCode = 1;
   } else {
     run(commands, options).catch(error => { console.error(error.message); process.exitCode = 1; });

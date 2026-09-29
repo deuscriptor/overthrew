@@ -7,7 +7,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { spawnSync } = require("node:child_process");
 
-const root = path.resolve(__dirname, "../..");
+const root = path.resolve(__dirname, "..");
 const sources = path.join(__dirname, "panorama_sources");
 const backups = path.join(__dirname, "panorama_backups");
 // Styles are compiled by Valve's resourcecompiler, which reads sources from the addon's content folder.

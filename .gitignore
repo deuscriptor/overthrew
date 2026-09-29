@@ -4,7 +4,7 @@
 /tools_thumbnail_cache.sqlite3*
 /panorama_debugger.cfg
 
-# Node.js (offline test runner deps live in tools/epic_only/runtime)
+# Node.js (offline test runner deps live in tools/runtime)
 node_modules/
 .npm-cache/
 npm-debug.log*

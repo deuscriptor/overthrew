@@ -1,5 +1,5 @@
 local output = print
-dofile("tools/epic_only/test_orbs.lua")
+dofile("tools/test_orbs.lua")
 local map = "ot3_necropolis_ffa"
 GetMapName = function() return map end
 DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP = 2
@@ -206,5 +206,5 @@ map = "ot3_gardens_duo"
 assert(not IsEpicOnlyMap() and not IsSingleDraftMap() and not IsFlatRerollMap())
 assert(HostOptions:ResolveHost() == players[2], "other maps must keep native host privileges")
 assert(not HostOptions:ClaimHost(0), "claims accepted on another map")
-dofile("tools/epic_only/test_turbo.lua")
+dofile("tools/test_turbo.lua")
 output("PASS host rules: all eight combinations, Epic-linked rerolls, host authorization, migration, validation, locking and one-time start")

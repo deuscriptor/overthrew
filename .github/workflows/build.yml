@@ -52,16 +52,16 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: tools/epic_only/runtime/package-lock.json
+          cache-dependency-path: tools/runtime/package-lock.json
 
       - name: Install offline test runner
-        run: npm ci --prefix tools/epic_only/runtime --ignore-scripts --no-audit --no-fund
+        run: npm ci --prefix tools/runtime --ignore-scripts --no-audit --no-fund
 
       - name: Offline tests
-        run: node tools/epic_only/run_tests.js
+        run: node tools/run_tests.js
 
       - name: Verify Panorama resources match their sources
-        run: node tools/epic_only/panorama_resources.js verify
+        run: node tools/panorama_resources.js verify
 
       - name: Package
         id: package
