@@ -1,7 +1,7 @@
 -- Uses the production rule predicate and filters, with engine events simulated.
 local saved_map, saved_state = GetMapName, GameRules.State_Get
-local map, phase = "ot3_necropolis_ffa", 7
-GetMapName = function() return map end
+local phase = 7
+GetMapName = function() return "ot3_necropolis_ffa" end
 GameRules.State_Get = function() return phase end
 DOTA_GAMERULES_STATE_PRE_GAME = 6
 local reasons = {"Unspecified", "Death", "Buyback", "PurchaseConsumable", "PurchaseItem",
@@ -45,10 +45,7 @@ HostOptions.locked = false
 gold(100, "GameTick", 100)
 xp(100, 100)
 HostOptions.locked = true
-map = "ot3_gardens_duo"
-gold(100, "GameTick", 100)
-xp(100, 100)
-map, phase = "ot3_necropolis_ffa", DOTA_GAMERULES_STATE_PRE_GAME
+phase = DOTA_GAMERULES_STATE_PRE_GAME
 local original_hero_class, original_player_class = CDOTA_BaseNPC_Hero, CDOTA_PlayerResource
 local balance, experience, native_filters, fail = 0, 0, false, false
 CDOTA_PlayerResource = {ModifyGold = function(_, id, amount, reliable, reason)
@@ -91,4 +88,4 @@ assert(not pcall(function() CDOTA_BaseNPC_Hero:ModifyGold(10,false,0) end))
 assert(not TurboRewards.gold, "suppression flag leaked after native error")
 CDOTA_BaseNPC_Hero, CDOTA_PlayerResource = original_hero_class, original_player_class
 GetMapName, GameRules.State_Get = saved_map, saved_state
-io.write("PASS Turbo: native/script grants doubled once, nested callbacks guarded; starting gold, spending, sales, refunds, transfers and other maps unchanged\n")
+io.write("PASS Turbo: native/script grants doubled once, nested callbacks guarded; starting gold, spending, sales, refunds and transfers unchanged\n")

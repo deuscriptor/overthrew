@@ -8,7 +8,6 @@ const HUD = {
 };
 const multiline_selection_teams_per_line = {
 	ot3_necropolis_ffa: 4,
-	ot3_demo: 4,
 };
 
 function GetPlayerPanel(player_id) {
@@ -75,7 +74,7 @@ function CreateTeams() {
 	if (spectator && spectator[1] && spectator[1] == 1) all_teams_ids.push(1);
 
 	let teams_line = $.CreatePanel("Panel", HUD.TEAMS_ROOT, "");
-	let multilines = multiline_selection_teams_per_line[MAP_BASE_NAME];
+	let multilines = multiline_selection_teams_per_line[MAP_NAME];
 	all_teams_ids.forEach((team_id, idx) => {
 		if (multilines && idx > 0 && idx % multilines == 0) {
 			teams_line = $.CreatePanel("Panel", HUD.TEAMS_ROOT, "");
@@ -99,11 +98,6 @@ function CreateTeams() {
 		)}), to(transparent));`;
 	});
 }
-function AutoAssign() {
-	if (!Game.IsDemoMode()) return;
-
-	Game.AutoAssignPlayersToTeams();
-}
 function ShuffleTeams() {
 	Game.ShufflePlayerTeamAssignments();
 }
@@ -117,10 +111,6 @@ function UnlockTeams() {
 	Game.SetTeamSelectionLocked(false);
 	Game.SetRemainingSetupTime(-1);
 	Game.SetAutoLaunchEnabled(false);
-}
-
-function CheckAutoAssign() {
-	if (Game.GetTeamSelectionLocked()) AutoAssign();
 }
 
 function IsShowLobbyTools() {
@@ -154,14 +144,13 @@ function UpdateSchedule() {
 }
 (() => {
 	HUD.CONTEXT.GetParent().style.margin = "0px";
-	HUD.CONTEXT.AddClass(MAP_BASE_NAME);
+	HUD.CONTEXT.AddClass(MAP_NAME);
 
 	HUD.TEAMS_ROOT.RemoveAndDeleteChildren();
 	HUD.UNASSIGNED_ROOT.RemoveAndDeleteChildren();
 
 	CreateTeams();
 	OnTeamPlayerListChanged();
-	CheckAutoAssign();
 	CheckPrivileges();
 	CustomNetTables.SubscribeNetTableListener("game_options", function(table, key) { if (key === "match_rules") CheckPrivileges(); });
 	UpdateSchedule();

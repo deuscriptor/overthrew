@@ -1,7 +1,6 @@
 -- Manual Tools-mode check: script_reload_code epic_only_smoke
 -- Run in a disposable test session after addon initialization.
 assert(IsInToolsMode(), "The epic-only smoke check requires Tools mode")
-assert(GetBaseMapName() == "ot3_necropolis_ffa", "Load an FFA map first")
 assert(GameLoop.current_layout == TEAMS_LAYOUTS[GetMapName()], "Wrong map layout")
 assert(#GameLoop.current_layout.teamlist == 8, "Expected eight FFA teams")
 assert(GameMode.do_double_orb_drops, "FFA paired drops are disabled")

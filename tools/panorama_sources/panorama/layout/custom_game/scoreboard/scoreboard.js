@@ -221,16 +221,12 @@ function CreatePanelForPlayer(player_id) {
 }
 
 function SortTeams() {
-	const center_teams_ui = Math.floor(HUD.TEAMS_ROOT.Children().length / 2);
 	const local_team_panel = HUD.TEAMS_ROOT.FindChildrenWithClassTraverse("LocalTeam")[0];
 	if (!local_team_panel) return;
 
-	const local_team_idx = HUD.TEAMS_ROOT.GetChildIndex(local_team_panel);
-
-	const focus_idx = MAP_BASE_NAME == "ot3_necropolis_ffa" ? 0 : center_teams_ui + 1;
-	const focus_panel = HUD.TEAMS_ROOT.GetChild(focus_idx - (local_team_idx == focus_idx));
-
-	if (focus_panel) HUD.TEAMS_ROOT.MoveChildBefore(local_team_panel, focus_panel);
+	// The local team goes first.
+	const first_panel = HUD.TEAMS_ROOT.GetChild(0);
+	if (first_panel && first_panel != local_team_panel) HUD.TEAMS_ROOT.MoveChildBefore(local_team_panel, first_panel);
 }
 
 function InitPlayers() {

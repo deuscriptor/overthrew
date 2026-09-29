@@ -2,7 +2,7 @@
 -- enemies, including true sight, and visible again after leaving. Player 0 plus one bot on another FFA team.
 -- Rerun until "FSMOKE DONE"; later reruns print the log again.
 if not PlayerResource or not HostOptions then print("FSMOKE waiting for the map") return end
-assert(IsInToolsMode() and UsesHostRules(), "requires local FFA tools mode")
+assert(IsInToolsMode(), "requires tools mode")
 local state = GameRules:State_Get()
 if state < DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP or not PlayerResource:GetPlayer(0) then print("FSMOKE waiting for the player") return end
 if state == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then

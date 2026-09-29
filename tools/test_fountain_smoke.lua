@@ -7,8 +7,7 @@ PATTACH_ABSORIGIN_FOLLOW = 1
 local client = false
 IsClient = function() return client end
 IsValidEntity = function(v) return v ~= nil end
-local host_map, locked, all_vision = true, true, true
-UsesHostRules = function() return host_map end
+local locked, all_vision = true, true
 HostOptions = {GetOption = function(_, name) return name == "all_vision" and all_vision end}
 setmetatable(HostOptions, {__index = function(_, key) if key == "locked" then return locked end end})
 local particles = 0
@@ -55,9 +54,9 @@ on_client:SetStackCount(1)
 assert(on_client:CheckState()[MODIFIER_STATE_INVISIBLE])
 client = false
 
--- All Vision off, rules not locked yet, or another map: no smoke.
-for _, case in ipairs({{true, true, false}, {true, false, true}, {false, true, true}}) do
-	host_map, locked, all_vision = case[1], case[2], case[3]
+-- All Vision off or rules not locked yet: no smoke.
+for _, case in ipairs({{true, false}, {false, true}}) do
+	locked, all_vision = case[1], case[2]
 	local plain = Effect(Unit(2))
 	local plain_state = plain:CheckState()
 	assert(plain:GetStackCount() == 0 and plain:GetModifierInvisibilityLevel() == 0)

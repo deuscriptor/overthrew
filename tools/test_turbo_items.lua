@@ -1,7 +1,6 @@
 local turbo = false
 IsTurboMode = function() return turbo end
 GetMapName = function() return "ot3_necropolis_ffa" end
-GetBaseMapName = GetMapName
 ListenToGameEvent = function() end
 local timers, stateListener, stocks = {}, nil, {}
 Timers = {CreateTimer = function(_, delay, callback) table.insert(timers, {delay, callback}) end}

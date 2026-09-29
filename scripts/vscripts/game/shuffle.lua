@@ -4,10 +4,6 @@ function Shuffle:DoTeamShuffle()
 	-- find all parties and spread them into teams first
 	-- then fill the gaps with solo players
 
-	if GetMapName() == "ot3_demo" then
-		return
-	end
-
 	local current_team_rosters = {}
 
 	for i = 1, #GameLoop.current_layout.teamlist do

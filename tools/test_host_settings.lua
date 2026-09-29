@@ -1,5 +1,3 @@
-local map = true
-UsesHostRules = function() return map end
 class = function(t) return t or {} end
 EventDriver = {Listen = function() end}
 CustomNetTables = {SetTableValue = function() end}
@@ -135,16 +133,12 @@ assert(not protected, "Do not protect summoned combat wards")
 HostOptions.locked = false
 HostItems:ProtectWard(protectedUnit, "npc_dota_observer_wards")
 assert(not protected, "Do not apply unlocked rules")
-HostOptions.locked = true
-map = false
-HostItems:ProtectWard(protectedUnit, "npc_dota_observer_wards")
-assert(not protected, "Do not protect wards on other maps")
 HostItems.ward_stock_initialized = false
 HostItems:InitializeWardStock()
-assert(stockCalls == 8, "Other maps must keep default stock")
+assert(stockCalls == 8, "Unlocked rules keep the default stock")
 HostItems:ApplyRules()
-for _, name in ipairs(restricted) do assert(HostItems:IsDisabled(name), "Other maps must keep bans") end
+for _, name in ipairs(restricted) do assert(HostItems:IsDisabled(name), "Unlocked rules keep the bans") end
 UpgradeRerolls:PreparePlayer(0)
 assert(UpgradeRerolls.current_free_rerolls[0] == 30)
 assert(ward("npc_dota_observer_wards", true, 360) == 359.9)
-print("PASS host settings: item toggles independent, component restoration scheduled once, other maps restricted, 999 allowance, rarity costs preserved, 60-minute ward lifetime set once")
+print("PASS host settings: item toggles independent, component restoration scheduled once, unlocked rules restricted, 999 allowance, rarity costs preserved, 60-minute ward lifetime set once")

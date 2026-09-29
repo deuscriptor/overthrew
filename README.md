@@ -1,8 +1,10 @@
 # Overthrew
 
 Overthrew is a Dota 2 custom game: a fork of the **Overthrow 3.0** custom game,
-with a host-configurable free-for-all mode on `ot3_necropolis_ffa` (Single Draft,
-Turbo, kill goal, item toggles, All Vision and more, chosen before hero pick). Fountains
+with a single map, `ot3_necropolis_ffa`: a free-for-all for up to eight players whose
+rules the host configures before hero pick (Single Draft, Turbo, kill goal, item toggles,
+All Vision and more). The other Overthrow maps (Duo, Quintet, Octet and the hero demo)
+are not included. Fountains
 are safe zones there: on your own fountain and for 1.5 seconds after leaving it you cannot attack,
 damage or disable enemies or capture orbs, and enemies cannot target or damage you unless you try to. Protected
 heroes turn dark, like Dota's own fountain invulnerability.

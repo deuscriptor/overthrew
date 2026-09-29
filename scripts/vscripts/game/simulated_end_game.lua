@@ -104,17 +104,14 @@ function SimulatedEndGame:_EndWithWinner(team_id)
 	DebugMessage("[Simulated End Game] setting winner to team", team_id)
 
 	self.winner_team = team_id
-	local is_not_demo = GetMapName() ~= "ot3_demo"
 
 	HeroChallenges:Update() -- since update usually runs on timer, ensure we aren't skipping progress when endgame happens
 	SimulatedEndGame:PreparePlaces()
 	EndGameStats:FinalizeStats()
 	MVPController:FinalizeStats(self.winner_team)
 
-	if is_not_demo then
-		-- TODO: battlepass calculations when it's implemented
-		WebApi:RequestAfterMatch(team_id, SimulatedEndGame.teams_places)
-	end
+	-- TODO: battlepass calculations when it's implemented
+	WebApi:RequestAfterMatch(team_id, SimulatedEndGame.teams_places)
 
 	local entities = FindUnitsInRadius(
 		team_id,

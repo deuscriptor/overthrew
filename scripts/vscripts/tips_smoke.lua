@@ -2,7 +2,7 @@
 -- Rerun until "TIPTEST DONE" (setup, hero pick, bots, then tips); the next three runs each send a
 -- visible bot tip to screenshot ("TIPTEST SHOWN"), the one after ends the match ("TIPTEST ENDED").
 if not PlayerResource or not HostOptions then print("TIPTEST waiting for the map") return end
-assert(IsInToolsMode() and UsesHostRules(), "requires local FFA tools mode")
+assert(IsInToolsMode(), "requires tools mode")
 local state = GameRules:State_Get()
 if state < DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP or not PlayerResource:GetPlayer(0) then print("TIPTEST waiting for the player") return end
 if state == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then

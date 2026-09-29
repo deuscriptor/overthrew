@@ -157,7 +157,7 @@ function SortPlayers(param) {
 	}
 	if (param == "player_id") b_sort_dec = true;
 
-	if (MAP_BASE_NAME == "ot3_necropolis_ffa" && param != "player_id") SortTeams(param, b_sort_dec);
+	if (param != "player_id") SortTeams(param, b_sort_dec);
 	else {
 		const sort = (root, players_container_name) => {
 			root.Children().forEach((team_root) => {
@@ -474,7 +474,7 @@ function _EndScreenPhase2(data) {
 	local_player_parallel_animations.add(local_kills_animation);
 
 	const challenge_animation_pull = new RunSequentialActions();
-	if (data.active_challenge && data.active_challenge.id && !Game.IsDemoMode()) {
+	if (data.active_challenge && data.active_challenge.id) {
 		const challenge = data.active_challenge;
 		const is_completed = challenge.completed;
 
@@ -780,10 +780,8 @@ function _EndScreenPhase4(data) {
 			FillPlayerStats(basic_player, player_id, player_stats);
 			FillPlayerStats(row, player_id, player_stats);
 			CreateTipsBadge(basic_player, player_stats);
-			if (MAP_BASE_NAME == "ot3_necropolis_ffa") {
-				FillPlayerStats(team_root, player_id, player_stats);
-				FillPlayerStats(team_full_rows_container, player_id, player_stats);
-			}
+			FillPlayerStats(team_root, player_id, player_stats);
+			FillPlayerStats(team_full_rows_container, player_id, player_stats);
 
 			/****** Fill items ******/
 			const items_container = row.FindChildTraverse("EG_Items");
@@ -921,7 +919,7 @@ function StartEndScreen(data) {
 	SEQUENCE_RUNNER.finish();
 	SEQUENCE_RUNNER.actions = [];
 	HUD.CONTEXT.hittest = true;
-	HUD.CONTEXT.SwitchClass("map_name", MAP_BASE_NAME);
+	HUD.CONTEXT.SwitchClass("map_name", MAP_NAME);
 	ClearSortHeaders();
 
 	$.RegisterForUnhandledEvent("Cancelled", StartSkippingAhead);

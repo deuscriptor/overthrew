@@ -1,7 +1,7 @@
 require("game/upgrades/upgrades")
 require("game/game_loop")
 require("game/items_limits")
-if IsInToolsMode() or GetMapName() == "ot3_demo" then require("game/demo/init") end
+if IsInToolsMode() then require("game/demo/init") end
 require("game/end_game_stats")
 require("game/overboss_orb_drop_manager")
 require("game/flying_item_drop")

@@ -14,55 +14,6 @@ TEAM_COLORS = {
 }
 
 TEAMS_LAYOUTS = {
-	["ot3_demo"] = {
-		player_count = 1,
-		teamlist = {
-			DOTA_TEAM_GOODGUYS,
-			DOTA_TEAM_BADGUYS,
-			DOTA_TEAM_CUSTOM_1,
-			DOTA_TEAM_CUSTOM_2,
-			DOTA_TEAM_CUSTOM_3,
-			DOTA_TEAM_CUSTOM_4,
-			DOTA_TEAM_CUSTOM_5,
-			DOTA_TEAM_CUSTOM_6,
-		},
-		-- these are ADDED to basic 960 / 720
-		ring_bonuses = {
-			gpm = 900,
-			xpm = 1440,
-		},
-		ring_radius = 900,
-		overboss_throw_chance = 3.33,
-		kill_goal = 999,
-		abandon_kill_goal_reduction = 2,
-		kills_by_vote = 2,
-		time_by_vote = 30,
-		game_base_duration = 1200,
-		respawn_time = {
-			3, 3
-		},
-
-		common_upgrade_progress = {
-			6, 6
-		},
-		-- bar starts at 2 kills, incremented by 3 after every 1 orb granted
-		rare_upgrade_basic_requirement = 2,
-		rare_upgrade_requirement_increment = 3,
-		rare_upgrade_requirement_step = 1,
-		capture_point_time = 4,
-		capture_point_radius = 250,
-		flying_item_drop_time = 120,
-		center_vision_reveal_radius = 1100,
-
-		starting_drop_weights = {},
-
-		leader_overthrow_reward_min = 3,
-		leader_overthrow_reward_max = 6,
-		leader_overthrow_threshold = 5,
-
-		rating_changes = {0, 0, 0, 0, 0, 0, 0, 0},
-		min_connected_players = 99999,
-	},
 	["ot3_necropolis_ffa"] = {
 		player_count = 1,
 		teamlist = {
@@ -116,173 +67,6 @@ TEAMS_LAYOUTS = {
 
 		min_connected_players = 2,
 	},
-	["ot3_gardens_duo"] = {
-		player_count = 2,
-		teamlist = {
-			DOTA_TEAM_GOODGUYS,
-			DOTA_TEAM_BADGUYS,
-			DOTA_TEAM_CUSTOM_1,
-			DOTA_TEAM_CUSTOM_2,
-			DOTA_TEAM_CUSTOM_3,
-		},
-		-- these are ADDED to basic 960 / 720
-		ring_bonuses = {
-			gpm = 900,
-			xpm = 1440,
-		},
-		ring_radius = 1050,
-		overboss_throw_chance = 3.33,
-		kill_goal = 50,
-		abandon_kill_goal_reduction = 2,
-		kills_by_vote = 2,
-		time_by_vote = 30,
-		game_base_duration = 1200,
-		respawn_time = {
-			12, 10, 8, 6, 4
-		},
-
-		common_upgrade_progress = {
-			6, 8.5, 12, 17, 24
-		},
-		-- bar starts at 2 kills, incremented by 3 after every 1 orb granted
-		rare_upgrade_basic_requirement = 2,
-		rare_upgrade_requirement_increment = 3,
-		rare_upgrade_requirement_step = 1,
-		capture_point_time = 5,
-		capture_point_radius = 250,
-		flying_item_drop_time = 120,
-		center_vision_reveal_radius = 1000,
-		tower_attack_range = 850,
-
-		starting_drop_weights = {},
-
-		gg_token_kill_goal_bonus = 10,
-		rating_changes = {30, 15, 0, -15, -30},
-		stalemate_game_time_limit = 180,
-
-		leader_overthrow_reward_min = 5,
-		leader_overthrow_reward_max = 6,
-		leader_overthrow_threshold = 5,
-
-		min_connected_players = 2,
-	},
-	["ot3_jungle_quintet"] = {
-		player_count = 5,
-		teamlist = {
-			DOTA_TEAM_GOODGUYS,
-			DOTA_TEAM_BADGUYS,
-			DOTA_TEAM_CUSTOM_1,
-		},
-		ring_bonuses = {
-			gpm = 900,
-			xpm = 1440,
-		},
-		ring_radius = 1400,
-		overboss_throw_chance = 2,
-		kill_goal = 90,
-		abandon_kill_goal_reduction = 3,
-		kills_by_vote = 2,
-		time_by_vote = 20,
-		game_base_duration = 1200,
-		respawn_time = {
-			12, 8, 4
-		},
-
-		common_upgrade_progress = {
-			6, 12, 24
-		},
-		rare_upgrade_basic_requirement = 4,
-		rare_upgrade_requirement_increment = 5,
-		rare_upgrade_requirement_step = 1,
-		capture_point_time = 7,
-		capture_point_radius = 322,
-		flying_item_drop_time = 200,
-		center_vision_reveal_radius = 1500,
-		tower_attack_range = 850,
-
-		gg_token_kill_goal_bonus = 15,
-		rating_changes = {30, 0, -30},
-		stalemate_game_time_limit = 180,
-
-		leader_overthrow_reward_min = 3,
-		leader_overthrow_reward_max = 4,
-		leader_overthrow_threshold = 5,
-
-		starting_drop_weights = {
-			[1] = 5,
-			[2] = 5,
-			[3] = 5,
-			[8] = 5,
-		},
-
-		min_connected_players = 4,
-	},
-	["ot3_desert_octet"] = {
-		player_count = 8,
-		teamlist = {
-			DOTA_TEAM_GOODGUYS,
-			DOTA_TEAM_BADGUYS,
-			DOTA_TEAM_CUSTOM_1,
-		},
-		ring_bonuses = {
-			gpm = 900,
-			xpm = 1440,
-		},
-		ring_radius = 1400,
-		overboss_throw_chance = 2,
-		kill_goal = 125,
-		abandon_kill_goal_reduction = 4,
-		kills_by_vote = 2,
-		time_by_vote = 12.5,
-		game_base_duration = 1200,
-		respawn_time = {
-			12, 8, 4
-		},
-
-		common_upgrade_progress = {
-			6, 12, 24
-		},
-		rare_upgrade_basic_requirement = 6,
-		rare_upgrade_requirement_increment = 8,
-		rare_upgrade_requirement_step = 1,
-		capture_point_time = 10,
-		capture_point_radius = 400,
-		flying_item_drop_time = 200,
-		center_vision_reveal_radius = 1500,
-		tower_attack_range = 850,
-
-		gg_token_kill_goal_bonus = 20,
-		rating_changes = {30, 0, -30},
-
-		starting_drop_weights = {
-			[1] = 5,
-			[2] = 5,
-			[3] = 5,
-			[8] = 5,
-		},
-
-		--[[
-		laggy_heroes = {
-			npc_dota_hero_phantom_lancer = true,
-			npc_dota_hero_venomancer = true,
-			npc_dota_hero_chaos_knight = true,
-			npc_dota_hero_shadow_shaman = true,
-			npc_dota_hero_spectre = true,
-			npc_dota_hero_undying = true,
-			npc_dota_hero_dark_seer = true,
-			npc_dota_hero_terrorblade = true,
-		},
-		laggy_heroes_max_count = 2,
-		]]
-
-		stalemate_game_time_limit = 180,
-
-		leader_overthrow_reward_min = 3,
-		leader_overthrow_reward_max = 4,
-		leader_overthrow_threshold = 5,
-
-		min_connected_players = 4,
-	}
 }
 
 PREGAME_TIME = 20
@@ -298,62 +82,24 @@ UPGRADE_RARITY_COMMON = 1
 UPGRADE_RARITY_RARE = 2
 UPGRADE_RARITY_EPIC = 4
 
-EPIC_ONLY_MAP_NAME = "ot3_ffa_epic"
-EPIC_ONLY_SINGLE_DRAFT_MAP_NAME = "ot3_ffa_epic_draft"
-SINGLE_DRAFT_MAP_NAME = "ot3_ffa_draft"
-
--- Keep the variant independent while inheriting the complete FFA rule set.
-local function copy_map_settings(value)
-	if type(value) ~= "table" then return value end
-	local result = {}
-	for key, entry in pairs(value) do result[key] = copy_map_settings(entry) end
-	return result
-end
-
-TEAMS_LAYOUTS[EPIC_ONLY_MAP_NAME] = copy_map_settings(TEAMS_LAYOUTS.ot3_necropolis_ffa)
-TEAMS_LAYOUTS[EPIC_ONLY_MAP_NAME].base_map = "ot3_necropolis_ffa"
-TEAMS_LAYOUTS[EPIC_ONLY_MAP_NAME].orb_rarity_override = UPGRADE_RARITY_EPIC
-TEAMS_LAYOUTS[EPIC_ONLY_SINGLE_DRAFT_MAP_NAME] = copy_map_settings(TEAMS_LAYOUTS[EPIC_ONLY_MAP_NAME])
-TEAMS_LAYOUTS[EPIC_ONLY_SINGLE_DRAFT_MAP_NAME].single_draft = true
-TEAMS_LAYOUTS[SINGLE_DRAFT_MAP_NAME] = copy_map_settings(TEAMS_LAYOUTS.ot3_necropolis_ffa)
-TEAMS_LAYOUTS[SINGLE_DRAFT_MAP_NAME].base_map = "ot3_necropolis_ffa"
-TEAMS_LAYOUTS[SINGLE_DRAFT_MAP_NAME].single_draft = true
-
-function UsesHostRules()
-	return GetMapName() == "ot3_necropolis_ffa"
-end
-
 function IsFlatRerollMap()
 	return IsEpicOnlyMap()
 end
 
 function IsTurboMode()
-	return UsesHostRules() and HostOptions ~= nil and HostOptions.locked == true and HostOptions:GetOption("turbo")
+	return HostOptions ~= nil and HostOptions.locked == true and HostOptions:GetOption("turbo")
 end
 
 function IsEpicOnlyMap()
-	if UsesHostRules() then return HostOptions ~= nil and HostOptions:GetOption("epic_orbs") end
-	local layout = TEAMS_LAYOUTS[GetMapName()]
-	return layout ~= nil and layout.orb_rarity_override == UPGRADE_RARITY_EPIC
+	return HostOptions ~= nil and HostOptions:GetOption("epic_orbs")
 end
 
 function IsSingleDraftMap()
-	if UsesHostRules() then return HostOptions ~= nil and HostOptions:GetOption("single_draft") end
-	local layout = TEAMS_LAYOUTS[GetMapName()]
-	return layout ~= nil and layout.single_draft == true
-end
-
--- Use this for shared gameplay/layout rules, never for the actual map identity.
-function GetBaseMapName(map_name)
-	map_name = map_name or GetMapName()
-	local layout = TEAMS_LAYOUTS[map_name]
-	return layout and layout.base_map or map_name
+	return HostOptions ~= nil and HostOptions:GetOption("single_draft")
 end
 
 function ResolveOrbRarity(rarity)
-	if UsesHostRules() then return IsEpicOnlyMap() and UPGRADE_RARITY_EPIC or rarity end
-	local layout = TEAMS_LAYOUTS[GetMapName()]
-	return layout and layout.orb_rarity_override or rarity
+	return IsEpicOnlyMap() and UPGRADE_RARITY_EPIC or rarity
 end
 
 -- TODO: revert

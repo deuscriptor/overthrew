@@ -19,7 +19,7 @@ local CAST_ORDERS = {
 }
 
 function BackpackItems:IsEnabled()
-	return UsesHostRules() and HostOptions.locked and HostOptions:GetOption("backpack_items")
+	return HostOptions.locked and HostOptions:GetOption("backpack_items")
 end
 
 function BackpackItems:ApplyRules()

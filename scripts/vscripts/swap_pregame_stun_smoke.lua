@@ -2,7 +2,7 @@
 -- Tools mode skips the production pre-game stun, so this applies it the same way GameLoop does.
 -- Rerun until "SWAPSTUN DONE".
 if not PlayerResource or not HostOptions then print("SWAPSTUN waiting for the map") return end
-assert(IsInToolsMode() and UsesHostRules(), "requires local FFA tools mode")
+assert(IsInToolsMode(), "requires tools mode")
 local state = GameRules:State_Get()
 if state < DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP or not PlayerResource:GetPlayer(0) then print("SWAPSTUN waiting for the player") return end
 if state == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then

@@ -36,7 +36,7 @@ function MoveMorphlingBar() {
 
 function UpdateFightRecap() {
 	const fight_recap = FindDotaHudElement("FightRecap");
-	fight_recap.style.marginTop = `${MAP_BASE_NAME == "ot3_necropolis_ffa" ? 75 : 50}px`;
+	fight_recap.style.marginTop = "75px";
 }
 
 function UpdateSidePanelPos() {

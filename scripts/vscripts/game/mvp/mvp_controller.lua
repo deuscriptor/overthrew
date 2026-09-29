@@ -21,7 +21,7 @@ function MVPController:Init()
 	MVPController._category_results = {}
 	MVPController._category_winners = {}
 
-	for _, category in pairs(MVP_EXCLUDED_CATEGORIES_PER_MAP[GetBaseMapName()] or {}) do
+	for _, category in pairs(MVP_EXCLUDED_CATEGORIES_PER_MAP[GetMapName()] or {}) do
 		table.remove_item(MVP_CATEGORY, category)
 	end
 
@@ -350,10 +350,10 @@ end
 function MVPController:GetMVPReward(mvp_type)
 	if not mvp_type or mvp_type == MVP_TYPE.NONE then return {} end
 
-	local map_name = GetBaseMapName()
+	local map_name = GetMapName()
 
 	-- game has to be at least 10 minutes long and have all players in to qualify
-	if GameRules:GetGameTime() < 10 * 60 or not GameLoop.is_full_lobby or map_name == "ot3_demo" or HostOptions:GetOption(HOST_OPTION.TOURNAMENT) or not SimulatedEndGame:IsSubmissionAllowed() then
+	if GameRules:GetGameTime() < 10 * 60 or not GameLoop.is_full_lobby or HostOptions:GetOption(HOST_OPTION.TOURNAMENT) or not SimulatedEndGame:IsSubmissionAllowed() then
 		DebugMessage("[MVPController] declined MVP rewards - ineligible match")
 		return {}
 	end

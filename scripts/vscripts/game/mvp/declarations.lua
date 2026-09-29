@@ -4,21 +4,6 @@ MVP_REWARDS = {
 		{items = {bp_reroll = 4}}, -- runner up 1
 		{items = {bp_reroll = 4}}, -- runner up 2
 	},
-	ot3_gardens_duo = {
-		{items = {bp_reroll = 8}}, -- MVP
-		{items = {bp_reroll = 4}}, -- runner up 1
-		{items = {bp_reroll = 4}}, -- runner up 2
-	},
-	ot3_jungle_quintet = {
-		{items = {bp_reroll = 12}}, -- MVP
-		{items = {bp_reroll = 6}}, -- runner up 1
-		{items = {bp_reroll = 6}}, -- runner up 2
-	},
-	ot3_desert_octet = {
-		{items = {bp_reroll = 14}}, -- MVP
-		{items = {bp_reroll = 7}}, -- runner up 1
-		{items = {bp_reroll = 7}}, -- runner up 2
-	},
 }
 
 

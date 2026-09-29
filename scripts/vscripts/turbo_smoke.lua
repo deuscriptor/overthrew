@@ -1,5 +1,5 @@
 -- Local tools-mode check. Run in setup, then again after selecting a hero.
-assert(IsInToolsMode() and UsesHostRules(), "Turbo smoke requires local FFA tools mode")
+assert(IsInToolsMode(), "Turbo smoke requires tools mode")
 if GameRules:State_Get() == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
 	-- Tools mode normally injects 99,999 demo gold and ends pregame after 5s.
 	-- Disable that test-only interference so real starting gold can be checked.

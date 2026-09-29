@@ -1,6 +1,6 @@
 -- Run twice in a disposable local Tools session with a synthetic player 1.
 -- First run sends a request to the human; accept it using the actual UI.
-assert(IsInToolsMode() and UsesHostRules() and HeroSwaps:IsOpen())
+assert(IsInToolsMode() and HeroSwaps:IsOpen())
 if not _G.hero_swaps_ui_check then
 	local state = {get_connection = PlayerResource.GetConnectionState,
 		a = PlayerResource:GetSelectedHeroEntity(0), b = PlayerResource:GetSelectedHeroEntity(1)}

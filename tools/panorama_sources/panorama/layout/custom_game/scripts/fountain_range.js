@@ -40,7 +40,7 @@ function CreateFountainParticleAt(unit, team) {
 	const radius_value = Entities.GetAttackRange(unit) + aura_bonus_range;
 
 	// ffa has double highground, place particle below (otherwise it breaks, and there's no way to fix that in the particle)
-	if (MAP_BASE_NAME == "ot3_necropolis_ffa") position[2] = 117;
+	position[2] = 117;
 
 	// 0, 2 - position
 	Particles.SetParticleControl(p_id, 0, position);

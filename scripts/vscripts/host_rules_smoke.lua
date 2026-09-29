@@ -1,4 +1,4 @@
-assert(IsInToolsMode() and UsesHostRules())
+assert(IsInToolsMode())
 print("HOST_RULES_STATE", GameRules:State_Get(), HostOptions.locked)
 DeepPrintTable(CustomNetTables:GetTableValue("game_options", "match_rules") or {})
 if HostOptions.locked then

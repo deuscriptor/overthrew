@@ -21,16 +21,6 @@ function OT3Demo:OnNPCSpawned(event)
 end
 
 
-function OT3Demo:OnEntityKilled(event)
-	local killed = event.killed
-	if not killed or not killed:IsRealHero() or killed:IsClone() then return end
-
-	if GetMapName() == "ot3_demo" then
-		killed:SetRespawnPosition(killed:GetAbsOrigin())
-	end
-end
-
-
 function OT3Demo:OnAbilityUsed(event)
 	if not self.free_spells_enabled then return end
 

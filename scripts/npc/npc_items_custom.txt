@@ -1,7 +1,6 @@
 #base "items/vanilla_items_custom.txt"
 #base "items/secret_shop_overrides.txt"
 #base "items/orbs.txt"
-#base "items/orbs_epic_only.txt"
 
 "DOTAAbilities"
 {

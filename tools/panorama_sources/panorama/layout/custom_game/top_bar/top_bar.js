@@ -38,17 +38,11 @@ function UpdateTeamScore(team_id) {
 	root.SetHasClass("NearToWin", goal_diff <= 5);
 }
 function ShowTimeLimit() {
-	if (Game.GetMapInfo().map_display_name != "ot3_demo") {
-		PLAYER_MOUSE_OVER_GAME_TIME = true;
-	}
-
+	PLAYER_MOUSE_OVER_GAME_TIME = true;
 	UpdateGameTime();
 }
 function HideTimeLimit() {
-	if (Game.GetMapInfo().map_display_name != "ot3_demo") {
-		PLAYER_MOUSE_OVER_GAME_TIME = false;
-	}
-
+	PLAYER_MOUSE_OVER_GAME_TIME = false;
 	UpdateGameTime();
 }
 function CreateTopTeamBar(team_id) {
@@ -156,11 +150,6 @@ let alert_game_near_to_end = 120; //seconds
 function UpdateGameTime() {
 	let game_time = Game.GetDOTATime(false, false);
 
-	if (Game.GetMapInfo().map_display_name == "ot3_demo") {
-		HUD.CONTEXT.SetDialogVariable("game_time", FormatSeconds(game_time));
-		return;
-	}
-
 	if (Game.GameStateIs(DOTA_GameState.DOTA_GAMERULES_STATE_PRE_GAME)) {
 		const time = Math.max(Game.GetStateTransitionTime() - Game.GetGameTime(), 0);
 		HUD.CONTEXT.SetDialogVariable("game_time", FormatSeconds(time));
@@ -206,14 +195,11 @@ function CheckLeaderTeam() {
 }
 
 function SortTeams() {
-	const center_teams_ui = Math.floor(HUD.TEAMS_ROOT.Children().length / 2);
-
 	HUD.TEAMS_ROOT.Children().forEach((panel, idx) => {
 		panel.RemoveClass("CentralForSpectator");
 		if (panel.BHasClass("LocalTeam")) {
-			const focus_idx = MAP_BASE_NAME == "ot3_necropolis_ffa" ? 0 : center_teams_ui + 1;
-			const focus_panel = HUD.TEAMS_ROOT.GetChild(focus_idx - (idx == focus_idx));
-			if (focus_panel) HUD.TEAMS_ROOT.MoveChildBefore(panel, focus_panel);
+			// The local team goes first.
+			if (idx != 0) HUD.TEAMS_ROOT.MoveChildBefore(panel, HUD.TEAMS_ROOT.GetChild(0));
 
 			HUD.UNDER_PANEL.SetParent(panel);
 		} else if (!IsSpectating()) {
@@ -234,11 +220,6 @@ function SortTeams() {
 function InitPlayers() {
 	for (let player_id = 0; player_id <= 23; player_id++) {
 		CreatePanelForPlayer(player_id);
-	}
-
-	if (Game.GetMapInfo().map_display_name == "ot3_demo") {
-		let game_time = Game.GetDOTATime(false, false);
-		HUD.CONTEXT.SetDialogVariable("game_time", FormatSeconds(game_time));
 	}
 
 	interval_funcs[`UpdateGameTime`] = () => {
@@ -301,7 +282,7 @@ function CheckAltPress() {
 (function () {
 	CreateHeroSwapPanel();
 	HUD.TEAMS_ROOT.RemoveAndDeleteChildren();
-	HUD.CONTEXT.SwitchClass("map_name", MAP_BASE_NAME);
+	HUD.CONTEXT.SwitchClass("map_name", MAP_NAME);
 
 	CheckSpectatorUI();
 

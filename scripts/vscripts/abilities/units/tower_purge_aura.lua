@@ -16,11 +16,11 @@ function modifier_tower_purge_aura:IsHidden() return true end
 
 function modifier_tower_purge_aura:OnCreated()
 	self.attack_range_override = TEAMS_LAYOUTS[GetMapName()].tower_attack_range
-	self.model_scale = GetBaseMapName() == "ot3_necropolis_ffa" and -99 or 25
+	self.model_scale = -99
 
 	if IsClient() then return end
 
-	if (not self.fow) and GetBaseMapName() == "ot3_necropolis_ffa" then
+	if not self.fow then
 		local parent = self:GetParent()
 		self.fow = AddFOWViewer(parent:GetTeamNumber(), parent:GetAbsOrigin(), 1800, -1, false)
 

@@ -1,5 +1,5 @@
 -- Disposable local engine check; run during setup, then after choosing a hero.
-assert(IsInToolsMode() and UsesHostRules())
+assert(IsInToolsMode())
 if GameRules:State_Get() == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
 	assert(HostOptions:GetOption("longer_wards"))
 	assert(not HostOptions:GetOption("infinite_rerolls"))

@@ -131,7 +131,7 @@ function InitPickLocker() {
 	GameUI.Player.RegisterForPlayerDataChanges(() => {
 		level = GameUI.Player.GetSubscriptionTier();
 
-		if (GameUI.GetOption("tournament_mode") || Game.IsInToolsMode() || Game.IsDemoMode()) {
+		if (GameUI.GetOption("tournament_mode") || Game.IsInToolsMode()) {
 			level = 2;
 		}
 

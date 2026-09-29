@@ -64,15 +64,6 @@ function Filters:ExecuteOrderFilter(event)
 		end
 	end
 
-	-- Prevent from buying orbs from the wrong map
-	if order_type == DOTA_UNIT_ORDER_PURCHASE_ITEM and player_id ~= -1 and unit then
-		if string.find(event.shop_item_name, "_ffa_epic_only", 1, true) and not IsEpicOnlyMap() then return false end
-		if string.match(event.shop_item_name, "_ffa") and not string.match(GetBaseMapName(), "_ffa") then return end
-		if string.match(event.shop_item_name, "_duo") and not string.match(GetMapName(), "_duo") then return end
-		if string.match(event.shop_item_name, "_quintet") and not string.match(GetMapName(), "_quintet") then return end
-		if string.match(event.shop_item_name, "_octet") and not string.match(GetMapName(), "_octet") then return end
-	end
-
 	-- spawn the dark portal on the edge of the orb capture point
 	if order_type == DOTA_UNIT_ORDER_CAST_POSITION and ability and ability_name == "abyssal_underlord_dark_portal" and IsValidEntity(unit) then
 		local radius_buffered = OrbDropManager.capture_point_radius + 200

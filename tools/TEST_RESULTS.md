@@ -641,3 +641,38 @@ clients remain manual checks.
   `test_fountain_protection.lua` checks it offline. `fountain_protection_smoke.lua` gained a real-orb exit (E):
   all 39 checks ok. Sven teleported onto a spawned orb straight from his fountain did not start a capture alone,
   and did not contest the unprotected Pudge, who captured. Sven contested once his protection ended.
+
+## 2026-09-30: Unsupported maps removed (#21)
+
+- Only `ot3_necropolis_ffa` is registered. Removed `ot3_gardens_duo`, `ot3_jungle_quintet`, `ot3_desert_octet`,
+  `ot3_demo` and the `ot3_ffa_*` variant leftovers (packages, overviews, shops, upgrade overrides, Duo/Quintet/Octet
+  and epic-only orb items and tokens, `Build-Map.ps1`, `MapPackage.cs`, `MapResourceAliases.cs`, `build_shop.js`,
+  `tools/backups/`).
+- `run_tests.js` (35 groups, including 10 orb regression cases now driven by the host `epic_orbs` rule) and
+  `panorama_resources.js verify` (29 scripts rebuilt, `MAP_BASE_NAME` replaced by `MAP_NAME`) pass. The token
+  parity check reports 3,341 tokens in each language. luacheck was not run locally (not installed); a grep found
+  no remaining use of the removed globals.
+- Dota Tools, fresh session on `ot3_necropolis_ffa`: the map loaded and `GameMode` init finished without script
+  errors; the Hero Demo tooling still initialized. With Single Draft on and Epic-Only off (applied through a
+  temporary script): `epic_only_smoke` (setup and with a hero), `single_draft_smoke`, `single_draft_random_smoke`,
+  `standard_single_draft_smoke` (adapted to host rules: 999 allowance, reroll with the current `selection_id`) and
+  `host_rules_smoke` all passed. No Panorama JavaScript errors in the client log.
+- Pre-existing, unrelated log errors: missing `maps/ot3_necropolis_ffa/{water,fog}_flow_map` textures (also in the
+  09/28 published-build log) and `marci_special_delivery.lua:9` indexing the server-only `GameLoop` on the client.
+- After also removing every `ot3_demo` map check from Lua (Hero Demo init is Tools-only, the match timer is
+  unconditional, the demo-only debug localization request and `OT3Demo:OnEntityKilled` are gone): all 31 changed
+  Lua files parse, `run_tests.js` passes, and a second Dota Tools session reached the running match with the
+  duration timer active (limit 2000 s for 50 kills), the Hero Demo tooling initialized, and
+  `standard_single_draft_smoke`, `epic_only_smoke` (with a hero) and `host_rules_smoke` passing. The client log had
+  no script or Panorama JavaScript errors.
+- After removing `UsesHostRules()` and every other branch on the map name (Lua, editable Panorama sources, tests;
+  `Game.IsDemoMode`, the demo-only auto-assign and the non-FFA team ordering are gone): `luacheck scripts/vscripts`
+  1.2.0 (Windows release) reports 0 warnings / 0 errors in 345 files, `run_tests.js` (35 groups) and
+  `panorama_resources.js verify` (29 scripts) pass. Fresh Dota Tools session: `host_claim_smoke` passed in setup;
+  with Single Draft on and Epic-Only off, `single_draft_smoke`, `single_draft_random_smoke`,
+  `standard_single_draft_smoke`, `epic_only_smoke`, `host_rules_smoke` and `host_items_smoke` passed, and the match
+  had its duration timer, Turbo, fountain protection on all 8 towers and kick voting off. No script or Panorama
+  errors in the client log apart from the next point.
+- `all_vision_smoke` fails when run after the rules lock with All Vision on: its enemy spawns at (4000, 4000), 1,177
+  units from the Badguys fountain, inside the 1,194 fountain zone, so the All Vision fountain smoke hides it as
+  designed. The script predates that feature; this is not caused by the map cleanup.

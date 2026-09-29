@@ -1,7 +1,7 @@
 OrbDropManager = OrbDropManager or class({})
 
 function OrbDropManager:Init()
-	GameMode.do_double_orb_drops = GetBaseMapName() == "ot3_necropolis_ffa"
+	GameMode.do_double_orb_drops = true
 
 	local layout = GameLoop.current_layout
 

@@ -36,7 +36,7 @@ const C_CHAT_ACTIONS = {
 		return Players.GetPlayerName(player_id);
 	},
 	[C_CHAT_ENUM.PLAYER_COLOR]: (player_id) => {
-		if (PLAYER_COLOR_MAPS.includes(MAP_BASE_NAME)) return GetHEXPlayerColor(player_id);
+		if (PLAYER_COLOR_MAPS.includes(MAP_NAME)) return GetHEXPlayerColor(player_id);
 		else return GameUI.GetTeamColor(Players.GetTeam(player_id));
 	},
 	[C_CHAT_ENUM.PLAYER_COLOR_READABLE]: (player_id) => {

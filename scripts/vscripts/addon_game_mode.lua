@@ -43,7 +43,6 @@ function GameMode:Init()
 	GameMode:SetTeams()
 	HeroSwaps:Init()
 	HostItems:Init()
-	if not UsesHostRules() then SingleDraft:Init() end
 	OrbDropManager:Init()
 	Filters:Init()
 	CustomChat:Init()
@@ -62,7 +61,7 @@ function GameMode:Init()
 	Convars:SetInt("tv_delay", 10)
 
 	game_mode_entity:SetLoseGoldOnDeath(false)
-	game_mode_entity:SetFreeCourierModeEnabled(GetMapName() ~= "ot3_demo")
+	game_mode_entity:SetFreeCourierModeEnabled(true)
 	game_mode_entity:SetPauseEnabled(IsInToolsMode())
 	game_mode_entity:SetRandomHeroBonusItemGrantDisabled(true)
 	game_mode_entity:SetCanSellAnywhere(true)
@@ -74,17 +73,12 @@ function GameMode:Init()
 		GameRules:SetCustomGameSetupAutoLaunchDelay(3)
 	end
 
-	-- this setting is weird and persists in demo mode between reloads
-	if GetMapName() == "ot3_demo" then
-		game_mode_entity:SetDaynightCycleDisabled(true)
-	else
-		game_mode_entity:SetDaynightCycleDisabled(false)
-	end
+	game_mode_entity:SetDaynightCycleDisabled(false)
 
 	GameRules:SetTimeOfDay(0.251)
 
-	if IsInToolsMode() or GetMapName() == "ot3_demo" then OT3Demo:Init(game_mode_entity) end
-	if UsesHostRules() then HostOptions:HoldSetup() end
+	if IsInToolsMode() then OT3Demo:Init(game_mode_entity) end
+	HostOptions:HoldSetup()
 
 	EventDriver:Dispatch("GameMode:init_finished", {})
 
@@ -110,8 +104,7 @@ function GameMode:SetTeams()
 	local teams_layout = TEAMS_LAYOUTS[GetMapName()]
 
 	for _, team in pairs(teams_layout.teamlist) do
-		local player_count = GetMapName() == "ot3_demo" and 99 or teams_layout.player_count
-		GameRules:SetCustomGameTeamMaxPlayers(team, player_count)
+		GameRules:SetCustomGameTeamMaxPlayers(team, teams_layout.player_count)
 		GameLoop.current_kills_count[team] = 0
 	end
 

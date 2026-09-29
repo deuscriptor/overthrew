@@ -1,7 +1,7 @@
 -- Local tools-mode check that a host-fixed Kill Goal cannot be moved by the early vote or a GG token.
 -- Rerun until "KGLOCK PASS" (setup, hero pick, then checks).
 if not PlayerResource or not HostOptions then print("KGLOCK waiting for the map") return end
-assert(IsInToolsMode() and UsesHostRules(), "requires local FFA tools mode")
+assert(IsInToolsMode(), "requires tools mode")
 local state = GameRules:State_Get()
 if state < DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP or not PlayerResource:GetPlayer(0) then print("KGLOCK waiting for the player") return end
 if state == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then

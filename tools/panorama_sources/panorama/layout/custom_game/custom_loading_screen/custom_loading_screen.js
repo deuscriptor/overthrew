@@ -138,9 +138,7 @@ function UpdatePlayersLoadState() {
 
 function CreateLoadingPlayersPanel() {
 	LOADING_HUD.CONTEXT.SetHasClass("BLoadingState", true);
-	// The loading screen runs before the shared HUD utilities are included.
-	const map_name = Game.GetMapInfo().map_display_name;
-	LOADING_HUD.CONTEXT.AddClass(["ot3_ffa_epic", "ot3_ffa_epic_draft", "ot3_ffa_draft"].includes(map_name) ? "ot3_necropolis_ffa" : map_name);
+	LOADING_HUD.CONTEXT.AddClass(Game.GetMapInfo().map_display_name);
 
 	LOADING_HUD.PLAYERS_LIST.RemoveAndDeleteChildren();
 

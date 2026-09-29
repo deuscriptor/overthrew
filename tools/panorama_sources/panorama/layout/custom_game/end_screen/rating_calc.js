@@ -1,11 +1,8 @@
 const MMR_MAP = {
 	ot3_necropolis_ffa: [28, 20, 12, 4, -4, -12, -20, -28],
-	ot3_desert_octet: [30, 0, -30],
-	ot3_gardens_duo: [30, 15, 0, -15, -30],
-	ot3_jungle_quintet: [30, 0, -30],
 };
 function GetTeamBaseRatingChange(team_id) {
-	return MMR_MAP[MAP_BASE_NAME][team_places[team_id]] || 0;
+	return MMR_MAP[MAP_NAME][team_places[team_id]] || 0;
 }
 
 function GetPlayerRating(target_player_id) {

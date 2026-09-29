@@ -1,7 +1,6 @@
 local output = print
 dofile("tools/test_orbs.lua")
-local map = "ot3_necropolis_ffa"
-GetMapName = function() return map end
+GetMapName = function() return "ot3_necropolis_ffa" end
 DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP = 2
 local state = DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP
 local finished, initialized, bans = 0, 0, nil
@@ -19,7 +18,7 @@ PlayerResource.IsValidPlayerID = function(_, id) return id == 0 or id == 1 end
 PlayerResource.GetPlayer = function(_, id) return players[id + 1] end
 IsValidEntity = function(p) return p ~= nil end
 GameRules.State_Get = function() return state end
--- Native privileges follow load order; player 1 loaded first. Only other maps use them.
+-- Native privileges follow load order; player 1 loaded first. They must not decide the host.
 GameRules.PlayerHasCustomGameHostPrivileges = function(_, p) return p.id == 1 end
 local now, connection, fake = 0, {}, {}
 Time = function() return now end
@@ -201,10 +200,5 @@ connection[1] = nil
 HostOptions:Init()
 HostOptions:PublishRules()
 assert(publishedRules.host_id == -1, "script reload must clear the host")
--- Other maps keep native host privileges and have no claims.
-map = "ot3_gardens_duo"
-assert(not IsEpicOnlyMap() and not IsSingleDraftMap() and not IsFlatRerollMap())
-assert(HostOptions:ResolveHost() == players[2], "other maps must keep native host privileges")
-assert(not HostOptions:ClaimHost(0), "claims accepted on another map")
 dofile("tools/test_turbo.lua")
 output("PASS host rules: all eight combinations, Epic-linked rerolls, host authorization, migration, validation, locking and one-time start")

@@ -46,7 +46,7 @@ function modifier_fountain_rejuvenation_effect_lua:OnCreated()
 	-- All Vision removes fog, so on the configurable FFA map units on their own fountain are smoked instead:
 	-- hidden from enemies (true sight and minimap included), with no smoke visuals for their own team.
 	-- The stack count carries the decision to clients, which evaluate CheckState too.
-	if UsesHostRules() and HostOptions.locked and HostOptions:GetOption("all_vision") then
+	if HostOptions.locked and HostOptions:GetOption("all_vision") then
 		self:SetStackCount(1)
 	end
 

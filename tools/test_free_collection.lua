@@ -43,7 +43,7 @@ WebInventory:ItemConsumeEvent({PlayerID=0, item_name="bp_gg_token"})
 assert(not used and errors[1][1] == 0 and errors[1][2] == "#dota_hud_error_gg_token_fixed_kill_goal")
 fixed = false
 WebInventory:ItemConsumeEvent({PlayerID=0, item_name="bp_gg_token"})
-assert(used == 0 and #errors == 1, "other maps keep the GG token")
+assert(used == 0 and #errors == 1, "the GG token works while the kill goal is not fixed")
 -- Misc items (battle pass boosts, rerolls, tokens, gift orbs) are not part of the free collection:
 -- nobody owns them, even with backend counts, so their gameplay bonuses read 0 and cannot be consumed.
 local production_definitions, misc_consumed = ITEM_DEFINITIONS, false

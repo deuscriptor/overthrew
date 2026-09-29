@@ -1,6 +1,6 @@
 -- Local tools-mode check for Backpack Items. Run in setup, again to pick a hero, then once more.
 if not PlayerResource or not HostOptions then print("BPTEST waiting for the map") return end
-assert(IsInToolsMode() and UsesHostRules(), "Backpack Items smoke requires local FFA tools mode")
+assert(IsInToolsMode(), "Backpack Items smoke requires tools mode")
 local state = GameRules:State_Get()
 if state < DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP or not PlayerResource:GetPlayer(0) then print("BPTEST waiting for the player") return end
 if state == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then

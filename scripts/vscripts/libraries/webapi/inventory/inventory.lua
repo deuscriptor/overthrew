@@ -378,11 +378,6 @@ function WebInventory:ItemConsumeEvent(event)
 		return
 	end
 
-	if GetMapName() == "ot3_demo" then
-		DisplayError(player_id, "dota_hud_error_cannot_use_consumables_in_demo_mode")
-		return
-	end
-
 	-- the GG token raises the kill goal and time limit, which the host has fixed
 	if item_name == "bp_gg_token" and GameLoop:HasFixedKillGoal() then
 		DisplayError(player_id, "#dota_hud_error_gg_token_fixed_kill_goal")

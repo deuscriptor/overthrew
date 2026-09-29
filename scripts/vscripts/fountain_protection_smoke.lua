@@ -3,7 +3,7 @@
 -- try to harm an enemy while lingering. Player 0 (Sven) plus one bot on another FFA team, and two neutral dummies.
 -- Rerun until "FPROT DONE"; later reruns print the log again.
 if not PlayerResource or not HostOptions then print("FPROT waiting for the map") return end
-assert(IsInToolsMode() and UsesHostRules(), "requires local FFA tools mode")
+assert(IsInToolsMode(), "requires tools mode")
 local state = GameRules:State_Get()
 if state < DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP or not PlayerResource:GetPlayer(0) then print("FPROT waiting for the player") return end
 if state == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then

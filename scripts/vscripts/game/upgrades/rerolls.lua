@@ -3,7 +3,7 @@ UpgradeRerolls = UpgradeRerolls or class({})
 
 function UpgradeRerolls:Init()
 	UpgradeRerolls.current_free_rerolls = {}
-	UpgradeRerolls.free_rerolls = false -- IsInToolsMode() or GetMapName() == "ot3_demo"
+	UpgradeRerolls.free_rerolls = false -- IsInToolsMode()
 
 	UpgradeRerolls.used_rerolls = {}
 
@@ -12,7 +12,7 @@ end
 
 
 function UpgradeRerolls:PreparePlayer(player_id)
-	UpgradeRerolls.current_free_rerolls[player_id] = (UsesHostRules() and HostOptions.locked and HostOptions:GetOption("infinite_rerolls")) and 999 or 30
+	UpgradeRerolls.current_free_rerolls[player_id] = (HostOptions.locked and HostOptions:GetOption("infinite_rerolls")) and 999 or 30
 	local current_consumable_rerolls = 0 -- WebInventory:GetItemCount(player_id, "bp_reroll")
 
 	if UpgradeRerolls.free_rerolls then

@@ -2,7 +2,7 @@
 -- separate FFA teams. Rerun until "BPTEST DONE" (setup, hero pick, bot creation, then checks).
 -- backpack_items_multiplayer_off_smoke runs this with BPMP_OFF set, to check the option-off behavior.
 if not PlayerResource or not HostOptions then print("BPTEST waiting for the map") return end
-assert(IsInToolsMode() and UsesHostRules(), "requires local FFA tools mode")
+assert(IsInToolsMode(), "requires tools mode")
 local state = GameRules:State_Get()
 if state < DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP or not PlayerResource:GetPlayer(0) then print("BPTEST waiting for the player") return end
 if state == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then

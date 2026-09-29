@@ -14,7 +14,7 @@ Lagresse and Breathtaking Benefaction are Misc items (see the free collection
 below), so no rare/epic orb can be gifted to every team.
 The top-left menu keeps Dashboard, Dota Settings, Scoreboard and Collection; the
 In-Game Settings, Inbox, Leaderboard, Feedback and Promo Events buttons (and the
-new-mail banner) are hidden on every map. Randomed heroes receive Faerie Fire and
+new-mail banner) are hidden. Randomed heroes receive Faerie Fire and
 Enchanted Mango; Infused Raindrop is no longer included.
 **Kill Goal** is a numeric input at the bottom of Core, prefilled with 50. The
 host can enter a positive whole number. Apply locks this as the match's fixed
@@ -36,7 +36,7 @@ host** card in Apply & Start's place, with the same size and position. The first
 player to claim becomes the host (the server accepts one claim, and the button sends
 one request at a time). A host who disconnects or abandons before starting frees the
 role, and anyone can claim again; a returning player does not get it back. The rules
-lock with the host once started. Other maps keep native custom-game host privileges.
+lock with the host once started.
 
 Only the host can change the settings and sees coloured switches; for everyone else,
 and for all players once the rules lock, the switches stay greyed out. The server rejects changes after setup and
@@ -65,13 +65,22 @@ amounts. Turbo defaults on and does not change any other Turbo-mode mechanics.
 Single Draft disables bans and offers each player four heroes, one per attribute,
 without shared offers. Epic mode converts all existing orb rewards, including
 shop purchases, while retaining prices and source-specific triggers. The shop
-uses its original item names/icons; rewards follow the selected rule. Rerolls
-start at 30 and cost their original 1/2/4 with normal orbs, or always 1 with
-Epic Orbs. Other original maps retain their behavior.
+uses its original item names/icons; rewards follow the selected rule. The source
+rarity is kept separately for triggers and placement and never downgrades a reward.
+Rerolls start at 30 and cost their original 1/2/4 with normal orbs, or always 1 with
+Epic Orbs.
 
-Only the original FFA map is registered now. The three older variant VPKs have
-been removed; the configurable mode uses the original VPK and overview.
-Historical build tools remain available.
+Only `ot3_necropolis_ffa` is registered. The other Overthrow maps (`ot3_gardens_duo`,
+`ot3_jungle_quintet`, `ot3_desert_octet`, `ot3_demo`) and the earlier separate-map
+variants (`ot3_ffa_epic`, `ot3_ffa_epic_draft`, `ot3_ffa_draft`) were removed with their
+map packages, overviews, shops, upgrade overrides, Duo/Quintet/Octet and epic-only shop
+orbs, and the variant build tools. `run_tests.js` fails if a map package, overview, shop
+or upgrade override exists for a map that is not registered. The Hero Demo tooling
+(`game/demo`, the `ot3_demo` Panorama panel) still loads in Tools mode on the FFA map,
+where the smoke scripts use it. Lua and the editable Panorama sources no longer branch on
+the map name. Compiled Panorama resources without editable sources still name the removed
+maps in places that never match (`ot3_demo` checks in the demo panel, selected upgrades and
+the "+1 kill goal" menu; styles, the hidden leaderboard and preview images).
 
 Localization: the addon ships English (`resource/addon_english.txt`, the default
 and fallback for every other client language), Russian
@@ -111,74 +120,27 @@ settings page was visually checked in the original guide panel, with one page
 indicator and no guides/videos. `script_reload_code host_rules_smoke` validates
 the locked rules in a tools-mode FFA session without changing them.
 
-## Historical variant implementation
+## Single Draft and Epic-Only smoke checks
 
-The following records the earlier separate-map implementation and its tooling;
-its lobby-registration and launch instructions have been superseded above.
+Single Draft gives each player one Strength, Agility, Intelligence and Universal hero,
+drawn from the addon's enabled heroes. No hero appears in more than one player's offers,
+and offers persist across reconnects. The native picker enforces per-player
+availability; both custom random paths choose only from that player's four heroes. The
+smart-random button is hidden and the supporter pick-delay overlay is bypassed.
 
-`ot3_ffa_epic` is a separately selectable copy of Necropolis FFA.
-The English label is `Ffa Epic Only`; existing UI styles apply their usual casing.
-All original orb-producing events grant epic rewards, including passive/kill
-meters, hero-pick bonuses, captured drops, overthrow bursts, shops and gifts.
-Eight teams, timing, thresholds, source-specific lucky trinket chances and
-the 2,000 / 4,000 / 8,000 shop prices are retained. Reward effects, selection
-strength/pool use the existing epic rules. Each reroll costs 1 in Epic Only,
-so the existing localhost allowance of 30 funds 30 rerolls. Other maps retain
-their rarity-dependent 1 / 2 / 4 costs. Source rarity
-is retained separately for triggers and placement; it never downgrades a reward.
+Run these in a disposable Tools-mode session on `ot3_necropolis_ffa`:
 
-The original map remains registered. Gameplay and UI inherit its FFA settings
-without replacing the new map identity. No public leaderboard entry or new
-backend integration is added. Existing private/local lobby fallbacks still apply.
-
-`ot3_ffa_epic_draft` is an additional private-play copy,
-displayed as `Ffa Epic Only Single Draft`. It retains all Epic Only rules,
-including 30 reroll points at 1 per reroll. Banning is disabled. Each player
-receives one Strength, Agility, Intelligence and Universal hero, drawn from
-the addon's enabled heroes using the installed game's attributes. No hero
-appears in more than one player's offers. Offers persist across reconnects.
-The native picker enforces per-player availability; both custom random paths
-choose only from that player's four heroes. The smart-random button is hidden
-and the supporter pick-delay overlay is bypassed on this variant.
-
-Launch it with:
-
-```text
-dota_launch_custom_game overthrew ot3_ffa_epic_draft
-```
-
-`ot3_ffa_draft` / `Ffa Single Draft` provides the same
-four-choice, no-ban draft with standard FFA orb rules. Common, rare and epic
-rewards, timed epic events, shop items and rarity-dependent reroll costs
-(1 / 2 / 4, with the existing 30-point allowance) match the original FFA map.
-Both Epic Only variants remain available separately.
-
-```text
-dota_launch_custom_game overthrew ot3_ffa_draft
-```
-
-`script_reload_code single_draft_smoke` checks offers and any selected hero.
-`script_reload_code single_draft_random_smoke` deliberately chooses a random
-hero from player 0's offers; run it only during a disposable Tools-mode draft.
-After a hero initializes on standard Single Draft, run
-`script_reload_code standard_single_draft_smoke` in a fresh disposable session
-to check real shop-item rewards and reroll spending. It grants three item
-rewards and spends 7 of the starting 30 reroll points.
-
-Launch from the Dota console using the standard
-[addon launch command](https://developer.valvesoftware.com/wiki/Dota_2_Workshop_Tools/Addon_Overview/Playing_Addons):
-
-```text
-dota_launch_custom_game overthrew ot3_ffa_epic
-```
-
-In a disposable Tools-mode session, after addon initialization, run
-`script_reload_code epic_only_smoke` to check the loaded map identity, FFA settings,
-world entities and physical common/rare/epic requests. The check removes its
-three temporary capture units. Once a hero is initialized, it also queues three
-test rewards through the real selection renderer. It works on the original FFA map as a
-regression check. Visually check the minimap, capture effects, shop descriptions,
-hero bonus icons, and both time/kill progress bars in the client.
+- `script_reload_code single_draft_smoke` (Single Draft on) checks the offers and any
+  selected hero.
+- `script_reload_code single_draft_random_smoke` (Single Draft on, during hero
+  selection) deliberately randoms player 0 from their offers.
+- `script_reload_code standard_single_draft_smoke` (Single Draft on, Epic-Only off,
+  after a hero initializes) checks real shop-orb rewards and reroll spending. It grants
+  three item rewards and spends 7 reroll points (of 999 with Infinite Rerolls, else 30).
+- `script_reload_code epic_only_smoke` (after addon initialization) checks the FFA
+  layout, world entities and that physical common/rare/epic orbs follow the Epic-Only
+  setting. It removes its three temporary capture units. Once a hero is initialized, it
+  also queues three rewards through the real selection renderer.
 
 ## Automated checks
 
@@ -194,69 +156,8 @@ The Lua test harness executes production code with mocked engine services. Its
 pinned development-only runner can be restored with
 `npm ci --prefix tools/runtime --ignore-scripts --no-audit --no-fund`.
 Panorama resources, sources and regeneration are described in
-[panorama_README.md](panorama_README.md). Regenerate the variant shop/item files
-with `node tools/build_shop.js` after editing the original FFA items.
+[panorama_README.md](panorama_README.md).
 
-## Map package
-
-Run from PowerShell:
-
-```powershell
-& ./tools/Build-Map.ps1
-& ./tools/Build-Map.ps1 -VerifyOnly
-& ./tools/Build-Map.ps1 -TargetMap ot3_ffa_epic_draft
-& ./tools/Build-Map.ps1 -TargetMap ot3_ffa_epic_draft -VerifyOnly
-& ./tools/Build-Map.ps1 -TargetMap ot3_ffa_draft
-& ./tools/Build-Map.ps1 -TargetMap ot3_ffa_draft -VerifyOnly
-```
-
-If local PowerShell execution policy disables scripts, use a process-local
-invocation (this does not change the machine's policy):
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ./tools/Build-Map.ps1 -VerifyOnly
-```
-
-The builder creates `maps/ot3_ffa_epic.vpk` from the existing
-`maps/ot3_necropolis_ffa.vpk`. The editable Necropolis map source is not present
-in this checkout. This is a package alias copy, not a Hammer rebuild.
-
-Each variant also needs `resource/overviews/<map_name>.txt` outside its VPK.
-The builder writes and verifies this file, retaining the original Necropolis
-terrain material and minimap position/scale. Include these overview files when
-publishing. Missing them causes absent minimap terrain and incorrect projection.
-
-The output keeps every original internal path and adds a matching path under
-the new map name. Geometry, entities, navigation and world data remain unchanged.
-The new root `.vmap_c` and three `.vrman_c` manifests register both namespaces,
-including the world resource name derived by the engine from the selected map.
-These four metadata resources have rebuilt external-reference tables and IDs;
-the manifest resource lists also include the new names. Original paths remain
-available for the world's existing references. The original package is not edited.
-The preview texture is copied under the new map name; the overview reuses the
-original overview material and bounds.
-
-The builder accepts only the unsigned, single-file VPK v2 format used by the
-source package. It rebuilds the directory, file CRC32 values, chunk MD5 hashes
-and package hashes. Verification also compares all original payloads and checks
-the four repaired aliases against their deterministic generated metadata.
-The builder can update a previous generated copy, but rejects unrelated or
-manually edited packages. Engine testing is separate from structural validation.
-
-The generated copy contains 157 original entries and 157 aliases. Valve's
-installed `resourceinfo.exe` successfully reads its new `.vmap_c` and world
-resource; the world still names the preserved original worldnode paths.
-
-SHA-256 values for the source and repaired generated package:
-
-```text
-source: 27C8477F5609286A9BE4453C490687F83B7BCF804D18B778697A0CE21E53B9A2
-copy:   907E9809DCE86DD17797DF1179BB7A241E1596582C76D811AC88B07C09306D45
-```
-
-After building, launch the addon with `ot3_ffa_epic` and verify
-the map loads, pathing/minimap work, and Lua reports the new map name. Also load
-`ot3_necropolis_ffa` separately to verify the existing map still works.
 # Cross-team hero swaps
 
 The configurable FFA exposes **Hero Swaps** at the upper right after choosing a
@@ -306,7 +207,7 @@ single row, `‹ • • • ›` (`MatchRulesPager`), and restyled like the set
 - The current page is a gold pill. Bullets of unvisited pages glow like their tabs, and
   visited ones are grey; bullets are clickable.
 - The loading-screen frame art (with the notch under the bullets) is removed in settings
-  mode. Other maps keep the original hint pager.
+  mode.
 
 Other lists All Vision, Infinite Rerolls, Longer Wards and Invincible Wards in that
 order. Infinite Rerolls (999 instead of 30) defaults on, as does Longer Wards
@@ -320,7 +221,7 @@ and recipe, with native combine locks to prevent an immediate rebuild. Component
 can be unlocked for other recipes. Inventory events and the inventory filter
 cover hero/courier assembly, stash and quick-buy paths. Purchase and item-use
 orders are also checked. No global item whitelist is used: it greys out custom
-replacement items. Other maps retain the Rapier/Dagon restrictions.
+replacement items.
 
 `host_settings_smoke.lua` checks defaults/setup, rerolls and placed wards in a
 disposable local game. `host_items_smoke.lua` checks hero/courier assembly with
@@ -333,8 +234,8 @@ The same limit is used by the server and published to the HUD.
 Because the host fixes the Kill Goal, the early-game "+1 kill goal" menu
 (`early_consumables_menu`: the vote, GG Token and Double MMR Token) is never shown on
 this map, and the server ignores a vote there. Before this change, a vote left the goal
-unchanged but still extended the time limit. Other maps keep the menu.
-`test_early_consumables.lua` covers both cases.
+unchanged but still extended the time limit.
+`test_early_consumables.lua` covers the menu with and without a host-fixed kill goal.
 Using a GG Token (e.g. from the collection) is refused before it is consumed, with
 "The host set the Kill Goal, so it can't be changed"
 (`WebInventory:ItemConsumeEvent`, covered in `test_free_collection.lua`).
@@ -442,7 +343,7 @@ There is no reason field and no way to refuse a tip, so what a tip means depends
 when it is sent. Each player can send 3 tips per match (`TIPS_PER_GAME_MAX`), with a
 30 second cooldown between them (`TIPS_COOLDOWN`). The server enforces both and
 shows the existing error messages; the Tip button is greyed out while either limit
-applies. Self tips are ignored. Tipping is always on, on all maps.
+applies. Self tips are ignored. Tipping is always on.
 
 Tips never reach the original backend. The daily and subscription-tier limits,
 the `api/lua/match/tip` request, which sent both players' Steam IDs, and the
@@ -514,8 +415,7 @@ incoming damage with the absolute no-damage properties and sets the disarm and e
 Its stack count carries the exposure to clients. `Filters:FountainDamageFilter` and
 `Filters:FountainModifierFilter`, registered only on this map, drop damage and enemy debuffs from
 protected units and register exposure through `FountainProtection:BlocksHarm`. Unprotected sources cost
-one modifier lookup; the older full damage and modifier filters stay disabled. The original maps keep
-original behavior.
+one modifier lookup; the older full damage and modifier filters stay disabled.
 
 The look is the status effect of Dota's own AFK fountain invulnerability. In `client.dll`,
 `CDOTA_Modifier_FountainInvulnerabilityBuff` (found through its RTTI vtable) returns

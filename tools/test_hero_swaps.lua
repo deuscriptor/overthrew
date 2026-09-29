@@ -4,13 +4,12 @@ DOTA_GAMERULES_STATE_PRE_GAME = 8
 DOTA_GAMERULES_STATE_GAME_IN_PROGRESS = 10
 DOTA_CONNECTION_STATE_CONNECTED = 2
 DOTA_MAX_TEAM_PLAYERS = 8
-local state, now, enabled, ban = 4, 0, true, false
+local state, now, ban = 4, 0, false
 local players, callbacks, notifications, published, executed = {}, {}, {}, {}, {}
 for id = 0, 3 do
 	players[id] = {id = id, team = id + 2, connected = 2, hero = "hero_" .. id}
 	players[id].GetPlayerID = function(self) return self.id end
 end
-function UsesHostRules() return enabled end
 function IsValidEntity(entity) return entity ~= nil end
 function EntIndexToHScript(index) return players[index - 100] end
 function table.deepcopy(value)
@@ -46,7 +45,7 @@ HeroSwaps.Execute = function(_, request)
 	return true
 end
 local function reset()
-	now, state, ban, enabled, spawned = 0, 4, false, true, false
+	now, state, ban, spawned = 0, 4, false, false
 	for id, player in pairs(players) do player.hero, player.connected = "hero_" .. id, 2 end
 	HeroSwaps:Init()
 	executed = {}
@@ -115,8 +114,6 @@ reset()
 for _, phase in ipairs({4, 5, 6, 7, 8, 9}) do state = phase; assert(HeroSwaps:IsOpen()) end
 for _, phase in ipairs({3, 10, 11}) do state = phase; assert(not HeroSwaps:IsOpen()) end
 state, ban = 4, true
-assert(not HeroSwaps:IsOpen())
-ban, enabled = false, false
 assert(not HeroSwaps:IsOpen())
 reset()
 id = request(0, 1)
