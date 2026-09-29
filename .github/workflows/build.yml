@@ -1,0 +1,86 @@
+name: Build
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      folder:
+        description: "Package folder and zip name"
+        required: true
+        type: string
+    outputs:
+      artifact:
+        description: "Name of the uploaded artifact holding the zip"
+        value: ${{ jobs.build.outputs.artifact }}
+      asset:
+        description: "File name of the zip inside the artifact"
+        value: ${{ jobs.build.outputs.asset }}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PACKAGE_ENTRIES: addoninfo.txt maps materials models panorama particles resource scripts soundevents
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    outputs:
+      artifact: ${{ steps.package.outputs.artifact }}
+      asset: ${{ steps.package.outputs.asset }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: tools/epic_only/runtime/package-lock.json
+
+      - name: Install offline test runner
+        run: npm ci --prefix tools/epic_only/runtime --ignore-scripts --no-audit --no-fund
+
+      - name: Offline tests
+        run: node tools/epic_only/run_tests.js
+
+      - name: Verify Panorama resources match their sources
+        run: node tools/epic_only/panorama_resources.js verify
+
+      - name: Package
+        id: package
+        env:
+          FOLDER: ${{ inputs.folder }}
+        run: |
+          folder="${FOLDER:-overthrew_build_${GITHUB_SHA::7}}"
+          asset="$folder.zip"
+          for entry in $PACKAGE_ENTRIES; do
+            [[ -n "$(git ls-files -- "$entry")" ]] || { echo "::error::Missing package entry $entry"; exit 1; }
+          done
+          git archive --format=zip -9 --prefix="$folder/" -o "$RUNNER_TEMP/$asset" HEAD -- $PACKAGE_ENTRIES
+          count=$(git ls-files -- $PACKAGE_ENTRIES | wc -l)
+          packed=$(unzip -Z1 "$RUNNER_TEMP/$asset" | grep -vc '/$')
+          [[ "$count" == "$packed" ]] || { echo "::error::Packed $packed files, expected $count"; exit 1; }
+          size=$(du -h "$RUNNER_TEMP/$asset" | cut -f1)
+          echo "Packed $packed files into $asset ($size)"
+          echo "Packed **$packed** files from \`$(git rev-parse --short HEAD)\` into \`$asset\` ($size)." >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "folder=$folder"
+            echo "asset=$asset"
+            echo "artifact=$folder"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ${{ steps.package.outputs.artifact }}
+          path: ${{ runner.temp }}/${{ steps.package.outputs.asset }}
+          compression-level: 0
+          retention-days: ${{ inputs.folder && 1 || 7 }}
+          if-no-files-found: error
