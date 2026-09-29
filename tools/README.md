@@ -487,6 +487,7 @@ While protected, a unit:
 - deals no damage of any kind (attacks, spells, damage over time applied earlier, HP removal,
   self damage);
 - applies no debuffs to enemies (stuns, hexes, slows, forced movement, aura debuffs);
+- cannot capture or contest orbs, even when exposed (`capture_point_area:ValidCapturingUnit`);
 - cannot be targeted by enemies and takes no damage of any kind, unless it is exposed.
 
 A unit becomes exposed when it tries to harm another team while lingering: damage or a debuff from one
@@ -535,4 +536,5 @@ particle is precached in `precache.lua`: without it, the native modifier added f
 `test_fountain_protection.lua` covers the aura, the effect states, the look and tint, and the filters.
 `fountain_protection_smoke.lua` checks everything in a tools match: on the fountain, a passive-only
 exit with Radiance and Shiva's Guard, exposure by damage and by a debuff, a real Storm Bolt cast
-right after leaving, and the look and tint at each step.
+right after leaving, the look and tint at each step, and a real orb: protected Sven neither captures it
+alone nor contests the unprotected Pudge, and contests once the linger ends.

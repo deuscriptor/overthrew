@@ -67,6 +67,8 @@ end
 function capture_point_area:ValidCapturingUnit(unit)
 	if unit:IsInvulnerable() and not unit:HasModifier("modifier_naga_siren_song_of_the_siren") then return false end
 	if unit:HasModifier("modifier_ringmaster_the_box_buff") then return false end
+	-- configurable FFA fountain protection, exposed or not (game/fountain_protection.lua)
+	if unit:HasModifier("modifier_fountain_protection_effect_lua") then return false end
 	if unit:IsSpiritBear() then return false end
 	if unit:GetUnitLabel() == "brewmaster_earth" then return false end
 

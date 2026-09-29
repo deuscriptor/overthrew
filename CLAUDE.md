@@ -85,8 +85,8 @@ Always-on FFA features, each documented in `tools/README.md`:
 
 - Cross-team hero swaps (`game/hero_swaps.lua`).
 - Fountain protection: on the own fountain and for 1.5s after leaving it, disarmed, no damage or enemy debuffs
-  dealt, untargetable by enemies and no damage taken until an attempt to harm while lingering; dark look of the
-  native AFK fountain invulnerability
+  dealt, untargetable by enemies and no damage taken until an attempt to harm while lingering; no orb captures; dark
+  look of the native AFK fountain invulnerability
   (`game/fountain_protection.lua`, `Filters:FountainDamageFilter`, `Filters:FountainModifierFilter`).
 - Free local premium and collection. Backend writes are blocked, Misc-slot gameplay boosts are not granted,
   and the Collection shows only the Cosmetics tab.

@@ -1,4 +1,5 @@
 class = function(t) return t end
+local original_require = require
 LinkLuaModifier = function() end
 MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE = 1
 DOTA_UNIT_TARGET_FLAG_NONE, DOTA_UNIT_TARGET_TEAM_FRIENDLY, DOTA_UNIT_TARGET_HERO, DOTA_UNIT_TARGET_BASIC = 0, 1, 1, 18
@@ -187,6 +188,21 @@ local shielded_victim, victim_index = Unit(3, "lingering")
 local striker, striker_index = Unit(2, "lingering")
 assert(damage(victim_index, striker_index) == false and striker.effect:IsExposed() and not shielded_victim.effect:IsExposed(), "attempt on a shielded unit exposes the attacker")
 
+-- Protected heroes can't capture or contest orbs, exposed or not.
+require = function() end
+dofile("scripts/vscripts/game/capture_points/capture_point_area.lua")
+require = original_require
+local function Hero(modifiers)
+	return {
+		IsInvulnerable = function() return false end,
+		HasModifier = function(_, name) return modifiers[name] == true end,
+		IsSpiritBear = function() return false end, GetUnitLabel = function() return "" end,
+		IsRealHero = function() return true end, IsTempestDouble = function() return false end, IsMonkeyClone = function() return false end,
+	}
+end
+assert(capture_point_area:ValidCapturingUnit(Hero({})) == true, "an unprotected hero captures")
+assert(capture_point_area:ValidCapturingUnit(Hero({modifier_fountain_protection_effect_lua = true})) == false, "a protected hero doesn't")
+
 -- Registered only on the configurable FFA map.
 local registered = {}
 local game_mode = {
@@ -197,7 +213,6 @@ local game_mode = {
 }
 GameRules = {GetGameModeEntity = function() return game_mode end}
 Dynamic_Wrap = function(scope, name) return scope[name] end
-local original_require = require
 require = function() end
 dofile("scripts/vscripts/filters/init.lua")
 require = original_require
@@ -208,4 +223,4 @@ for _, host_map in ipairs({true, false}) do
 	assert((registered.damage == Filters.FountainDamageFilter) == host_map)
 	assert((registered.modifier == Filters.FountainModifierFilter) == host_map)
 end
-print("PASS fountain protection: own fountain zone plus 1.5 second linger, dark look until exposed, disarmed, untargetable and shielded until an active attempt while lingering, no damage or debuffs dealt, filters on FFA only")
+print("PASS fountain protection: own fountain zone plus 1.5 second linger, dark look until exposed, disarmed, untargetable and shielded until an active attempt while lingering, no damage or debuffs dealt, no orb captures, filters on FFA only")

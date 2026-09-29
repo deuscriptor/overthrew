@@ -637,3 +637,7 @@ clients remain manual checks.
   sentry true sight next to them, and see them again after they leave.
 - Smoke particle removed too (no smoke visuals, invisible state kept): `fountain_smoke_smoke.lua` passed again
   with the same checks. A screenshot of Sven on his fountain shows only the dark protection look.
+- Orb captures: `capture_point_area:ValidCapturingUnit` skips units with the protection effect, exposed or not.
+  `test_fountain_protection.lua` checks it offline. `fountain_protection_smoke.lua` gained a real-orb exit (E):
+  all 39 checks ok. Sven teleported onto a spawned orb straight from his fountain did not start a capture alone,
+  and did not contest the unprotected Pudge, who captured. Sven contested once his protection ended.

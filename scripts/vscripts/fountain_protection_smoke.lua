@@ -127,7 +127,7 @@ elseif stage == 1 then
 		Timers:CreateTimer(0.5, callback)
 	end
 
-	local leg_b, leg_c, leg_d
+	local leg_b, leg_c, leg_d, leg_e
 	-- A: passive auras (Radiance, Shiva's Guard) are blocked while lingering but don't expose
 	local radiance = sven:AddItemByName("item_radiance")
 	local shivas = sven:AddItemByName("item_shivas_guard")
@@ -206,11 +206,37 @@ elseif stage == 1 then
 			check(exposed() and not dummy:IsStunned() and dummy:GetHealth() == dummy:GetMaxHealth(), "D: Storm Bolt blocked (no stun, no damage) and exposes")
 		end)
 		after_linger(left_d, function()
-			go_home(finish)
+			go_home(leg_e)
+		end)
+	end
+	-- E: a real orb. Protected Sven neither captures it alone nor contests Pudge; he contests once the linger ends.
+	leg_e = function()
+		local spot = dummy:GetAbsOrigin() + Vector(-450, 0, 0)
+		FindClearSpaceForUnit(pudge, spot + Vector(500, 0, 0), true) -- off his fountain, so his own protection ends
+		Timers:CreateTimer(2, function()
+			local orb = GameMode:SpawnOrbDrop(spot, UPGRADE_RARITY_COMMON, false)
+			local area = orb:FindModifierByName("capture_point_area")
+			if not area then check(false, "E: orb spawned") finish() return end
+			check(not pudge:HasModifier(EFFECT), "E: Pudge unprotected next to the orb")
+			local left_e = leave(spot - dummy:GetAbsOrigin())
+			Timers:CreateTimer(0.5, function()
+				check(effect() ~= nil and not area.is_capturing and area.progress == 0, "E: protected Sven alone doesn't capture")
+				FindClearSpaceForUnit(pudge, spot + Vector(-60, 0, 0), true)
+			end)
+			Timers:CreateTimer(1.0, function()
+				check(effect() ~= nil and area.is_capturing and not area.is_contesting and area.current_team == pudge:GetTeam(), "E: Pudge captures, protected Sven doesn't contest")
+			end)
+			after_linger(left_e, function()
+				Timers:CreateTimer(0.2, function()
+					check(area.is_contesting and area.heroes_in_radius[sven:GetTeam()] ~= nil, "E: Sven contests once the linger ends")
+					area:StopPoint()
+					go_home(finish)
+				end)
+			end)
 		end)
 	end
 	_G.fprot_stage = 2
-	out("FPROT stage 1 done, timers running; rerun in 10 s")
+	out("FPROT stage 1 done, timers running; rerun in 15 s")
 	return
 elseif stage == 2 then
 	print("FPROT timers still running, rerun")
