@@ -1,0 +1,26 @@
+# Dependabot version updates. Update PRs must pass the required Build check.
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # Actions used by .github/workflows (pinned to commit SHAs).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  # Offline Lua test runner (Fengari) used by tools/epic_only/run_tests.js.
+  - package-ecosystem: "npm"
+    directory: "/tools/epic_only/runtime"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    groups:
+      test-runner:
+        patterns: ["*"]
