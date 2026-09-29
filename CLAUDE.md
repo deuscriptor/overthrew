@@ -1,61 +1,231 @@
 # CLAUDE.md
 
-See also AGENTS.md (workflow rules). Development-only file; exclude from Workshop publishing.
+Guidance for Claude Code and human contributors working in this repository.
+Development-only: never part of the Workshop package (see [Release and publishing](#release-and-publishing)).
 
-## What this is
+## Project
 
-Dota 2 custom game addon `overthrew`, a fork of Overthrow 3.0. Work branch `map-config`, main `main`.
+`overthrew` is a Dota 2 custom game addon, a fork of Overthrow 3.0 (see `README.md` and `LICENSE`).
+It adds a host-configurable free-for-all mode on `ot3_necropolis_ffa`.
 
-- **Entry point:** `ot3_necropolis_ffa` (DefaultMap in `addoninfo.txt`, 8 players, min 1). Other registered maps (gardens_duo, jungle_quintet, desert_octet, ot3_demo) keep original behavior.
-- Earlier separate-map variants (`ot3_ffa_epic`, `ot3_ffa_draft`, `ot3_ffa_epic_draft`) were removed; `tools/Build-Map.ps1` is historical. No Hammer map source exists — VPKs are compiled only.
+- **Maps:** `ot3_necropolis_ffa` is the `DefaultMap` in `addoninfo.txt` (8 players, min 1) and the only map
+  with host rules: `UsesHostRules()` in `core_declarations.lua` checks the map name. The other registered maps
+  (`ot3_gardens_duo`, `ot3_jungle_quintet`, `ot3_desert_octet`, `ot3_demo`) keep original Overthrow behavior.
+- **No map sources:** maps ship as compiled VPKs only; there is no Hammer source.
+- **Historical leftovers:** the removed map variants `ot3_ffa_epic`, `ot3_ffa_draft` and `ot3_ffa_epic_draft`
+  still have overviews, shop files, `tools/Build-Map.ps1` and `tools/backups/`. Don't extend them.
+- **Spec:** `tools/README.md` is the authoritative feature specification. Keep it and `README.md` current (see
+  [Documentation](#documentation)).
 
-**Host settings** (hidden until every player has loaded, then edited by whoever presses **Claim host** first — no automatic host; before hero pick; shown instead of guides/videos; **Apply & Start** locks them and begins picking):
-- Core: Single Draft (on), Turbo (on; 2x earned gold/XP), Epic-Only orbs (off; rerolls cost 1), Backpack Items (off; backpack slots keep working, see README), Kill Goal (default 50; match time = 1200s × goal/30); the early "+1 kill goal" voting menu is suppressed server-side and GG Tokens are refused
-- Items: Divine Rapier (on), Dagon (on); off = item disabled/disassembled
-- Other, in menu order: All Vision (on; units on their own fountain are smoked: invisible to enemies incl. true sight/minimap), Infinite Rerolls (on; 999), Longer Wards (on), Invincible Wards (on)
-- Also: cross-team Hero Swaps; free local premium/collection (backend writes blocked; Misc-slot gameplay boosts are not granted; the Collection shows Cosmetics only, without Chat Wheel/Treasures/Misc tabs); scoreboard player tips (always on, local only: toast + chat + end-screen tally, 3/match, 30s cooldown, no currency moved; `libraries/webapi/tips.lua`).
+## Repository layout
 
-## Key code
+| Path | Contents |
+| --- | --- |
+| `addoninfo.txt` | Map registration, default map, player limits |
+| `scripts/vscripts/` | Game Lua. Entry points: `addon_game_mode.lua` (server) and `addon_game_mode_client.lua` (client) |
+| `scripts/vscripts/*_smoke.lua` | In-game smoke tests, run by hand in Workshop Tools (they ship in the package) |
+| `scripts/npc/`, `scripts/shops/`, `scripts/upgrades/` | KeyValues data: heroes, items, abilities, shops, orb upgrades |
+| `resource/addon_{english,russian,ukrainian}.txt` | Localization |
+| `panorama/` | **Compiled** UI resources (`.vjs_c`, `.vcss_c`, `.vxml_c`). Never edit these by hand |
+| `tools/panorama_sources/` | Editable Panorama JS (and `toasts.css`), compiled into `panorama/` |
+| `tools/panorama_backups/` | Original compiled resources that the builds start from |
+| `tools/test_*.lua`, `tools/*.js` | Offline test suite and helper scripts |
+| `tools/runtime/` | npm dependencies of the offline Lua runner (Fengari) |
+| `tools/*.md` | Feature spec, Panorama notes, test log, publishing check, investigations |
+| `.github/` | CI workflows and Dependabot |
 
-- `scripts/vscripts/libraries/host_options.lua` — option state, `MATCH_FLAGS`, net table `game_options` (`host_options`, `match_rules`), events `HostOptions:apply_rules` / `HostOptions:set_option_state`
-- `scripts/vscripts/core_declarations.lua` — `UsesHostRules()`, `IsSingleDraftMap()`, `IsEpicOnlyMap()`, `IsFlatRerollMap()`
-- `scripts/vscripts/game/` — `single_draft.lua`, `turbo_rewards.lua`, `hero_swaps.lua`, `host_items.lua`, `backpack_items.lua`, `game_loop.lua`, `neutral_item_drop.lua`
-- **Panorama:** runtime uses compiled `.vjs_c`. Editable JS lives in `tools/panorama_sources/` and must be rebuilt (below). Originals in `tools/panorama_backups/`. XML containers are not modified. CSS: only `toasts/toasts.css` has an editable source (recovered from the compiled file); `panorama_resources.js build` compiles it with Valve's `resourcecompiler.exe` via `content/dota_addons/overthrew/` (outside git). Image URLs in CSS sources must stay `s2r://…_png.vtex` (no PNG sources exist; `file://{images}` compiles to empty paths). The compiler does not validate property names; check the client log (`-condebug`).
-- **Docs:** `tools/README.md` (authoritative feature spec), `panorama_README.md`, `TEST_RESULTS.md`, `PUBLISHING_CHECK.md`, `NEUTRAL_TIMINGS_INVESTIGATION.md`.
-- **Localization:** English (`resource/addon_english.txt`, default/fallback for other client languages), Russian (`resource/addon_russian.txt`) and Ukrainian (`resource/addon_ukrainian.txt`). Every token change goes into **all three** files, with real translations. Russian keeps item/hero/game-mode names in English, as the Russian Dota client does. Ukrainian follows the official Dota 2 Ukrainian client (reference: `resource/localization/*_ukrainian.txt` in `game/dota/pak01_dir.vpk`): «ви» address, ’ apostrophe, official hero/ability names in prose, item titles in English, «Англійською: …» line on ability descriptions. `run_tests.js` fails if the token sets differ.
+## Commands
 
-### Adding a host option (a boolean match flag)
+Run everything from the addon root. Requires Node.js 24. In Git Bash, if `node` isn't on the PATH, run
+`export PATH="/c/Program Files/nodejs:$PATH"` first.
 
-One toggle touches five places — keep them in sync:
-1. `host_options.lua` — add the name to `MATCH_FLAGS`; add it to `DEFAULT_ON_FLAGS` only if it should start checked (absent = default off). `ApplyRules` validates every flag as 0/1/false/true and publishes through the `match_rules` net table.
-2. Panorama source `tools/panorama_sources/.../custom_loading_screen/custom_loading_screen.js` — add `"<name>"` to the right category in the `categories` array (`core`/`other`/`items`); array position = on-screen order. Then rebuild (see Testing).
-3. Localization — add `"host_rules_<name>" "<Label>"` and its hover tooltip `"host_rules_<name>_tip"` to `resource/addon_english.txt` **and** translated to `resource/addon_russian.txt` and `resource/addon_ukrainian.txt`. Category headings are `host_rules_category_<id>`.
-4. Consumer code — read the flag where its effect applies, via `HostOptions:GetOption("<name>")`, guarded by `HostOptions.locked` / `UsesHostRules()`. Existing consumers: `core_declarations.lua` (single_draft, epic_orbs, turbo), `host_items.lua` (divine_rapier, dagon), `game/upgrades/rerolls.lua` (infinite_rerolls), `host_options.lua` (all_vision → fog), `game/backpack_items.lua` (backpack_items; applied from `HostOptions:ApplyRules`, casts hooked in `filters/order.lua`).
-5. Tests — update `tools/test_host_rules.lua` (defaults + apply payloads list every flag) and `panorama_test.js` (category order assertions). `ApplyRules` rejects a payload missing any flag, so also add the flag to every `ApplyRules({...})` call in `scripts/vscripts/*_smoke.lua`.
+```sh
+npm ci --prefix tools/runtime --ignore-scripts --no-audit --no-fund   # once, or when runner deps are missing
+node tools/run_tests.js                  # full offline suite: Lua tests on Fengari, localization parity, Panorama tests
+node tools/panorama_test.js              # Panorama logic only (already included in run_tests.js)
+node tools/panorama_resources.js build   # after editing tools/panorama_sources/: rebuild panorama/*_c
+node tools/panorama_resources.js verify  # compiled resources match their sources (CI runs this)
+luacheck scripts/vscripts                # luacheck 1.2.0 (CI downloads the release binary)
+node tools/vconsole.js 'script_reload_code host_rules_smoke'   # send console commands to a running Dota client
+```
 
-## Testing
+Before opening a PR, `luacheck`, `run_tests.js` and `panorama_resources.js verify` must pass, because CI runs the same three.
 
-Environment (verified 2026-09-26): Node.js v24 at `C:\Program Files\nodejs` (on the **PowerShell** PATH; **not** on the Git-Bash PATH — in Bash first run `export PATH="/c/Program Files/nodejs:$PATH"`). Dota Workshop Tools binaries present under `game/bin/win64` (resourcecompiler, resourceinfo, vconsole2). All offline suites currently pass.
+## Architecture
 
-**1. Offline (Node.js, from addon root)** — run first, cheapest:
-- `node tools/run_tests.js` — Lua tests (`tools/test_*.lua`) run production code on Fengari with a mocked engine
-- `node tools/panorama_test.js` — Panorama logic with mocked panels
-- `node tools/panorama_resources.js build` then `... verify` — after editing JS in `panorama_sources/`
-- `luacheck scripts/vscripts` (luacheck 1.2.0, from the addon root) — `.luacheckrc` collects the repo's own globals and `table`/`string`/`math` extensions from `scripts/vscripts` at load time; new engine API names go into its `engine` list
-- Restore runner deps if missing: `npm ci --prefix tools/runtime --ignore-scripts --no-audit --no-fund`
-- Record results in `tools/TEST_RESULTS.md`.
+### Host settings
 
-**2. In-game (Dota 2 Workshop Tools):**
-- Launch Dota with `-tools`, pick addon `overthrew`, then console: `dota_launch_custom_game overthrew ot3_necropolis_ffa` (Local Host lobby; host settings appear pre-pick).
-- Smoke scripts `scripts/vscripts/*_smoke.lua` run in a disposable tools session via `script_reload_code <name>` (e.g. `host_rules_smoke`, `turbo_smoke`, `host_settings_smoke`, `host_items_smoke`, `hero_swaps_smoke`, `hero_swaps_ui_smoke`, `invincible_wards_smoke`, `all_vision_smoke`, `free_collection_smoke`, `single_draft_smoke`, `backpack_items_smoke`, `host_claim_smoke`, `tips_smoke`, `kill_goal_lock_smoke`, `fountain_smoke_smoke`, `swap_pregame_stun_smoke`, `hero_swaps_look_smoke`). They print `..._PASS` markers or assert. Some mutate state — use fresh sessions.
-- Send console commands from a terminal via VConsole (port 29000): `node tools/vconsole.js 'script_reload_code host_rules_smoke'` (options `--port --wait-ms --listen-ms`).
-- Reloading: after Lua changes restart the map (`disconnect`, then `dota_launch_custom_game ...`); `script_reload` mid-match re-runs init and resets host options. HUD Panorama scripts reload on map restart, but the loading screen (host settings menu) only reloads after quitting and relaunching the client.
-- The Dota game window must be in the foreground, or Panorama stops laying out and screenshots are stale. `jpeg_screenshot <name>` writes to `game/dota/screenshots/`.
-- `vconsole.js` output can include the console backlog: send `echo <unique marker>` first and read only what follows it.
-- Server-to-client events are wrapped by `ProtectedCustomEvents`: payloads arrive under `event_data`; subscribe with `GameEvents.NewProtectedFrame(panel).SubscribeProtected(...)`.
-- Test gotchas: item cooldowns are shared per item type on a hero (`EndCooldown` first); enemy test units near a fountain die; targets need vision (`AddFOWViewer`) with All Vision off.
-- Simulated multiplayer: bot players with real player IDs/teams via `GameRules:AddBotPlayerWithEntityScript(hero, name, team, "", false)` (see `backpack_items_multiplayer_smoke.lua`, `hero_swaps_smoke.lua`). Gotchas: idle heroes auto-attack each other (`SetIdleAcquire(false)`; damage disables Blink Dagger); teleported respawns keep `modifier_fountain_invulnerability` (out of game, untargetable); native target casts turn first (wait ~0.5s before checking); the map-centre pit shortens blinks; `ExecuteOrderFromTable` orders reach the filter with issuer -1. VConsole keeps little backlog, so long smokes store their log and reprint it when rerun. There is no `script` console command.
-- Client-side checks: Panorama `$.Msg` does not reach VConsole, but launching with `-condebug` writes it (HUD and loading screen) to `game/dota/console.log`. `cl_script_reload_code <name>` runs a file in the client Lua VM. The client VM lacks the `DOTA_GAMERULES_STATE_*` constants. Panorama `Game.GetConvarInt` cannot read Lua-registered convars; the client VM of a client in the server process can. A temporary HUD hook can listen on a net table key and send real orders (`Game.PrepareUnitOrders`) or clicks (`$.DispatchEvent("Activated", panel, "mouse")`), and report back with `GameEvents.SendCustomGameEventToServer` to a `CustomGameEventManager:RegisterListener`. Restore the HUD build afterwards. `net_fakelag` does not delay the host's own loopback client, and `GameUI.SelectUnit` cannot select enemy heroes.
-- Real multiplayer (several clients) is not tested; bot simulation doesn't replace it. Lobbies cannot be created from a `-tools` client ("Cannot start matchmaking with -insecure, -dev or -tools"), so real Local Host lobbies (which run the published Workshop build) need the normal client. Launch it through Steam (`steam.exe -applaunch 570 -condebug`; starting `dota2.exe` directly fails VAC), then Arcade → the game → Create Custom Lobby → Server Location "Local Host", set a password, Start Game. A Local Host server is an in-process listen server (`ActivateServerFromLobby - IsLan: YES, IsDedicatedServer: NO`), but it may run on a member's PC other than the lobby owner's. At match start the log tears off to `game/dota/console.<match_id>.log`, which begins with a CSODOTALobby dump (`leader_id`, members, slots) and `Initializing from lobby ... preferred PlayerID` lines. None of this is exposed to scripts.
+On `ot3_necropolis_ffa` the pre-game panel shows the host settings menu instead of guides/videos:
 
-**3. Publishing:** see `tools/PUBLISHING_CHECK.md`. Publish via Workshop Tools; exclude `.git`, `.github`, `.luacheckrc`, `tools/`, AGENTS.md, CLAUDE.md, editor caches, `panorama_debugger.cfg`. Players need no launch flags. CI (`.github/workflows/`): **Build** (`build.yml`; PRs, pushes to main, manual, and called by Release) runs luacheck, the offline suite and `panorama_resources.js verify`, then zips the nine runtime entries of the committed tree (`PACKAGE_ENTRIES`) and uploads the zip as an artifact; its `Build` job is the required PR check. **Release** (`release.yml`, manual, input `release` = semantic version) checks the tag is new, runs Build with folder `overthrew_v<version>`, tags the dispatched branch's latest commit `v<version>` and creates the GitHub release with the zip (prerelease for `-suffix` versions). Dependabot (`.github/dependabot.yml`) opens weekly grouped update PRs for the SHA-pinned workflow actions and the Fengari test runner (`tools/runtime`), with a 7-day cooldown on new releases.
+1. The menu stays hidden until every player has loaded (or a 120s wait expires).
+2. The first player to press **Claim host** becomes the host. There is no automatic host. A host who leaves
+   before starting frees the role.
+3. **Apply & Start** sends `HostOptions:apply_rules`, locks the options (`HostOptions.locked`) and starts hero pick.
+
+State lives in `scripts/vscripts/libraries/host_options.lua`: `MATCH_FLAGS`, `DEFAULT_ON_FLAGS`, and events
+`HostOptions:apply_rules`, `HostOptions:set_option_state` and `HostOptions:claim_host`. It is published through the
+`game_options` net table under the keys `host_options` and `match_rules`. `ApplyRules` rejects a payload
+unless every flag is present and is 0/1/true/false.
+
+| Option (flag) | Default | Menu tab | Effect | Consumer |
+| --- | --- | --- | --- | --- |
+| Single Draft (`single_draft`) | on | Core | Single Draft hero pick | `core_declarations.lua`, `game/single_draft.lua` |
+| Turbo (`turbo`) | on | Core | 2x earned gold/XP and kill Madstones; Shard at 1:00 | `core_declarations.lua`, `game/turbo_rewards.lua` |
+| Epic-Only orbs (`epic_orbs`) | off | Core | Every orb upgrade is epic; each reroll costs 1 | `core_declarations.lua` (`IsEpicOnlyMap`, `IsFlatRerollMap`) |
+| Backpack Items (`backpack_items`) | off | Core | Backpack items stay active (see spec) | `game/backpack_items.lua`, `filters/order.lua` |
+| Kill Goal (`kill_goal`, number) | 50 | Core | Match time = 1200s × goal / 30 | `host_options.lua` → `GameLoop` |
+| Divine Rapier (`divine_rapier`) | on | Items | Off = item disabled/disassembled | `game/host_items.lua` |
+| Dagon (`dagon`) | on | Items | Off = item disabled/disassembled | `game/host_items.lua` |
+| All Vision (`all_vision`) | on | Other | No fog; units on their own fountain are hidden from enemies | `host_options.lua`, `modifier_fountain_rejuvenation_lua.lua` |
+| Infinite Rerolls (`infinite_rerolls`) | on | Other | 999 rerolls | `game/upgrades/rerolls.lua` |
+| Longer Wards (`longer_wards`) | on | Other | 60-min Observer/Sentry lifetime; 4 Observers in stock | `game/host_items.lua` |
+| Invincible Wards (`invincible_wards`) | on | Other | Placed wards immune to attacks and damage | `game/host_items.lua` |
+
+Always-on FFA features, each documented in `tools/README.md`:
+
+- Cross-team hero swaps (`game/hero_swaps.lua`).
+- Free local premium and collection. Backend writes are blocked, Misc-slot gameplay boosts are not granted,
+  and the Collection shows only the Cosmetics tab.
+- Scoreboard player tips (`libraries/webapi/tips.lua`). They are local only: a toast, a chat line and an
+  end-screen tally, limited to 3 per match with a 30s cooldown. No currency moves.
+- A host-fixed kill goal: the original "+1 kill goal" vote is suppressed server-side, and GG Tokens are refused.
+
+### Recipe: adding a boolean host option
+
+Update these five places together:
+
+1. **`host_options.lua`:** add the name to `MATCH_FLAGS`. Add it to `DEFAULT_ON_FLAGS` only if it should start on.
+2. **Panorama:** in `tools/panorama_sources/panorama/layout/custom_game/custom_loading_screen/custom_loading_screen.js`,
+   add it to a category (`core`, `items` or `other`) in the `categories` array. Array order is on-screen order. Then run
+   `panorama_resources.js build`.
+3. **Localization:** add `host_rules_<name>` (label) and `host_rules_<name>_tip` (tooltip) to all three `addon_*.txt`
+   files. Category headings are `host_rules_category_<id>`.
+4. **Consumer:** read the flag with `HostOptions:GetOption("<name>")` where the effect applies, guarded by
+   `UsesHostRules()` / `HostOptions.locked`.
+5. **Tests:** update the defaults and apply payloads in `tools/test_host_rules.lua` and the category order in
+   `tools/panorama_test.js`. Also add the flag to every `ApplyRules({...})` call in `scripts/vscripts/*_smoke.lua`.
+
+Then add the option to the table above, to `tools/README.md` and to `README.md` (see [Documentation](#documentation)).
+
+## Conventions
+
+### Panorama
+
+- The runtime loads only compiled resources. Edit JS in `tools/panorama_sources/`, then `build`, then `verify`.
+  Commit both the source and the rebuilt `_c` file.
+- XML containers are never modified. The only CSS with an editable source is `toasts/toasts.css`.
+  Styles compile through Valve's `game/bin/win64/resourcecompiler.exe` via the untracked
+  `content/dota_addons/overthrew/` folder, so building CSS needs Windows with Workshop Tools installed.
+- Image URLs in CSS sources must stay `s2r://…_png.vtex`. No PNG sources exist, and `file://{images}`
+  compiles to empty paths.
+- The compiler does not validate property names, so check the client log (`-condebug`) after a style change.
+- Server-to-client events go through `ProtectedCustomEvents`. Payloads arrive under `event_data`; subscribe with
+  `GameEvents.NewProtectedFrame(panel).SubscribeProtected(...)`.
+
+### Localization
+
+- Every token change goes into **all three** files with real translations. `run_tests.js` fails if the token sets
+  differ. English is the fallback for other client languages.
+- **Russian:** keep item, hero and game-mode names in English, as the Russian Dota client does.
+- **Ukrainian:** follow the official Dota 2 Ukrainian client (`resource/localization/*_ukrainian.txt` inside
+  `game/dota/pak01_dir.vpk`). That means «ви» address, the ’ apostrophe, official hero/ability names in prose,
+  item titles in English, and an «Англійською: …» line on ability descriptions.
+
+### Lua
+
+- New engine API globals go into the `engine` list in `.luacheckrc`. The repo's own globals and the
+  `table`/`string`/`math` extensions are collected automatically.
+- Gate FFA-only behavior with `UsesHostRules()` so the original maps are unaffected.
+
+### Documentation
+
+Bring the READMEs up to date as part of every significant change, in the same PR, before calling the work done:
+
+- **`README.md`** (public overview): what the game offers and how to get it. Update it when user-visible features,
+  host options, defaults, maps or the release/installation flow change.
+- **`tools/README.md`** (feature spec): exact behavior, limits and design decisions. Update it with every behavior
+  change, and keep test and tooling notes current.
+- **`CLAUDE.md`** (this file): update it when commands, layout, conventions, CI or the host-option recipe change.
+
+A change is significant when it adds, removes or renames a feature or option, changes a default or visible behavior,
+or changes how the project is built, tested or released. Refactors, internal fixes and test-only changes don't need
+README edits. If nothing needs updating, say so in the PR description.
+
+### Git and pull requests
+
+- Branch from `main` with a short kebab-case topic name (e.g. `backpack-items`), then open a PR into `main`.
+- PRs are squash-merged with Title Case titles, e.g. `Add Luacheck to Build (#15)`. The `Build` check is required.
+- Record test runs (offline and in-game) in `tools/TEST_RESULTS.md`.
+
+## In-game testing (Dota 2 Workshop Tools)
+
+Launching Dota or sending console commands acts on the developer's machine. Claude should ask first unless the
+developer has granted standing permission.
+
+- **Launch:** start Dota with `-tools` (add `-condebug` to capture logs), choose addon `overthrew`, then run
+  `dota_launch_custom_game overthrew ot3_necropolis_ffa` in the console.
+- **Smoke scripts:** run with `script_reload_code <name>` (e.g. `host_rules_smoke`, `backpack_items_smoke`,
+  `hero_swaps_smoke`; see `scripts/vscripts/*_smoke.lua`). They print `..._PASS` markers or assert. Many mutate
+  state, so use a fresh session for each.
+- **VConsole:** `tools/vconsole.js` talks to port 29000 (`--port`, `--wait-ms`, `--listen-ms`). Its output can include
+  backlog, so send `echo <unique marker>` first and read only what follows. The backlog is short, so long smoke
+  scripts store their log and reprint it when rerun.
+- **Reloading:** after Lua changes, restart the map (`disconnect`, then relaunch). `script_reload` mid-match re-runs
+  init and resets host options. HUD Panorama reloads on map restart, but the loading screen (the host settings menu)
+  reloads only after restarting the client.
+- **Focus:** keep the Dota window in the foreground. Otherwise Panorama stops laying out and screenshots
+  (`jpeg_screenshot <name>` → `game/dota/screenshots/`) are stale.
+- **Client logs:** Panorama `$.Msg` doesn't reach VConsole; with `-condebug` it goes to `game/dota/console.log`.
+  `cl_script_reload_code <name>` runs a file in the client Lua VM. That VM lacks the `DOTA_GAMERULES_STATE_*`
+  constants.
+
+### Gotchas
+
+- Item cooldowns are shared per item type on a hero, so call `EndCooldown` first.
+- Enemy test units near a fountain die. With All Vision off, targets need vision (`AddFOWViewer`).
+- For simulated multiplayer, add bots with real player IDs/teams:
+  `GameRules:AddBotPlayerWithEntityScript(hero, name, team, "", false)` (see `backpack_items_multiplayer_smoke.lua`).
+  - Idle heroes auto-attack each other, so call `SetIdleAcquire(false)`; the damage also disables Blink Dagger.
+  - Teleported respawns keep `modifier_fountain_invulnerability`.
+  - Native target casts turn first, so wait about 0.5s before checking.
+  - The map-centre pit shortens blinks.
+  - `ExecuteOrderFromTable` orders reach the order filter with issuer -1.
+- There is no `script` console command. Panorama `Game.GetConvarInt` can't read Lua-registered convars.
+- `net_fakelag` doesn't delay the host's own loopback client. `GameUI.SelectUnit` can't select enemy heroes.
+- To drive the real UI, a temporary HUD hook can send orders (`Game.PrepareUnitOrders`) or clicks
+  (`$.DispatchEvent("Activated", panel, "mouse")`) and report back to a server listener. Restore the HUD build afterwards.
+
+### Real multiplayer
+
+Real multiplayer with several clients is untested, and the bot simulation doesn't replace it. A `-tools` client
+cannot create lobbies, so use the normal client:
+
+1. Launch through Steam: `steam.exe -applaunch 570 -condebug`. Starting `dota2.exe` directly fails VAC.
+2. Go to Arcade → the game → Create Custom Lobby, set Server Location to "Local Host", set a password, and start.
+
+This runs the published Workshop build. The listen server may run on any member's PC. At match start the log
+switches to `game/dota/console.<match_id>.log`, which begins with the lobby dump (leader, members, slots).
+
+## Release and publishing
+
+- **Build** (`.github/workflows/build.yml`): runs on PRs, pushes to `main`, manual dispatch, and when Release calls it.
+  It runs luacheck, the offline suite and `panorama_resources.js verify`. It then zips the committed tree's nine
+  runtime entries (`PACKAGE_ENTRIES`: `addoninfo.txt maps materials models panorama particles resource scripts
+  soundevents`) and uploads the zip as an artifact.
+- **Release** (`.github/workflows/release.yml`): manual, with input `release` = a semantic version. It checks that
+  the tag is new, builds `overthrew_v<version>.zip`, tags the dispatched commit `v<version>` and creates the GitHub
+  release. `-suffix` versions become prereleases.
+- **Dependabot:** weekly grouped PRs for the SHA-pinned actions and `tools/runtime`, with a 7-day cooldown.
+- **Workshop:** publish with Workshop Tools from a folder that holds only the nine runtime entries. Never include
+  `.git`, `.github`, `.claude`, `.luacheckrc`, `tools/`, `CLAUDE.md`, `README.md`, editor caches or
+  `panorama_debugger.cfg`. Keep `PACKAGE_ENTRIES` in sync with any new runtime folder. Players need no launch flags.
+  Details are in `tools/PUBLISHING_CHECK.md`.
+- Claude never uploads to the Workshop or creates releases/tags unless explicitly asked.
+
+## Further docs
+
+- `tools/README.md`: feature spec and design notes
+- `tools/panorama_README.md`: Panorama resource format and build details
+- `tools/TEST_RESULTS.md`: log of test runs
+- `tools/PUBLISHING_CHECK.md`: publishing audit and packaging limits
+- `tools/NEUTRAL_TIMINGS_INVESTIGATION.md`: neutral item timing investigation
