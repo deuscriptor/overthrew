@@ -215,8 +215,10 @@ function UpdateChatStyle() {
 }
 
 function InitMatchRules() {
-	// Loading panels can initialize before map information and net tables arrive.
-	if (!CustomNetTables.GetTableValue("game_options", "match_rules")) return;
+	// Loading panels can initialize before map information and net tables arrive. The settings stay
+	// hidden (the usual tips show instead) until every player has loaded.
+	const initialRules = CustomNetTables.GetTableValue("game_options", "match_rules");
+	if (!initialRules || (initialRules.ready !== 1 && initialRules.locked !== 1)) return;
 	if (LOADING_HUD.CONTEXT.FindChildTraverse("MatchRulesPanel")) return;
 	["LS_Tips_Logo", "LS_DiscordButton"].forEach(function(className) {
 		LOADING_HUD.CONTEXT.FindChildrenWithClassTraverse(className).forEach(function(element) { element.visible = false; });
@@ -382,7 +384,7 @@ function InitMatchRules() {
 			// clamped to half the height, keeping semicircular ends at any UI scale.
 			const track = $.CreatePanel("Panel", row, "");
 			css(track, {width: "40px", height: "22px", horizontalAlign: "right", verticalAlign: "center",
-				borderRadius: "999px", transitionProperty: "background-color, box-shadow", transitionDuration: "0.12s"});
+				borderRadius: "999px", transitionProperty: "background-color, box-shadow, saturation, opacity", transitionDuration: "0.12s"});
 			const trackFill = $.CreatePanel("Panel", track, "");
 			css(trackFill, {width: "38px", height: "20px", margin: "1px", borderRadius: "999px",
 				transitionProperty: "background-color", transitionDuration: "0.12s"});
@@ -403,6 +405,8 @@ function InitMatchRules() {
 				// A faint glow in the outline colour softens the edge pixels.
 				track.style.boxShadow = (on ? "#9cc07f66" : "#41546566") + " 0px 0px 2px 0px";
 				trackFill.style.backgroundColor = on ? "gradient(linear, 0% 0%, 0% 100%, from(#6f9f5c), to(#4a7340))" : "#0a1017";
+				// Read-only viewers (waiting for or before a host, or after the start) get greyed-out switches.
+				css(track, {saturation: canEditRules ? "1" : "0", opacity: canEditRules ? "1" : "0.5"});
 				css(knob, {backgroundColor: on ? "#ffffff" : "#6d7f8e", transform: on ? "translate3d(18px, 0px, 0px)" : "translate3d(0px, 0px, 0px)"});
 			};
 			controls[name] = row;
@@ -455,7 +459,47 @@ function InitMatchRules() {
 	css(waitingText, {flowChildren: "down", verticalAlign: "center"});
 	css(label(waitingText, "#host_rules_waiting"), {marginBottom: "0px", fontSize: "15px", fontWeight: "bold",
 		letterSpacing: "1.5px", textTransform: "uppercase", color: "#f3dfae", textShadow: "0px 1px 2px 1.0 #000000aa"});
-	css(label(waitingText, "#host_rules_waiting_detail"), {marginBottom: "0px", fontSize: "13px", color: "#8da6b5"});
+	const waitingDetail = label(waitingText, "");
+	css(waitingDetail, {marginBottom: "0px", fontSize: "13px", color: "#8da6b5"});
+	// With no host yet, anyone can claim the role: the same card, lit gold like unvisited tabs.
+	const claim = $.CreatePanel("Button", panel, "ClaimHost");
+	css(claim, {horizontalAlign: "center", marginTop: "12px", minWidth: "220px", height: "42px", padding: "0px 22px 0px 16px",
+		flowChildren: "right", backgroundColor: "gradient(linear, 0% 0%, 100% 100%, from(#1a2835), to(#0b121a))",
+		borderRadius: "3px", transitionProperty: "border, box-shadow, brightness, opacity", transitionDuration: "0.12s"});
+	const claimMark = $.CreatePanel("Panel", claim, "");
+	css(claimMark, {width: "9px", height: "9px", verticalAlign: "center", marginRight: "14px", backgroundColor: GOLD,
+		transform: "rotateZ(45deg)", boxShadow: "#d4bb8699 0px 0px 6px 0px"});
+	const claimText = $.CreatePanel("Panel", claim, "");
+	css(claimText, {flowChildren: "down", verticalAlign: "center"});
+	css(label(claimText, "#host_rules_claim"), {marginBottom: "0px", fontSize: "15px", fontWeight: "bold",
+		letterSpacing: "1.5px", textTransform: "uppercase", color: "#f3dfae", textShadow: "0px 1px 2px 1.0 #000000aa"});
+	css(label(claimText, "#host_rules_claim_detail"), {marginBottom: "0px", fontSize: "13px", color: "#8da6b5"});
+	claimText.Children().forEach(function(child) { child.hittest = false; });
+	let claimHovered = false, claimPending = false;
+	function styleClaim() {
+		const ready = claim.enabled;
+		css(claim, {
+			border: "1px solid " + (ready && claimHovered ? GOLD : "#dfc58b"),
+			boxShadow: ready && claimHovered ? "#d4bb8666 0px 0px 6px 0px" : "#c59a48cc 0px 0px 8px 1px",
+			brightness: ready && claimHovered ? "1.25" : "1",
+			opacity: ready ? "1" : "0.6",
+		});
+	}
+	const showClaimTooltip = tooltip(claim, "#host_rules_claim_tip");
+	claim.SetPanelEvent("onmouseover", function() { claimHovered = true; styleClaim(); showClaimTooltip(); });
+	claim.SetPanelEvent("onmouseout", function() {
+		claimHovered = false;
+		styleClaim();
+		$.DispatchEvent("DOTAHideTextTooltip", claim);
+	});
+	claim.SetPanelEvent("onactivate", function() {
+		if (!claim.enabled) return;
+		// One request at a time; the rules update shows who got the role.
+		claimPending = true;
+		refresh();
+		GameEvents.SendToServerEnsured("HostOptions:claim_host", {});
+		$.Schedule(2, function() { claimPending = false; if (claim.IsValid()) refresh(); });
+	});
 	let waitingStep = 0;
 	function animateWaiting() {
 		if (!waiting.IsValid()) return;
@@ -507,7 +551,17 @@ function InitMatchRules() {
 		start.enabled = canEdit && validKillGoal();
 		styleStart();
 		start.visible = canEdit;
-		waiting.visible = !canEdit && rules.locked !== 1;
+		const open = rules.locked !== 1;
+		const hasHost = rules.host_id !== undefined && rules.host_id >= 0;
+		claim.visible = open && !hasHost;
+		claim.enabled = claim.visible && !claimPending;
+		styleClaim();
+		waiting.visible = open && hasHost && !canEdit;
+		if (waiting.visible) {
+			const host = Game.GetPlayerInfo(rules.host_id);
+			waitingDetail.SetDialogVariable("host_name", host ? host.player_name : "");
+			waitingDetail.text = $.Localize("#host_rules_waiting_detail", waitingDetail);
+		}
 	}
 	CustomNetTables.SubscribeNetTableListener("game_options", function(table, key) { if (key === "match_rules") refresh(); });
 	refresh();

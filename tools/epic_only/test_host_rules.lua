@@ -11,7 +11,7 @@ GameRules.GetGameModeEntity = function() return {
 } end
 local players = {{id = 0}, {id = 1}}
 for _, player in ipairs(players) do player.GetPlayerID = function(self) return self.id end end
--- Connection-order signals must not decide the host.
+-- Connection-order signals must not decide the host: players claim it.
 GetListenServerHost = function() return {GetController = function() return players[2] end} end
 local fallback
 Timers = {CreateTimer = function(_, args) fallback = args end}
@@ -19,7 +19,7 @@ PlayerResource.IsValidPlayerID = function(_, id) return id == 0 or id == 1 end
 PlayerResource.GetPlayer = function(_, id) return players[id + 1] end
 IsValidEntity = function(p) return p ~= nil end
 GameRules.State_Get = function() return state end
--- Native privileges follow load order; player 1 loaded first. They must be ignored.
+-- Native privileges follow load order; player 1 loaded first. Only other maps use them.
 GameRules.PlayerHasCustomGameHostPrivileges = function(_, p) return p.id == 1 end
 local now, connection, fake = 0, {}, {}
 Time = function() return now end
@@ -48,6 +48,7 @@ dofile("scripts/vscripts/libraries/host_options.lua")
 GameLoop.current_layout = TEAMS_LAYOUTS.ot3_necropolis_ffa
 for draft = 0, 1 do for epic = 0, 1 do for turbo = 0, 1 do
     HostOptions:Init()
+    assert(HostOptions:ClaimHost(0))
     assert(not HostOptions:GetOption("epic_orbs"), "Epic Orbs must default off")
     assert(not HostOptions:GetOption("backpack_items"), "Backpack Items must default off")
     for _, on in ipairs({"single_draft", "turbo", "infinite_rerolls", "all_vision",
@@ -91,6 +92,7 @@ end end end
 assert(initialized == 4)
 for _, goal in ipairs({1, 15, 30, 45, 60, 90}) do
     HostOptions:Init()
+    assert(HostOptions:ClaimHost(0))
     assert(HostOptions:ApplyRules({PlayerID=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, kill_goal=goal,
         infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0}))
     assert(GameLoop.current_layout.game_base_duration == DEFAULT_MATCH_LENGTH * (goal / 30))
@@ -99,6 +101,7 @@ for _, goal in ipairs({1, 15, 30, 45, 60, 90}) do
 end
 for _, name in ipairs({"backpack_items", "infinite_rerolls", "all_vision", "invincible_wards", "longer_wards", "divine_rapier", "dagon"}) do
     HostOptions:Init()
+    assert(HostOptions:ClaimHost(0))
     assert(HostOptions:GetOption(name) == (name ~= "backpack_items"), name .. " default")
     local event = {PlayerID=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=1, kill_goal=30,
         infinite_rerolls=1, all_vision=1, invincible_wards=1, longer_wards=0, divine_rapier=1, dagon=1}
@@ -114,9 +117,9 @@ for _, name in ipairs({"backpack_items", "infinite_rerolls", "all_vision", "invi
     assert(HostOptions:GetOption(name) == (value == 1), "locked new flag changed")
 end
 assert(backpackApplied > 0, "Applying rules must configure Backpack Items")
--- Lobby order: when the lobby's first member (player 0) has left, the next one leads.
+-- Kill goal validation, with player 1 as host.
 HostOptions:Init()
-connection[0] = DOTA_CONNECTION_STATE_ABANDONED
+assert(HostOptions:ClaimHost(1))
 assert(not HostOptions:ApplyRules({PlayerID=0, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, kill_goal=30}))
 for _, invalid in ipairs({0, -1, 1.5, "30", false, math.huge, 2147483648}) do
     assert(not HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, kill_goal=invalid}))
@@ -124,62 +127,84 @@ for _, invalid in ipairs({0, -1, 1.5, "30", false, math.huge, 2147483648}) do
     assert(HostOptions.options.kill_goal == 50)
 end
 assert(HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, kill_goal=30}))
-connection[0] = nil
+-- Claim host: nobody is host until a player claims it, and only once setup has begun and
+-- every player has loaded. Load order and native privileges (player 1) play no part.
+local claim = listeners["HostOptions:claim_host"]
 HostOptions:Init()
-state = DOTA_GAMERULES_STATE_HERO_SELECTION
-assert(not HostOptions:ApplyRules({PlayerID=0, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=1, epic_orbs=1, turbo=1, backpack_items=0, kill_goal=30}))
+state = DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP - 1
+HostOptions:PublishRules()
+assert(publishedRules.ready == 0 and publishedRules.host_id == -1, "settings open before setup")
+claim({PlayerID=1}, 1)
+assert(publishedRules.host_id == -1, "claim accepted before setup")
 state = DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP
--- The lowest player ID (the lobby's first slot) leads. The first loader (player 1, who
--- holds native privileges and the listen-server slot) gains nothing.
-HostOptions:Init()
 connection[0] = DOTA_CONNECTION_STATE_NOT_YET_CONNECTED
 HostOptions:PublishRules()
-assert(publishedRules.host_id == -1, "first loader became host while the lobby owner was loading")
-assert(not HostOptions:IsHost(players[2]))
+assert(publishedRules.ready == 0, "settings open while a player is loading")
+claim({PlayerID=1}, 1)
+assert(publishedRules.host_id == -1, "claim accepted while a player was loading")
 connection[0] = nil
 HostOptions:PublishRules()
-assert(publishedRules.host_id == 0, "lobby owner did not get host once loaded")
+assert(publishedRules.ready == 1 and publishedRules.host_id == -1, "host picked automatically")
+connection[0] = DOTA_CONNECTION_STATE_NOT_YET_CONNECTED
+HostOptions:PublishRules()
+assert(publishedRules.ready == 1, "open settings closed again")
+connection[0] = nil
+claim({PlayerID=0}, 1)
 fake[0] = true
-HostOptions:PublishRules()
-assert(publishedRules.host_id == 1, "bot treated as lobby owner")
+claim({PlayerID=0}, 0)
 fake[0] = nil
-connection[0] = DOTA_CONNECTION_STATE_DISCONNECTED
-HostOptions:PublishRules()
-assert(publishedRules.host_id == 1, "disconnected owner must pass host to the next member")
-connection[0] = nil
-HostOptions:PublishRules()
-assert(publishedRules.host_id == 0, "reconnected owner must get host back")
+assert(publishedRules.host_id == -1, "forged or bot claim accepted")
+claim({PlayerID=0}, 0)
+assert(publishedRules.host_id == 0 and HostOptions.host == players[1], "first claim did not win")
+claim({PlayerID=1}, 1)
+assert(publishedRules.host_id == 0, "host taken from another player")
 local edits = listeners["HostOptions:set_option_state"]
 edits({PlayerID=1, name="kill_goal", state=70}, 1)
 edits({PlayerID=0, name="kill_goal", state=70}, 1)
-assert(HostOptions.options.kill_goal == 50, "non-owner or forged edit accepted")
+assert(HostOptions.options.kill_goal == 50, "non-host or forged edit accepted")
 edits({PlayerID=0, name="kill_goal", state=60}, 0)
 assert(HostOptions.options.kill_goal == 60)
+-- A host who leaves before starting frees the role for anyone; returning does not restore it.
+connection[0] = DOTA_CONNECTION_STATE_DISCONNECTED
+HostOptions:PublishRules()
+assert(publishedRules.host_id == -1, "departed host kept the role")
+claim({PlayerID=1}, 1)
+assert(publishedRules.host_id == 1, "role not claimable after the host left")
+connection[0] = nil
+HostOptions:PublishRules()
+assert(publishedRules.host_id == 1 and HostOptions.options.kill_goal == 60, "returning player took host or settings reset")
 local apply = listeners["HostOptions:apply_rules"]
-local event = {PlayerID=1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, kill_goal=60}
-apply(event, 1)
-assert(not HostOptions.locked, "first loader started match")
-event.PlayerID = 0
-apply(event, 1)
-assert(not HostOptions.locked, "forged owner started match")
+local event = {PlayerID=0, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, kill_goal=60}
 apply(event, 0)
-assert(HostOptions.locked, "lobby owner could not start match")
--- A lobby owner who never finishes loading cannot stall setup.
+assert(not HostOptions.locked, "non-host started match")
+event.PlayerID = 1
+apply(event, 0)
+assert(not HostOptions.locked, "forged host started match")
+apply(event, 1)
+assert(HostOptions.locked, "host could not start match")
+connection[1] = DOTA_CONNECTION_STATE_DISCONNECTED
+claim({PlayerID=0}, 0)
+assert(HostOptions.host_id == 1, "host changed after the rules locked")
+connection[1] = nil
+-- A player who never finishes loading cannot keep the settings closed.
 HostOptions:Init()
-connection[0] = DOTA_CONNECTION_STATE_NOT_YET_CONNECTED
+connection[1] = DOTA_CONNECTION_STATE_NOT_YET_CONNECTED
 fallback = nil
-HostOptions:WatchHostLoading()
+HostOptions:WatchLoading()
 assert(fallback and fallback.useGameTime == false and fallback.endTime == 120)
 HostOptions:PublishRules()
-assert(publishedRules.host_id == -1)
+assert(publishedRules.ready == 0)
 fallback.callback()
-HostOptions:PublishRules()
-assert(publishedRules.host_id == 1, "stuck lobby owner stalled setup")
-connection[0] = nil
+assert(publishedRules.ready == 1, "stuck loader kept the settings closed")
+assert(HostOptions:ClaimHost(0))
+connection[1] = nil
 HostOptions:Init()
 HostOptions:PublishRules()
-assert(publishedRules.host_id == 0, "script reload must restore lobby order")
+assert(publishedRules.host_id == -1, "script reload must clear the host")
+-- Other maps keep native host privileges and have no claims.
 map = "ot3_gardens_duo"
 assert(not IsEpicOnlyMap() and not IsSingleDraftMap() and not IsFlatRerollMap())
+assert(HostOptions:ResolveHost() == players[2], "other maps must keep native host privileges")
+assert(not HostOptions:ClaimHost(0), "claims accepted on another map")
 dofile("tools/epic_only/test_turbo.lua")
 output("PASS host rules: all eight combinations, Epic-linked rerolls, host authorization, migration, validation, locking and one-time start")

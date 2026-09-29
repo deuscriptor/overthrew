@@ -168,6 +168,7 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	let listener;
 	const requests = [];
 	const waitingFrames = [];
+	const claimTimers = [];
 	const pagesRequested = [];
 	// The loading screen's own pager: arrows with a chevron image, and the bullets container.
 	const tipsRoot = new Panel("LS_Tips_Root", "Panel", root);
@@ -186,9 +187,9 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	};
 	const context = vm.createContext({LOADING_HUD: {CONTEXT: root, MOVIE_CONTAINER: root, BULLETS_ROOT: bulletsRoot}, hints: [], InitHints: initHints,
 		SetHint: index => pagesRequested.push(index),
-		$: {CreatePanel: (type, parent, id) => new Panel(id, type, parent), Localize: value => value,
-			Schedule: (delay, callback) => { if (delay === 0.3) waitingFrames.push(callback); }},
-		Game: {GetLocalPlayerID: () => 0},
+		$: {CreatePanel: (type, parent, id) => new Panel(id, type, parent), Localize: value => value, DispatchEvent: () => {},
+			Schedule: (delay, callback) => { if (delay === 0.3) waitingFrames.push(callback); if (delay === 2) claimTimers.push(callback); }},
+		Game: {GetLocalPlayerID: () => 0, GetPlayerInfo: id => ({player_name: "Player " + id})},
 		GameEvents: {SendToServerEnsured: (name, args) => requests.push({name, args})},
 		CustomNetTables: {GetTableValue: () => data, SubscribeNetTableListener: (table, fn) => { listener = fn; }},
 	});
@@ -196,7 +197,11 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	assert.equal(root.children.length, 1, "wait for rules before constructing controls");
 	const logo = new Panel("Logo", "Image", root, ["LS_Tips_Logo"]);
 	const discord = new Panel("Discord", "Button", root, ["LS_DiscordButton"]);
-	data = {host_id: 0, locked: 0, single_draft: 1, epic_orbs: 0, turbo: 1, longer_wards: 1};
+	data = {host_id: -1, locked: 0, ready: 0, single_draft: 1, epic_orbs: 0, turbo: 1, longer_wards: 1};
+	vm.runInContext("InitMatchRules();", context);
+	assert.equal(root.children.length, 3, "settings stay hidden until every player has loaded");
+	assert.equal(logo.visible, true, "loading tips stay until then");
+	data = {host_id: 0, locked: 0, ready: 1, single_draft: 1, epic_orbs: 0, turbo: 1, longer_wards: 1};
 	vm.runInContext("InitMatchRules(); InitMatchRules();", context);
 	assert.equal(root.children.length, 4, "initialize only once");
 	// Pager: arrows and bullets grouped into one row, styled like the settings.
@@ -239,6 +244,9 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	tabs[1].events.onactivate();
 	assert.deepEqual(pagesRequested, [1], "tabs open their settings page");
 	const knob = name => root.FindChildTraverse("Rule_" + name).children[2].children[0].children[0];
+	const track = name => root.FindChildTraverse("Rule_" + name).children[2];
+	assert.equal(track("single_draft").style.saturation, "1", "the host sees coloured switches");
+	assert.equal(track("epic_orbs").style.opacity, "1");
 	assert.match(knob("single_draft").style.transform, /18px/, "enabled option shows switch on");
 	assert.match(knob("epic_orbs").style.transform, /\(0px/, "disabled option shows switch off");
 	assert.equal(root.FindChildTraverse("KillGoalTime").text, "#host_rules_time_limit 33:20");
@@ -293,13 +301,48 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	}
 	assert.equal(root.FindChildTraverse("Rule_single_draft").enabled, false);
 	assert.equal(goal.enabled, false);
+	for (const name of ["single_draft", "epic_orbs"]) {
+		assert.equal(track(name).style.saturation, "0", "waiting players see greyed-out switches");
+		assert.equal(track(name).style.opacity, "0.5");
+	}
+	assert.equal(waiting.children[1].children[1].vars.host_name, "Player 1", "waiting card names the host");
+	const claim = root.FindChildTraverse("ClaimHost");
+	assert.equal(claim.visible, false, "no claim while someone is host");
+	data.host_id = -1;
+	listener("game_options", "match_rules");
+	assert.equal(claim.visible, true, "anyone can claim a free host role");
+	assert.equal(waiting.visible, false);
+	assert.equal(start.visible, false);
+	assert.equal(root.FindChildTraverse("Rule_single_draft").enabled, false, "no edits before claiming");
+	// Same footprint as Apply & Start and the waiting card, lit like unvisited tabs.
+	assert.equal(claim.style.height, start.style.height);
+	assert.equal(claim.style.marginTop, start.style.marginTop);
+	assert.equal(claim.style.border, "1px solid #dfc58b");
+	assert.match(claim.style.boxShadow, /^#c59a48cc/);
+	assert.deepEqual(claim.children[1].children.map(p => p.text), ["#host_rules_claim", "#host_rules_claim_detail"]);
+	claim.events.onmouseover();
+	assert.equal(claim.style.border, "1px solid #d4bb86", "claim hover");
+	claim.events.onmouseout();
+	const sent = requests.length;
+	claim.events.onactivate();
+	claim.events.onactivate();
+	assert.equal(requests.length, sent + 1, "one claim request at a time");
+	assert.deepEqual(JSON.parse(JSON.stringify(requests[requests.length - 1])), {name: "HostOptions:claim_host", args: {}});
+	assert.equal(claim.enabled, false);
+	claimTimers.shift()();
+	assert.equal(claim.enabled, true, "claim can be retried if it was not granted");
 	data.host_id = 0;
+	listener("game_options", "match_rules");
+	assert.equal(claim.visible, false);
+	assert.equal(start.visible, true, "the claimer gets Apply & Start");
+	assert.equal(track("single_draft").style.saturation, "1", "switches regain colour for the new host");
 	data.locked = 1;
 	listener("game_options", "match_rules");
 	assert.equal(start.enabled, false, "locked settings cannot be edited");
 	assert.equal(waiting.visible, false, "no waiting message after start");
+	assert.equal(claim.visible, false, "no claim after start");
 }
-console.log("PASS: independent rule flags, delayed settings arrival, host controls and atomic Apply payload");
+console.log("PASS: independent rule flags, settings hidden until everyone loads, Claim Host, host controls and atomic Apply payload");
 
 const source = fs.readFileSync(path.join(scripts, "top_bar/orbs_progress.js"), "utf8");
 for (const epic of [false, true]) {

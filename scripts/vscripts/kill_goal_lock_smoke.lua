@@ -5,6 +5,7 @@ assert(IsInToolsMode() and UsesHostRules(), "requires local FFA tools mode")
 local state = GameRules:State_Get()
 if state < DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP or not PlayerResource:GetPlayer(0) then print("KGLOCK waiting for the player") return end
 if state == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
+	HostOptions:ClaimHost(0) -- no automatic host: claim it as a player would
 	assert(HostOptions:ApplyRules({PlayerID=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0,
 		kill_goal=40, infinite_rerolls=0, all_vision=0, invincible_wards=1, longer_wards=1, divine_rapier=1, dagon=1}))
 	print("KGLOCK setup applied")
