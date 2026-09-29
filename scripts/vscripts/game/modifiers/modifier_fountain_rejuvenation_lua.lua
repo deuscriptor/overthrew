@@ -22,7 +22,6 @@ modifier_fountain_rejuvenation_effect_lua.interval = 0.5
 modifier_fountain_rejuvenation_effect_lua.mana_regen = 25 -- %
 modifier_fountain_rejuvenation_effect_lua.health_regen = 25 -- %
 modifier_fountain_rejuvenation_effect_lua.status_res = 50 -- %
-FOUNTAIN_SMOKE_PARTICLE = "particles/items2_fx/smoke_of_deceit_buff.vpcf"
 
 function modifier_fountain_rejuvenation_effect_lua:GetTexture() return "filler_ability" end
 
@@ -45,20 +44,13 @@ function modifier_fountain_rejuvenation_effect_lua:OnCreated()
 	if parent:GetUnitName() == "npc_dota_hero_lich" then self.interval = 0.1 end
 
 	-- All Vision removes fog, so on the configurable FFA map units on their own fountain are smoked instead:
-	-- hidden from enemies (true sight and minimap included), with the Smoke of Deceit look for their own team.
+	-- hidden from enemies (true sight and minimap included), with no smoke visuals for their own team.
 	-- The stack count carries the decision to clients, which evaluate CheckState too.
 	if UsesHostRules() and HostOptions.locked and HostOptions:GetOption("all_vision") then
 		self:SetStackCount(1)
-		self.smoke_particle = ParticleManager:CreateParticleForTeam(FOUNTAIN_SMOKE_PARTICLE, PATTACH_ABSORIGIN_FOLLOW, parent, parent:GetTeamNumber())
 	end
 
 	self:StartIntervalThink(self.interval)
-end
-
-function modifier_fountain_rejuvenation_effect_lua:OnDestroy()
-	if IsClient() or not self.smoke_particle then return end
-	ParticleManager:DestroyParticle(self.smoke_particle, false)
-	ParticleManager:ReleaseParticleIndex(self.smoke_particle)
 end
 
 function modifier_fountain_rejuvenation_effect_lua:OnIntervalThink()
@@ -117,6 +109,8 @@ function modifier_fountain_rejuvenation_effect_lua:GetModifierStatusResistanceSt
 end
 
 
+-- The invisible state alone hides the unit from enemies; a level of 0 skips the translucent model, so the own team
+-- sees the dark fountain protection look (modifier_fountain_protection_look_lua) instead.
 function modifier_fountain_rejuvenation_effect_lua:GetModifierInvisibilityLevel()
-	return self:GetStackCount()
+	return 0
 end

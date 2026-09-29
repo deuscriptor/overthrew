@@ -4,7 +4,6 @@ PrecacheManager = {}
 
 PrecacheManager.particles = {
 	"particles/leader/leader_overhead.vpcf",
-	"particles/items2_fx/smoke_of_deceit_buff.vpcf",
 	"particles/orb_common.vpcf",
 	"particles/orb_rare.vpcf",
 	"particles/orb_epic.vpcf",
@@ -18,6 +17,7 @@ PrecacheManager.particles = {
 	"particles/orb_spree/orb_spree_shockwave.vpcf",
 	"particles/epic_pathfinder.vpcf",
 	"particles/ui/fountain_range/fountain_range.vpcf",
+	"particles/status_fx/status_effect_dark_willow_shadow_realm.vpcf",
 
 	"particles/custom/generics/status_res_on_debuff/generic_status_res_on_debuff.vpcf",
 

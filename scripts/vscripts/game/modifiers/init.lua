@@ -2,6 +2,7 @@ local modifier_names = {
 	"modifier_bat_handler",
 	"modifier_central_ring_emitter",
 	"modifier_fountain_movespeed_lua",
+	"modifier_fountain_protection_lua",
 	"modifier_fountain_rejuvenation_lua",
 	"modifier_kill_leader",
 	"modifier_pregame_stunned",
