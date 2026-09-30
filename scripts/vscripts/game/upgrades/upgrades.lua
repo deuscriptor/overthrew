@@ -712,7 +712,9 @@ function Upgrades:SetGenericUpgrade(hero, upgrade_name, count)
 end
 
 
-function Upgrades:AddGenericUpgradeModifier(unit, upgrade_name, upgrade_count)
+--- Returns true when the modifier was applied. With skip_stat_bonus the caller runs CalculateStatBonus once
+--- after applying several upgrades.
+function Upgrades:AddGenericUpgradeModifier(unit, upgrade_name, upgrade_count, skip_stat_bonus)
 	local upgrade_definition = self.generic_upgrades_kv[upgrade_name]
 
 	if unit:IsSpiritBear() and (upgrade_definition.ignore_bear and upgrade_definition.ignore_bear == 1) then
@@ -746,7 +748,24 @@ function Upgrades:AddGenericUpgradeModifier(unit, upgrade_name, upgrade_count)
 	modifier:SetStackCount(upgrade_count)
 	modifier:ForceRefresh()
 
-	if unit.CalculateStatBonus then
+	if unit.CalculateStatBonus and not skip_stat_bonus then
+		unit:CalculateStatBonus(true)
+	end
+
+	return true
+end
+
+
+--- Applies every generic upgrade of `source` to `unit`, recalculating its stats once.
+function Upgrades:AddGenericUpgradeModifiers(unit, source)
+	local applied = false
+	for upgrade_name, upgrade_data in pairs(source.upgrades and source.upgrades.generic or {}) do
+		if upgrade_data and upgrade_data.count and upgrade_data.count > 0 then
+			applied = Upgrades:AddGenericUpgradeModifier(unit, upgrade_name, upgrade_data.count, true) or applied
+		end
+	end
+
+	if applied and unit.CalculateStatBonus then
 		unit:CalculateStatBonus(true)
 	end
 end
@@ -804,13 +823,9 @@ function Upgrades:ProcessClone(clone, hero, skip_generics)
 
 	controller_modifier:ForceRefresh()
 
-	if not hero.upgrades.generic or skip_generics then return end
+	if skip_generics then return end
 
-	for upgrade_name, upgrade_data in pairs(hero.upgrades.generic) do
-		if upgrade_data and upgrade_data.count > 0 then
-			Upgrades:AddGenericUpgradeModifier(clone, upgrade_name, upgrade_data.count)
-		end
-	end
+	Upgrades:AddGenericUpgradeModifiers(clone, hero)
 end
 
 
@@ -967,11 +982,7 @@ function Upgrades:ApplySummonUpgrades(summon, summon_name, owner)
 	end
 
 	if summon_params.generic_upgrades then
-		for name, data in pairs(owner.upgrades.generic or {}) do
-			if data.count and data.count > 0 then
-				Upgrades:AddGenericUpgradeModifier(summon, name, data.count)
-			end
-		end
+		Upgrades:AddGenericUpgradeModifiers(summon, owner)
 	end
 end
 

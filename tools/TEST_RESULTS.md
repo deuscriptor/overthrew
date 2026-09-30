@@ -676,3 +676,27 @@ clients remain manual checks.
 - `all_vision_smoke` fails when run after the rules lock with All Vision on: its enemy spawns at (4000, 4000), 1,177
   units from the Badguys fountain, inside the 1,194 fountain zone, so the All Vision fountain smoke hides it as
   designed. The script predates that feature; this is not caused by the map cleanup.
+
+## 2026-09-30: Illusion performance (#24)
+
+- Offline: `run_tests.js` passes (36 groups, including the new `test_illusion_performance.lua` and the
+  reconcile-once case in `test_backpack_items.lua`; both new cases fail against the previous code).
+  `luacheck scripts/vscripts` 1.2.0 (Windows release, GPG signature checked) reports 0 warnings / 0 errors in 347
+  files; `panorama_resources.js verify` passes (no Panorama changes).
+- Dota Tools, fresh sessions on `ot3_necropolis_ffa`, `illusion_perf_smoke` against the previous code (production
+  scripts stashed) and against the fix: the before/after table in `tools/README.md` ("Illusions and performance").
+  Its seven behavior checks pass: an illusion's backpack item is equipped once, universal lifesteal heals the hero
+  on its spell damage but not its illusion, a stunned illusion gains disable status resistance, the BAT handler
+  follows modifiers added to its hero (stack 170 -> 130 -> 170), a Spirit Lance cast applies magic resistance
+  reduction, and a killed illusion keeps no upgrade modifiers (25 modifiers left before the fix, 9 engine item
+  modifiers after).
+- `hero_swaps_smoke` passes. `backpack_items_multiplayer_smoke`: 60 checks pass, including the Manta illusion and
+  Tempest Double cases; four checks on hexing between players fail identically on the previous code, so they are
+  pre-existing and unrelated.
+- Investigation (scratch scripts, not kept): the cost of an event grows with Lua modifiers on hero units only
+  (30 creeps with 17 empty Lua modifiers each cost nothing, 30 illusions with the same cost 4.6 ms per damage
+  instance); the per-modifier work is the engine calling the default `CDOTA_Modifier_Lua.GetPriority`, and a Lua
+  `GetPriority` (constant, on the class or on `CDOTA_Modifier_Lua`) saves about 10% only; killed illusions linger
+  5-15 s; `entity_killed` does not fire for illusions; `RemoveOnDeath` is asked at death, not at creation.
+  Removing `modifier_item_skadi` from live illusions during one experiment crashed the client (access
+  violation); the addon never does that.

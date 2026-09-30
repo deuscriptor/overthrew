@@ -8,11 +8,15 @@ function modifier_event_proxy:RemoveOnDeath() return false end
 if not IsServer() then return end
 
 
+-- The only listener of these global events: unit-scoped ones go to the modifiers of the unit concerned
+-- (libraries/unit_events.lua).
 function modifier_event_proxy:DeclareFunctions()
 	return {
 		MODIFIER_EVENT_ON_HERO_KILLED,
 		MODIFIER_EVENT_ON_MODIFIER_ADDED,
 		MODIFIER_EVENT_ON_TAKEDAMAGE_KILLCREDIT,
+		MODIFIER_EVENT_ON_TAKEDAMAGE,
+		MODIFIER_EVENT_ON_SPELL_TARGET_READY,
 	}
 end
 
@@ -32,10 +36,24 @@ function modifier_event_proxy:OnModifierAdded(event)
 	local buff = event.added_buff
 	if not IsValidEntity(unit) or not buff or buff:IsNull() then return end
 
-	EventDriver:Dispatch("Events:modifier_added", {
+	local event_data = {
 		unit = unit,
 		modifier = buff,
-	})
+	}
+	UnitEvents:Notify(unit, "OnModifierAdded", event_data)
+	EventDriver:Dispatch("Events:modifier_added", event_data)
+end
+
+
+-- to the attacker's modifiers
+function modifier_event_proxy:OnTakeDamage(event)
+	UnitEvents:Notify(event.attacker, "OnTakeDamage", event)
+end
+
+
+-- to the caster's modifiers
+function modifier_event_proxy:OnSpellTargetReady(event)
+	UnitEvents:Notify(event.unit, "OnSpellTargetReady", event)
 end
 
 

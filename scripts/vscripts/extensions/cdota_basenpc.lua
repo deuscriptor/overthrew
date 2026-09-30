@@ -22,6 +22,15 @@ function CDOTA_BaseNPC:HasShard()
 end
 
 
+-- Killed illusions stay in the world for seconds, and the engine visits each Lua modifier of every hero unit, dead
+-- ones included, on every attack and damage instance: modifiers kept through a hero's death return this from
+-- RemoveOnDeath so illusions drop them. Monkey King soldiers are reused, and Tempest Double comes back.
+function CDOTA_BaseNPC:IsIllusionGoneOnDeath()
+	if not self:IsIllusion() or self:IsMonkeyKingSoldier() then return false end
+	return not (self.IsTempestDouble and self:IsTempestDouble())
+end
+
+
 function CDOTA_BaseNPC:GetClones()
 	if self:GetUnitName() ~= "npc_dota_hero_meepo" then return {} end
 

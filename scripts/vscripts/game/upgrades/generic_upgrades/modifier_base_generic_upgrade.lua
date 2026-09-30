@@ -4,7 +4,7 @@ modifier_base_generic_upgrade = class({bonus=0})
 
 function modifier_base_generic_upgrade:IsHidden() return true end
 function modifier_base_generic_upgrade:IsPurgable() return false end
-function modifier_base_generic_upgrade:RemoveOnDeath() return false end
+function modifier_base_generic_upgrade:RemoveOnDeath() return IsServer() and self:GetParent():IsIllusionGoneOnDeath() end
 
 
 function modifier_base_generic_upgrade:RefreshOnLevelGained()
@@ -22,6 +22,8 @@ end
 
 function modifier_base_generic_upgrade:OnDestroy()
 	if not IsServer() then return end
+
+	UnitEvents:Unregister(self)
 
 	if self.level_gained_listener then
 		EventDriver:CancelListener("Events:level_gained", self.level_gained_listener)

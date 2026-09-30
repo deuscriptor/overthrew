@@ -298,7 +298,9 @@ the backpack, and re-equips the main slot one only later. The order filter
 therefore performs those moves itself (`BackpackItems:MoveItem`) and re-equips
 both items in the same server step; health and mana keep their percentages.
 Moves within main slots, within the backpack or to the stash stay native. Other
-inventory changes are reconciled every server tick.
+inventory changes are reconciled every server tick. An illusion's inventory never
+changes, so each illusion is reconciled once, on the first tick it exists; Monkey
+King soldiers are reused and stay in the per-tick pass.
 
 Limits: toggle items (Armlet) are refused: the engine toggles them in the
 backpack, but their toggled effect needs a main slot. Channelled items (Meteor
@@ -438,3 +440,62 @@ particle is precached in `precache.lua`: without it, the native modifier added f
 exit with Radiance and Shiva's Guard, exposure by damage and by a debuff, a real Storm Bolt cast
 right after leaving, the look and tint at each step, and a real orb: protected Sven neither captures it
 alone nor contests the unprotected Pudge, and contests once the linger ends.
+
+## Illusions and performance
+
+Heroes with many illusions (Phantom Lancer above all, also Naga Siren, Terrorblade, Chaos Knight or
+Manta Style) made the server lag: every attack, damage instance and modifier application anywhere got slower
+with each illusion alive, so Pangolier's Swashbuckle through a crowd of Phantom Lancer illusions stalled the
+server (issue #24). Measured in Workshop Tools with `illusion_perf_smoke.lua`:
+
+- The engine visits every Lua modifier of every hero unit, illusions included, on each attack or damage
+  instance anywhere on the map: about 40 calls to the default `GetPriority` per Lua modifier, through the script
+  VM. Creeps carrying the same modifiers cost nothing. Each illusion copies the hero's upgrade modifiers (one per
+  generic upgrade, plus the ability upgrade controller, the primary attribute reader and the BAT handler), so
+  with 30 illusions of a hero with 14 generic upgrades one damage instance cost 14 ms, against 0.7 ms without
+  illusions. Defining `GetPriority` in Lua does not avoid the calls.
+- A modifier that declares a global event (`MODIFIER_EVENT_ON_MODIFIER_ADDED`, `MODIFIER_EVENT_ON_TAKEDAMAGE`,
+  ...) is called for every such event on any unit, once per modifier instance. The BAT handler, on every hero and
+  illusion, handled every modifier added anywhere.
+- Killed illusions stay in the world for 5-15 seconds and keep the modifiers that are not removed on death, at
+  the same cost per event. The `entity_killed` game event does not fire for illusions, but the engine asks each
+  modifier's `RemoveOnDeath` when the unit dies.
+
+What the code does:
+
+- Global modifier events have a single listener, `modifier_event_proxy` on the overboss. Modifiers on heroes and
+  illusions that need an event for their own unit register with `UnitEvents` (`libraries/unit_events.lua`)
+  instead of declaring it: the BAT handler and Status Resistance on Disable (modifiers added to the parent),
+  Universal Lifesteal (damage dealt by the parent) and Magic Resistance Reduction (spells cast by the parent).
+- Generic upgrade modifiers, the ability upgrade controller and the primary attribute reader return true from
+  `RemoveOnDeath` on illusions that do not come back (`CDOTA_BaseNPC:IsIllusionGoneOnDeath`; Monkey King
+  soldiers and Tempest Double excluded), so a killed illusion keeps only engine modifiers. Heroes keep them
+  through death as before.
+- A clone's stats are recalculated once after its generic upgrades are applied
+  (`Upgrades:AddGenericUpgradeModifiers`), not once per upgrade; summons with generic upgrades too.
+- The BAT handler recalculates for modifiers added to its own unit only, and keeps one expiry watch on the timed
+  modifier that sets the BAT. It used to start another per-frame timer, printing to the console, for every
+  modifier added while such a buff was active.
+- Backpack Items reconciles each illusion once (see above).
+
+Server wall-clock times with 10 and 30 Phantom Lancer illusions, both heroes level 30 with the same 14 generic
+upgrades and items, before and after (same machine, Tools mode):
+
+| | 10 before | 10 after | 30 before | 30 after |
+| --- | --- | --- | --- | --- |
+| Illusion setup (`ProcessClone`, next frame) | 173 ms | 12 ms | 1343 ms | 46 ms |
+| Illusion spawn (`CreateIllusions`) | 61 ms | 24 ms | 187 ms | 72 ms |
+| One modifier added anywhere | 1.96 ms | 0.14 ms | 5.14 ms | 0.18 ms |
+| One damage instance, illusions alive | 3.5 ms | 1.8 ms | 14.3 ms | 4.7 ms |
+| One damage instance, illusions just killed | 2.9 ms | 0.38 ms | 11.0 ms | 0.42 ms |
+| Four Swashbuckle strikes (scripted attacks) | 402 ms | 251 ms | 3838 ms | 1959 ms |
+| Backpack Items reconcile, per second | 3.2 ms | 1.0 ms | 11.0 ms | 2.0 ms |
+
+Without illusions a damage instance now costs 0.36 ms (was 0.7 ms) and a modifier application 0.16 ms (was
+0.51 ms). What remains with many illusions alive is the engine's cost per Lua modifier: removing it would need
+illusions to carry fewer Lua modifiers, for example one modifier applying all of their generic upgrades.
+
+`test_illusion_performance.lua` covers the event routing, the BAT handler, the death rule and the single stat
+recalculation; `test_backpack_items.lua` the reconcile-once rule. `illusion_perf_smoke.lua` (fresh Tools session,
+about two minutes) prints the measurements above and checks the routed lifesteal, disable status resistance,
+magic resistance reduction and BAT handler, the backpack of an illusion and the modifiers left on a killed one.

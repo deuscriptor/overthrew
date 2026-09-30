@@ -140,6 +140,11 @@ Then add the option to the table above, to `tools/README.md` and to `README.md` 
   `table`/`string`/`math` extensions are collected automatically.
 - There is one map, so code doesn't branch on the map name. Per-map data stays keyed by `GetMapName()`
   (`TEAMS_LAYOUTS`, MVP rewards, neutral drop times, `scripts/upgrades/overrides/<map>/`).
+- Modifiers on heroes are copied to every illusion, and the engine visits each Lua modifier of every hero unit on
+  every attack and damage instance (see "Illusions and performance" in `tools/README.md`). Keep them few, and never
+  declare a global `MODIFIER_EVENT_*` in them: register the handler with `UnitEvents` (`libraries/unit_events.lua`)
+  and route the event through `modifier_event_proxy`. A modifier kept through death returns
+  `self:GetParent():IsIllusionGoneOnDeath()` from `RemoveOnDeath` (server side). Measure with `illusion_perf_smoke`.
 
 ### Documentation
 
@@ -195,6 +200,11 @@ developer has granted standing permission.
   - The map-centre pit shortens blinks.
   - `ExecuteOrderFromTable` orders reach the order filter with issuer -1.
 - There is no `script` console command. Panorama `Game.GetConvarInt` can't read Lua-registered convars.
+- Modifier classes live in their own script scopes, not in `_G`: reach one through `getmetatable(instance).__index`.
+  `LinkLuaModifier` doesn't reload a file already linked in the session, so classes added to it later are missing.
+- The server VM has no `os`; time code with `Plat_FloatTime()`. Illusions deal no damage through `ApplyDamage`, and
+  `entity_killed` doesn't fire for them.
+- Removing a native item modifier (such as `modifier_item_skadi`) from a unit can crash the game.
 - `net_fakelag` doesn't delay the host's own loopback client. `GameUI.SelectUnit` can't select enemy heroes.
 - To drive the real UI, a temporary HUD hook can send orders (`Game.PrepareUnitOrders`) or clicks
   (`$.DispatchEvent("Activated", panel, "mouse")`) and report back to a server listener. Restore the HUD build afterwards.

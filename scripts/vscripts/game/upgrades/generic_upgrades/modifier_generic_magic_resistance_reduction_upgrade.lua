@@ -11,6 +11,8 @@ end
 
 function modifier_generic_magic_resistance_reduction_upgrade:OnCreated()
 	self:RecalculateBonusPerUpgrade()
+	-- spells cast by the parent only (libraries/unit_events.lua)
+	if IsServer() then UnitEvents:Register(self, "OnSpellTargetReady") end
 end
 
 function modifier_generic_magic_resistance_reduction_upgrade:OnRefresh(old_stack_count)
@@ -19,13 +21,6 @@ end
 
 
 if IsServer() then
-	function modifier_generic_magic_resistance_reduction_upgrade:DeclareFunctions()
-		return {
-			-- MODIFIER_EVENT_ON_ABILITY_FULLY_CAST, -- OnAbilityFullyCast,
-			MODIFIER_EVENT_ON_SPELL_TARGET_READY, -- OnSpellTargetReady
-		}
-	end
-
 	function modifier_generic_magic_resistance_reduction_upgrade:OnSpellTargetReady(event)
 		if not IsValidEntity(self.parent) then return end
 		if event.unit ~= self.parent then return end

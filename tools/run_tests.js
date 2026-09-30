@@ -96,6 +96,16 @@ assert.equal(backpackItems.error, undefined);
 assert.equal(backpackItems.status, 0);
 assert.equal((backpackItems.stderr || '').trim(), '');
 assert.match(backpackItems.stdout, /PASS backpack items:/);
+const illusionPerformance = spawnSync(process.execPath, [
+  path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
+  'tools/test_illusion_performance.lua',
+], { cwd: root, encoding: 'utf8' });
+if (illusionPerformance.stdout) process.stdout.write(illusionPerformance.stdout);
+if (illusionPerformance.stderr) process.stderr.write(illusionPerformance.stderr);
+assert.equal(illusionPerformance.error, undefined);
+assert.equal(illusionPerformance.status, 0);
+assert.equal((illusionPerformance.stderr || '').trim(), '');
+assert.match(illusionPerformance.stdout, /PASS illusion performance:/);
 const tips = spawnSync(process.execPath, [
   path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
   'tools/test_tips.lua',
