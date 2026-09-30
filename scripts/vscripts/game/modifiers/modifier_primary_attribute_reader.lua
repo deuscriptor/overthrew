@@ -2,7 +2,7 @@ modifier_primary_attribute_reader = class({})
 
 function modifier_primary_attribute_reader:IsHidden() return true end
 function modifier_primary_attribute_reader:IsPurgable() return false end
-function modifier_primary_attribute_reader:RemoveOnDeath() return false end
+function modifier_primary_attribute_reader:RemoveOnDeath() return IsServer() and self:GetParent():IsIllusionGoneOnDeath() end
 function modifier_primary_attribute_reader:GetAttributes() return MODIFIER_ATTRIBUTE_PERMANENT end
 
 function modifier_primary_attribute_reader:OnCreated()

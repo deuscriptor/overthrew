@@ -33,7 +33,12 @@ function BackpackItems:ApplyRules()
 	self.reconcile_started = true
 	Timers:CreateTimer(0, function()
 		for _, hero in pairs(HeroList:GetAllHeroes()) do
-			if IsValidEntity(hero) and hero:HasInventory() then self:Reconcile(hero) end
+			if IsValidEntity(hero) and not hero.backpack_reconciled and hero:HasInventory() then
+				self:Reconcile(hero)
+				-- An illusion's inventory never changes after it spawns, so one pass is enough; the list holds
+				-- every illusion (killed ones too, for a while). Monkey King soldiers are reused.
+				if hero:IsIllusion() and not hero:IsMonkeyKingSoldier() then hero.backpack_reconciled = true end
+			end
 		end
 		return RECONCILE_INTERVAL
 	end)

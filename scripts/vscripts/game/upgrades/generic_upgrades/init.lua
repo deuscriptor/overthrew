@@ -1,5 +1,7 @@
 GenericUpgrades = GenericUpgrades or {}
 
+require("game/upgrades/illusion_generic_upgrades")
+
 DEFAULT_PATH = "game/upgrades/generic_upgrades/"
 
 function GenericUpgrades:Init()
@@ -32,6 +34,9 @@ function GenericUpgrades:Init()
 			table.insert(GenericUpgrades.upgrades_by_rarity[upgrade_data.rarity], upgrade_name)
 		end
 	end
+
+	-- an illusion's generic upgrades in one modifier
+	LinkLuaModifier("modifier_illusion_generic_upgrades", "game/upgrades/modifier_illusion_generic_upgrades", LUA_MODIFIER_MOTION_NONE)
 end
 
 

@@ -70,6 +70,7 @@ local function Unit(fields)
 	function unit:HasInventory() return true end
 	function unit:IsHero() return self.hero end
 	function unit:IsIllusion() return self.illusion end
+	function unit:IsMonkeyKingSoldier() return self.soldier == true end
 	return unit
 end
 
@@ -130,6 +131,19 @@ local illusionItem = illusion:Give(6, Item("item_black_king_bar"))
 heroes = {hero, illusion}
 tick()
 assert(illusionItem.state == 1 and not illusionItem.usable, "illusions keep backpack effects but never cast them")
+-- An illusion's inventory is fixed when it spawns: it is reconciled once, not every tick.
+-- Monkey King soldiers are reused, so they keep being reconciled.
+local soldier = Unit({illusion = true, soldier = true})
+local soldierItem = soldier:Give(6, Item("item_black_king_bar"))
+heroes = {hero, illusion, soldier}
+illusionItem.state = 0
+soldierItem.state = 0
+tick()
+assert(illusionItem.state == 0, "an illusion is not reconciled again")
+assert(soldierItem.state == 1, "Monkey King soldiers are reconciled every tick")
+soldierItem.state = 0
+tick()
+assert(soldierItem.state == 1)
 heroes = {hero}
 
 local function order(order_type, item, unit)

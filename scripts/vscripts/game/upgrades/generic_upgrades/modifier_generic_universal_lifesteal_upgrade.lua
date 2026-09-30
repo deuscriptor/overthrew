@@ -7,6 +7,8 @@ end
 
 function modifier_generic_universal_lifesteal_upgrade:OnCreated()
 	self:RecalculateBonusPerUpgrade()
+	-- damage dealt by the parent only (libraries/unit_events.lua)
+	if IsServer() then UnitEvents:Register(self, "OnTakeDamage") end
 end
 
 function modifier_generic_universal_lifesteal_upgrade:OnRefresh(old_stack_count)
@@ -20,7 +22,6 @@ if not IsServer() then return end
 function modifier_generic_universal_lifesteal_upgrade:DeclareFunctions()
 	return {
 		MODIFIER_PROPERTY_PROCATTACK_FEEDBACK,
-		MODIFIER_EVENT_ON_TAKEDAMAGE,
 	}
 end
 

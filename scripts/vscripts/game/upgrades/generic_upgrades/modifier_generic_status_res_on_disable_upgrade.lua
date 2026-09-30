@@ -27,7 +27,8 @@ function modifier_generic_status_res_on_disable_upgrade:OnCreated()
 
 	if not IsServer() then return end
 
-	self.listener = EventDriver:Listen("Events:modifier_added", self.OnModifierAdded, self)
+	-- modifiers added to the parent only (libraries/unit_events.lua)
+	UnitEvents:Register(self, "OnModifierAdded")
 end
 
 

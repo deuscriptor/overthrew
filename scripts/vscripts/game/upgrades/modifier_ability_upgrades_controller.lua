@@ -3,7 +3,7 @@ modifier_ability_upgrades_controller = modifier_ability_upgrades_controller or c
 
 function modifier_ability_upgrades_controller:IsHidden() return true end
 function modifier_ability_upgrades_controller:IsPurgable() return false end
-function modifier_ability_upgrades_controller:RemoveOnDeath() return false end
+function modifier_ability_upgrades_controller:RemoveOnDeath() return IsServer() and self:GetParent():IsIllusionGoneOnDeath() end
 function modifier_ability_upgrades_controller:IsPermanent() return true end
 
 

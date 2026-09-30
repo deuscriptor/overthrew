@@ -298,7 +298,9 @@ the backpack, and re-equips the main slot one only later. The order filter
 therefore performs those moves itself (`BackpackItems:MoveItem`) and re-equips
 both items in the same server step; health and mana keep their percentages.
 Moves within main slots, within the backpack or to the stash stay native. Other
-inventory changes are reconciled every server tick.
+inventory changes are reconciled every server tick. An illusion's inventory never
+changes, so each illusion is reconciled once, on the first tick it exists; Monkey
+King soldiers are reused and stay in the per-tick pass.
 
 Limits: toggle items (Armlet) are refused: the engine toggles them in the
 backpack, but their toggled effect needs a main slot. Channelled items (Meteor
@@ -438,3 +440,84 @@ particle is precached in `precache.lua`: without it, the native modifier added f
 exit with Radiance and Shiva's Guard, exposure by damage and by a debuff, a real Storm Bolt cast
 right after leaving, the look and tint at each step, and a real orb: protected Sven neither captures it
 alone nor contests the unprotected Pudge, and contests once the linger ends.
+
+## Illusions and performance
+
+Heroes with many illusions (Phantom Lancer above all, also Naga Siren, Terrorblade, Chaos Knight or
+Manta Style) made the server lag: every attack, damage instance and modifier application anywhere got slower
+with each illusion alive, so Pangolier's Swashbuckle through a crowd of Phantom Lancer illusions stalled the
+server (issue #24). Measured in Workshop Tools with `illusion_perf_smoke.lua`:
+
+- The engine visits every Lua modifier of every hero unit, illusions included, on each attack or damage
+  instance anywhere on the map: about 40 calls to the default `GetPriority` per Lua modifier, through the script
+  VM. Creeps carrying the same modifiers cost nothing. Each illusion copied the hero's upgrade modifiers (one per
+  generic upgrade, plus the ability upgrade controller, the primary attribute reader and the BAT handler), so
+  with 30 illusions of a hero with 14 generic upgrades one damage instance cost 14 ms, against 0.7 ms without
+  illusions. Defining `GetPriority` in Lua does not avoid the calls; fewer Lua modifiers do.
+- A modifier that declares a global event (`MODIFIER_EVENT_ON_MODIFIER_ADDED`, `MODIFIER_EVENT_ON_TAKEDAMAGE`,
+  ...) is called for every such event on any unit, once per modifier instance. The BAT handler, on every hero and
+  illusion, handled every modifier added anywhere.
+- Killed illusions stay in the world for 5-15 seconds and keep the modifiers that are not removed on death, at
+  the same cost per event. The `entity_killed` game event does not fire for illusions, but the engine asks each
+  modifier's `RemoveOnDeath` when the unit dies.
+- The kill-leader crown is not a factor: the leader is decided on real hero kills only (`GameLoop:OnUnitKilled`
+  ignores illusions), `modifier_kill_leader` is not copied to illusions, and a crowned hero's illusions cost the
+  same. (So the crown does tell the real hero from its illusions.)
+
+What the code does:
+
+- Global modifier events have a single listener, `modifier_event_proxy` on the overboss. Modifiers on heroes and
+  illusions that need an event for their own unit register with `UnitEvents` (`libraries/unit_events.lua`)
+  instead of declaring it: the BAT handler and Status Resistance on Disable (modifiers added to the parent),
+  Universal Lifesteal (damage dealt by the parent) and Magic Resistance Reduction (spells cast by the parent).
+- An illusion carries its generic upgrades in one modifier, `modifier_illusion_generic_upgrades`, instead of one
+  per upgrade: 18 modifiers instead of 30 in the measurements below. Each hosted upgrade runs its own modifier
+  class as a plain object (`game/upgrades/illusion_generic_upgrades.lua`), and the host forwards the engine's
+  property calls to the upgrades implementing them, summing the stats several share. `IllusionGenericUpgrades.HOSTED`
+  lists the upgrades that can be hosted: hidden, with no thinker, particle effect, state, transmitted data or
+  global event, and only properties the host declares. Universal Shield and Flying Movement show a buff and stay
+  modifiers of their own, as do all upgrades of heroes, Meepo clones, Tempest Double and summons.
+  - The engine asks a modifier for its declared functions before creating it, and clients get its transmitted
+    data before `OnCreated`, when `GetParent` fails. So the host declares every hosted property, the server passes
+    the counts as creation keys (`generic_armor = 2`), and both sides build the upgrades in `OnCreated`. The
+    upgrades never change: processing an illusion again (Monkey King soldiers, hero swaps) creates a new host.
+  - With hosted upgrades an illusion has the same stats as with upgrade modifiers, on the server and on clients.
+    On the server the engine applies no armor or magic resistance from Lua modifiers to illusions, hosted or not
+    (clients show them); that predates this change.
+- Generic upgrade modifiers, the host, the ability upgrade controller and the primary attribute reader return
+  true from `RemoveOnDeath` on illusions that do not come back (`CDOTA_BaseNPC:IsIllusionGoneOnDeath`; Monkey
+  King soldiers and Tempest Double excluded), so a killed illusion keeps only engine modifiers. Heroes keep them
+  through death as before.
+- A clone's stats are recalculated once after its generic upgrades are applied, not once per upgrade; summons
+  with generic upgrades too.
+- The BAT handler recalculates for modifiers added to its own unit only, and keeps one expiry watch on the timed
+  modifier that sets the BAT. It used to start another per-frame timer, printing to the console, for every
+  modifier added while such a buff was active.
+- Backpack Items reconciles each illusion once (see above).
+
+Server wall-clock times with 30 Phantom Lancer illusions, both heroes level 30 with the same 14 generic upgrades
+and items (same machine, Tools mode): before, with the event routing and death cleanup, and with hosted upgrades.
+
+| 30 illusions | Before | Routed events | Hosted upgrades |
+| --- | --- | --- | --- |
+| Illusion setup (`ProcessClone`, next frame) | 1343 ms | 46 ms | 16 ms |
+| Illusion spawn (`CreateIllusions`) | 187 ms | 72 ms | 80 ms |
+| One modifier added anywhere | 5.1 ms | 0.18 ms | 0.17 ms |
+| One damage instance, illusions alive | 14.3 ms | 4.7 ms | 1.4 ms |
+| One damage instance, illusions just killed | 11.0 ms | 0.42 ms | 0.43 ms |
+| Four Swashbuckle strikes (scripted attacks) | 3838 ms | 1959 ms | 630 ms |
+| Real Swashbuckle cast, worst frame | 507-1055 ms | 142-230 ms | 40-87 ms |
+| Backpack Items reconcile, per second | 11.0 ms | 2.0 ms | 1.0 ms |
+
+With 10 illusions a damage instance costs 0.66 ms (was 3.5 ms), four Swashbuckle strikes 104 ms (was 402 ms) and
+the real cast's worst frame 41-49 ms. Without illusions a damage instance costs 0.36 ms (was 0.7 ms) and a
+modifier application 0.16 ms (was 0.51 ms). The server frame is 33 ms. What remains per illusion is the engine's
+cost for its other Lua modifiers (the controller, the attribute reader, the BAT handler and the host).
+
+`test_illusion_performance.lua` covers the event routing, the BAT handler, the death rule, the hosting rules
+(every hosted upgrade qualifies, and shares only additive properties), the host on the server and the client, and
+the single stat recalculation; `test_backpack_items.lua` the reconcile-once rule. `illusion_perf_smoke.lua`
+(fresh Tools session, about two minutes) prints the measurements above and checks that hosted upgrades give an
+illusion the same stats as upgrade modifiers, a hosted attack proc, the routed lifesteal, disable status
+resistance, magic resistance reduction and BAT handler, the backpack of an illusion and the modifiers left on a
+killed one.
