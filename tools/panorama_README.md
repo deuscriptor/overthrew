@@ -49,3 +49,10 @@ unmodified.
 
 The behavior checks use mocked Panorama panels. A Dota client is still needed
 to visually verify panel appearance, clipping, map loading, and HUD lifecycle.
+
+Textures listed in `panorama_textures.json` are re-encoded by `panorama_textures.js` (see "Texture memory" in
+[README.md](README.md)). `build` regenerates them from their originals in git: it writes `name.png` sources for
+`name_png.vtex_c` into `content/dota_addons/overthrew/`, compiles them through a temporary stylesheet and removes
+both. `verify`, also run by `panorama_resources.js verify`, checks the committed textures' format and size, and
+that no uncompressed texture keeps an alpha channel it does not use. New art should be no larger than 4/3 of the
+largest box it is drawn in, and saved without alpha when it has no transparency.

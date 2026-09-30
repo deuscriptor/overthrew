@@ -721,3 +721,28 @@ clients remain manual checks.
   upgrade per illusion and caused 400-1250 ms frames). On the server, illusions take no armor or magic resistance
   from Lua modifiers (separate or hosted; clients show them), which predates this change. The kill-leader crown
   is decided on real hero kills only and never copied to illusions: no cost.
+
+## 2026-09-30: Texture memory (#30)
+
+- Offline: `run_tests.js` passes (38 groups), including the new Panorama checks for the loading screen release,
+  `ParkImages` and the texture tool (PNG round trip, alpha scan, alpha-weighted linear downscale, DXT1 decode), and
+  `test_host_rules.lua` asserting that setup ends only after the locked rules are published. `luacheck
+  scripts/vscripts` reports 0 warnings / 0 errors. `panorama_resources.js verify` passes: 31 scripts, 1 style, and
+  92 re-encoded textures; the other 530 uncompressed textures use their alpha.
+- The texture decoders match Source2Viewer's exports of 828 addon textures to within 2 levels per channel
+  (interlaced PNGs checked against ImageMagick, exact). The raw DXT5 art is scaled YCoCg, flagged only in the
+  compile metadata.
+- Dota Tools, 1 player, Dota window focused, `mat_print_textures_size_in_memory custom_game` after each phase
+  (table in `tools/README.md`): setup 33.2 -> 22.6 MB, hero selection 28.3 -> 4.2 MB, mid-match 76.4 -> 9.7 MB,
+  collection opened 27.5 MB, end screen 33.0 MB. 3.6 MB of each is in-world spray decal materials.
+- Screenshots of setup (loading screen and host settings), strategy time, the HUD, an epic orb choice with a generic
+  upgrade, the collection's Sprays and Pets tabs, and the end screen show the art in place. A first run showed the
+  collection and end screen without their parked art: `ClearPropertyFromCode("backgroundImage")` leaves the inline
+  `none`, the CSS name `"background-image"` clears it.
+- Fresh map session: `host_claim_smoke` passes; after Apply, `host_rules_smoke` passes both inside the half-second
+  window (setup, rules locked) and in hero selection.
+- Investigation (temporary probes, not kept): collapsing a panel neither prevents nor frees its images; deleting it,
+  `SetImage("")` or an inline `background-image: none` frees them at once. The loading screen ignores all such
+  changes after the HUD takes over (its script keeps running), also when its panels are reparented into the HUD;
+  with 0.5 s between the lock and the end of setup it frees its art. In one run the Tools window had lost focus and
+  the art stayed. `panorama_apply_styles_for_invisible_parents` is `false`.

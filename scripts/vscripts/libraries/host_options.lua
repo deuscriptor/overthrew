@@ -16,6 +16,9 @@ HOST_OPTION = {
 
 -- Stop waiting for players who never finish loading, so setup cannot stall.
 local HOST_LOADING_MAX_WAIT = 120
+-- The loading screen stops updating once hero selection begins, so it frees its art when the locked rules
+-- arrive; setup ends this many seconds later (see "Texture memory" in tools/README.md).
+local LOADING_SCREEN_RELEASE_TIME = 0.5
 
 function HostOptions:Init()
 	HostOptions.options = {}
@@ -213,7 +216,9 @@ function HostOptions:ApplyRules(event)
 	BackpackItems:ApplyRules()
 	CustomNetTables:SetTableValue("game_options", "host_options", self.options)
 	self:PublishRules()
-	GameRules:FinishCustomGameSetup()
+	Timers:CreateTimer({useGameTime = false, endTime = LOADING_SCREEN_RELEASE_TIME, callback = function()
+		if GameRules:State_Get() == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then GameRules:FinishCustomGameSetup() end
+	end})
 	return true
 end
 

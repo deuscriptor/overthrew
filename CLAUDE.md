@@ -28,6 +28,7 @@ It adds a host-configurable free-for-all mode on `ot3_necropolis_ffa`.
 | `panorama/` | **Compiled** UI resources (`.vjs_c`, `.vcss_c`, `.vxml_c`). Never edit these by hand |
 | `tools/panorama_sources/` | Editable Panorama JS (and `toasts.css`), compiled into `panorama/` |
 | `tools/panorama_backups/` | Original compiled resources that the builds start from |
+| `tools/panorama_textures.json` | Re-encoded UI textures: size, dropped alpha, where each is shown |
 | `tools/test_*.lua`, `tools/*.js` | Offline test suite and helper scripts |
 | `tools/runtime/` | npm dependencies of the offline Lua runner (Fengari) |
 | `tools/*.md` | Feature spec, Panorama notes, test log, publishing check, investigations |
@@ -43,7 +44,8 @@ npm ci --prefix tools/runtime --ignore-scripts --no-audit --no-fund   # once, or
 node tools/run_tests.js                  # full offline suite: Lua tests on Fengari, localization parity, Panorama tests
 node tools/panorama_test.js              # Panorama logic only (already included in run_tests.js)
 node tools/panorama_resources.js build   # after editing tools/panorama_sources/: rebuild panorama/*_c
-node tools/panorama_resources.js verify  # compiled resources match their sources (CI runs this)
+node tools/panorama_resources.js verify  # compiled resources match their sources, textures their list (CI runs this)
+node tools/panorama_textures.js build    # after editing tools/panorama_textures.json: re-encode the listed textures
 luacheck scripts/vscripts                # luacheck 1.2.0 (CI downloads the release binary)
 node tools/vconsole.js 'script_reload_code host_rules_smoke'   # send console commands to a running Dota client
 ```
@@ -59,7 +61,8 @@ On `ot3_necropolis_ffa` the pre-game panel shows the host settings menu instead 
 1. The menu stays hidden until every player has loaded (or a 120s wait expires).
 2. The first player to press **Claim host** becomes the host. There is no automatic host. A host who leaves
    before starting frees the role.
-3. **Apply & Start** sends `HostOptions:apply_rules`, locks the options (`HostOptions.locked`) and starts hero pick.
+3. **Apply & Start** sends `HostOptions:apply_rules`, locks the options (`HostOptions.locked`) and starts hero pick
+   0.5s later, after the loading screen has freed its art (see "Texture memory" in `tools/README.md`).
 
 State lives in `scripts/vscripts/libraries/host_options.lua`: `MATCH_FLAGS`, `DEFAULT_ON_FLAGS`, and events
 `HostOptions:apply_rules`, `HostOptions:set_option_state` and `HostOptions:claim_host`. It is published through the
@@ -122,6 +125,12 @@ Then add the option to the table above, to `tools/README.md` and to `README.md` 
 - Image URLs in CSS sources must stay `s2r://…_png.vtex`. No PNG sources exist, and `file://{images}`
   compiles to empty paths.
 - The compiler does not validate property names, so check the client log (`-condebug`) after a style change.
+- Panorama loads the images of every panel that exists, hidden or not (see "Texture memory" in `tools/README.md`).
+  A layout that stays hidden until needed parks its art with `ParkImages` (`scripts/utils.js`) and restores it when
+  first shown. The loading screen stops updating once the HUD replaces it, so it frees its art before that.
+- UI textures are no larger than 4/3 of the largest box they are drawn in and keep no unused alpha channel (the
+  compiler stores any alpha uncompressed; `verify` fails on it). Re-encode through `tools/panorama_textures.json`
+  and `panorama_textures.js build`, which needs Windows with Workshop Tools and the full git history.
 - Server-to-client events go through `ProtectedCustomEvents`. Payloads arrive under `event_data`; subscribe with
   `GameEvents.NewProtectedFrame(panel).SubscribeProtected(...)`.
 
@@ -212,6 +221,8 @@ developer has granted standing permission.
 - `net_fakelag` doesn't delay the host's own loopback client. `GameUI.SelectUnit` can't select enemy heroes.
 - To drive the real UI, a temporary HUD hook can send orders (`Game.PrepareUnitOrders`) or clicks
   (`$.DispatchEvent("Activated", panel, "mouse")`) and report back to a server listener. Restore the HUD build afterwards.
+- `mat_print_textures_size_in_memory custom_game` lists the resident UI textures (focus the Dota window first).
+  `ClearPropertyFromCode` takes CSS names (`"background-image"`); the camelCase name does nothing.
 
 ### Real multiplayer
 

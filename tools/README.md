@@ -26,7 +26,8 @@ and navigation remain for future settings pages. The menu shows category
 tabs, options, and the apply button; it omits explanatory paragraphs. Each option
 row shows an on/off switch and a one-line hover tooltip (`host_rules_<name>_tip`),
 and Kill Goal shows the resulting base time limit (40 seconds per kill).
-**Apply & Start** freezes the settings and begins hero selection. There is no
+**Apply & Start** freezes the settings; the loading screen fades out and hero selection begins half a
+second later (see "Texture memory"). There is no
 automatic host: the settings stay hidden (the usual loading tips show instead) until
 setup has begun and every player has loaded, so nobody edits them before the others
 arrive. After 120 seconds of setup, players still loading are skipped, so setup cannot
@@ -521,3 +522,61 @@ the single stat recalculation; `test_backpack_items.lua` the reconcile-once rule
 illusion the same stats as upgrade modifiers, a hosted attack proc, the routed lifesteal, disable status
 resistance, magic resistance reduction and BAT handler, the backpack of an illusion and the modifiers left on a
 killed one.
+
+## Texture memory
+
+Custom UI textures took 76 MB mid-match (issue #30): loading screen art stayed loaded for the whole match, the
+collection, end screen and team selection kept their art while hidden, images with an unused alpha channel were
+stored uncompressed, and much of the art was larger than it is ever drawn. Measured in Workshop Tools with
+`mat_print_textures_size_in_memory custom_game` (1 player, Dota window focused):
+
+| Phase | Before | After |
+| --- | --- | --- |
+| Custom game setup (loading screen, host settings) | 33.2 MB | 22.6 MB |
+| Hero selection | 28.3 MB | 4.2 MB |
+| Mid-match | 76.4 MB | 9.7 MB |
+| Mid-match, collection opened | 76.4 MB | 27.5 MB |
+| End screen (collection opened before) | 76.4 MB | 33.0 MB |
+
+3.6 MB of each "after" figure is the in-world spray decal materials (`*_spray_png_<hash>.vtex_c`), which are not UI.
+
+How Panorama holds images, measured in Tools:
+
+- A panel's images load as soon as the panel exists and its style applies, even when it or a parent is collapsed
+  or transparent. `visible = false` frees nothing. Deleting the panel, `SetImage("")` and an inline
+  `style.backgroundImage = "none"` free the texture at once; `ClearPropertyFromCode("background-image")` (the CSS
+  name: `"backgroundImage"` leaves the override) brings a stylesheet image back.
+- The custom loading screen stops being processed the moment the HUD replaces it. Its script still runs, but
+  deletions and image changes made after that never take effect, so its art must be freed while it still updates.
+
+What the code does:
+
+- **Loading screen:** `HostOptions:ApplyRules` publishes the locked rules at once and ends setup 0.5 s later. When
+  the locked rules arrive, the loading screen fades its content out (0.2 s) to its black background and deletes it.
+  A player loading into a match already past setup gets the loading screen without its content. A client whose Dota
+  window is not focused at that moment may not update in time and then keeps the art (Panorama does not lay out an
+  unfocused window).
+- **Team selection:** deleted once setup ends; not built at all for a player joining later.
+- **Hidden until needed:** `ParkImages` (`scripts/utils.js`) overrides the stylesheet images of a layout and its
+  children with an inline `none` and empties the given `Image` panels; the returned function restores them. The
+  collection parks its art and builds its tabs (all cosmetics item images) on first open; code outside it reaches
+  the cosmetics tab through stubs that load it first. The end screen parks its art until the game ends; the
+  leaderboard and promo events until first opened; the season-reset notice until shown. A few small `Image` icons
+  in the end screen (about 0.2 MB in total) stay loaded.
+- **Encoding:** the Panorama compiler stores a PNG with an alpha channel uncompressed (RGBA8888, 4 bytes per pixel)
+  and one without as DXT5 (1 byte per pixel), whatever the alpha values. Textures whose alpha is at least 245
+  everywhere (at most 4% see-through, on edge pixels) drop it. Everything else really uses alpha, including the
+  translucent panel backgrounds (alpha 214-220 over most of the image), and stays uncompressed.
+- **Size:** textures shown in the UI are downscaled to 4/3 of the largest box they are drawn in (CSS pixels are
+  1080p units, so they stay sharp up to 1440p), when that saves at least 10%. Boxes come from the stylesheets,
+  from panel sizes measured in Tools, and for images set from scripts from the panels that show them (cosmetics
+  items: cards and tooltips, 124 px). A texture drawn at its own size, or in a box that could not be resolved,
+  keeps its size; so do textures this fork never shows.
+
+`tools/panorama_textures.json` lists the 92 re-encoded textures with their size, whether alpha is dropped and
+where they are shown. `node tools/panorama_textures.js build` regenerates them from the originals in commit
+`bc5b937` (decoded from PNG, raw BGRA8888 or DXT including scaled YCoCg, downscaled by area in linear light with
+alpha weighting, recompiled by Valve's resourcecompiler). `node tools/panorama_resources.js verify` checks that
+the committed textures match the list and that no uncompressed texture keeps an unused alpha channel.
+`panorama_test.js` covers the loading screen release, `ParkImages` and the texture decoding, resizing and PNG
+encoding; `test_host_rules.lua` that setup ends only after the locked rules are published.

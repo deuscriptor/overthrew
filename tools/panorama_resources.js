@@ -166,6 +166,8 @@ function main() {
 		console.log(`${command}: ${count} Panorama scripts; syntax, block bounds, CRC32 and DATA verified`);
 		console.log(`${command}: ${styles} Panorama styles compiled from source and verified`);
 		console.log(`${command}: ${Object.keys(imageAliases).length} shop image alias verified`);
+		// Re-encoded textures are rebuilt separately (panorama_textures.js build); here they are only checked.
+		if (command === "verify") require("./panorama_textures").verify();
 	} else throw new Error("Usage: node panorama_resources.js extract <panorama/...vjs_c> | build | verify");
 }
 

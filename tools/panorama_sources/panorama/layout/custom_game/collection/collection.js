@@ -28,7 +28,7 @@ function InitCurrencyButtons() {
 	});
 }
 
-// Chat Wheel still loads (it may back the in-game wheel), but its tab is hidden; the collection shows cosmetics only
+// The Chat Wheel tab still loads with the others, but hidden: the collection shows cosmetics only
 const HIDDEN_TABS = ["chat_wheel"];
 function InitContent() {
 	HUD.TABS_ROOT.RemoveAndDeleteChildren();
@@ -155,6 +155,7 @@ function ToggleSubscriptionPurchasing(level) {
 }
 
 function ToggleCollectionShow() {
+	LoadCollection();
 	HUD.CONTEXT.ToggleClass("Show");
 	if (!HUD.CONTEXT.BHasClass("Show")) $.DispatchEvent("DropInputFocus");
 	GameUI.Collection.CloseSubPanels();
@@ -269,6 +270,7 @@ function _AddPanelToParent(panel, parent) {
 GameUI.Collection.AddSubPanel = (panel) => _AddPanelToParent(panel, HUD.SUB_PANELS);
 GameUI.Collection.AddAdditionalPanel = (panel) => _AddPanelToParent(panel, HUD.ADDITIONAL_PANELS);
 GameUI.Collection.OpenSpecificTab = (tab_name, b_skip_open_collection) => {
+	LoadCollection();
 	const tab = $(`#Tab_${tab_name}`);
 	if (!tab || !tab.Open) return;
 	if (!b_skip_open_collection) HUD.CONTEXT.AddClass("Show");
@@ -286,9 +288,28 @@ GameUI.Collection.HideTab = (tab_name) => {
 };
 
 GameUI.Collection.Show = () => {
+	LoadCollection();
 	HUD.CONTEXT.AddClass("Show");
 	GameUI.Collection.CloseSubPanels();
 };
+
+// Panorama loads the images of every panel that exists, even hidden: the collection parks its art and builds its
+// tabs, with all their item images, only when first opened.
+let RestoreCollectionArt;
+function LoadCollection() {
+	if (!RestoreCollectionArt) return;
+	RestoreCollectionArt();
+	RestoreCollectionArt = undefined;
+	InitContent();
+	GameUI.Events.RegisterForEventsDataChanges(InitCurrencyBundles);
+}
+function ForwardToCosmetics(name, owner) {
+	const stub = (...args) => {
+		LoadCollection();
+		if (owner()[name] !== stub) owner()[name](...args);
+	};
+	return stub;
+}
 
 function TrackSuppButtonsPressed() {
 	$.Schedule(0, TrackSuppButtonsPressed);
@@ -317,10 +338,17 @@ function TimeLeftParse(ms) {
 	GameUI.Custom_ToggleCollection = ToggleCollectionShow;
 
 	InitCurrencyButtons();
-	InitContent();
 	// InitSubscriptionConf();
-
-	GameUI.Events.RegisterForEventsDataChanges(InitCurrencyBundles);
+	RestoreCollectionArt = ParkImages(HUD.CONTEXT, [
+		[HUD.CONTEXT.FindChildrenWithClassTraverse("C_Glow")[0], "s2r://panorama/images/custom_game/collection/glow_png.vtex"],
+		...[1, 2].map((tier) => [
+			HUD.CONTEXT.FindChildrenWithClassTraverse(`C_SubscriptionButton_${tier}`)[0].GetChild(0),
+			`s2r://panorama/images/custom_game/collection/sub_${tier}_png.vtex`,
+		]),
+	]);
+	// Other layouts call into the cosmetics tab before it exists; its script replaces these on load.
+	GameUI.Cosmetics = { OpenSpecificCollectionTab: ForwardToCosmetics("OpenSpecificCollectionTab", () => GameUI.Cosmetics) };
+	GameUI.FillChatWheelContent = ForwardToCosmetics("FillChatWheelContent", () => GameUI);
 
 	GameUI.Player.RegisterForPlayerDataChanges(UpdatePlayerData);
 	HUD.CONTEXT.SetHasClass("BProPlayer", true);
