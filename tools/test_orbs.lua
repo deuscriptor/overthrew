@@ -4,7 +4,7 @@ HostItems.QueueInventoryCheck = function() end -- Covered by test_host_settings.
 -- Executes production Lua; only engine/services and the upgrade rendering boundary
 -- are mocked. This does not replace a Dota playtest of particles or compiled maps.
 local real_print = print
-local current_map = "ot3_necropolis_ffa"
+local epic_orbs = false
 local observations = {}
 local entities = {}
 local inventory = {}
@@ -30,7 +30,7 @@ DOTA_UNIT_ORDER_PURCHASE_ITEM, DOTA_UNIT_ORDER_PICKUP_ITEM = 16, 17
 DOTA_ModifyGold_PurchaseConsumable, PATTACH_ABSORIGIN_FOLLOW = 1, 1
 LUA_MODIFIER_MOTION_NONE = 0
 
-GetMapName = function() return current_map end
+GetMapName = function() return "ot3_necropolis_ffa" end
 IsInToolsMode = function() return false end
 IsServer = function() return true end
 IsValidEntity = function(entity) return type(entity) == "table" and not entity.removed end
@@ -57,7 +57,7 @@ CustomGameEventManager = { Send_ServerToPlayer = function(_, player, name, data)
     observations.client_event = data
 end }
 HOST_OPTION = { TOURNAMENT = 1 }
-HostOptions = { GetOption = function() return false end }
+HostOptions = { GetOption = function(_, name) return name == "epic_orbs" and epic_orbs end }
 GameRules = { IsGamePaused = function() return paused end }
 SeasonalEvents = {
     IsChristmas = function() return false end,
@@ -120,13 +120,13 @@ Upgrades.ShowSelection = function(self, hero, rarity, id)
     self.pending_selection[id] = { upgrade_rarity = rarity }
 end
 
-local function reset(map)
-    current_map = map or EPIC_ONLY_MAP_NAME
+local function reset(epic)
+    epic_orbs = epic
     observations, inventory, entities, heroes = {}, {}, {}, {}
     paused, seasonal_event = false, false
     Upgrades.queued_selection, Upgrades.pending_selection, Upgrades.lucky_trinket_proc = {}, {}, {}
     EndGameStats.orbs_collected = {}
-    GameLoop.current_layout = TEAMS_LAYOUTS[current_map]
+    GameLoop.current_layout = TEAMS_LAYOUTS.ot3_necropolis_ffa
     GameLoop.current_kill_order = { [2] = 1 }
     GameLoop.heroes_by_team = {}
     GameLoop.common_upgrades_progress = { [2] = 0 }
@@ -157,38 +157,20 @@ local function assert_queue(rarity, count, id)
     for _, selection in ipairs(Upgrades.queued_selection[id] or {}) do equal(selection.rarity, rarity, "queued rarity") end
 end
 
-test("variant copies FFA settings without sharing mutable nested tables", function()
-    local base, variant = TEAMS_LAYOUTS.ot3_necropolis_ffa, TEAMS_LAYOUTS[EPIC_ONLY_MAP_NAME]
-    local function compare(left, right)
-        if type(left) ~= "table" then equal(right, left); return end
-        assert(left ~= right, "map settings share a nested table")
-        for key, value in pairs(left) do compare(value, right[key]) end
-    end
-    compare(base, variant)
-    local original = base.ring_bonuses.gpm
-    variant.ring_bonuses.gpm = original + 1
-    equal(base.ring_bonuses.gpm, original, "independent ring bonus")
-    variant.ring_bonuses.gpm = original
-    equal(GetBaseMapName(EPIC_ONLY_MAP_NAME), "ot3_necropolis_ffa")
-    equal(GetBaseMapName("unknown_map"), "unknown_map")
-end)
-
-test("ordinary maps retain all reward rarities and physical orb visuals", function()
-    for _, map in ipairs({ "ot3_necropolis_ffa", SINGLE_DRAFT_MAP_NAME, "ot3_gardens_duo", "ot3_jungle_quintet", "ot3_desert_octet", "ot3_demo" }) do
-        for _, rarity in ipairs({ 1, 2, 4 }) do
-            reset(map)
-            equal(ResolveOrbRarity(rarity), rarity)
-            Upgrades:QueueSelection(heroes[0], rarity)
-            assert_queue(rarity, 1)
-            local orb = GameMode:SpawnOrbDrop(Vector(0, 0, 0), rarity, true)
-            equal(orb.modifier_data.orb_type, rarity)
-            equal(observations.particle, "particles/orb_" .. RARITY_ENUM_TO_TEXT[rarity] .. ".vpcf")
-        end
+test("normal orbs retain all reward rarities and physical orb visuals", function()
+    for _, rarity in ipairs({ 1, 2, 4 }) do
+        reset(false)
+        equal(ResolveOrbRarity(rarity), rarity)
+        Upgrades:QueueSelection(heroes[0], rarity)
+        assert_queue(rarity, 1)
+        local orb = GameMode:SpawnOrbDrop(Vector(0, 0, 0), rarity, true)
+        equal(orb.modifier_data.orb_type, rarity)
+        equal(observations.particle, "particles/orb_" .. RARITY_ENUM_TO_TEXT[rarity] .. ".vpcf")
     end
 end)
 
-test("hero upgrade overrides inherit FFA without replacing actual map identity", function()
-    reset()
+test("hero upgrade overrides load from the FFA map folder", function()
+    reset(false)
     local loaded = {}
     LoadKeyValues = function(path)
         table.insert(loaded, path)
@@ -197,12 +179,11 @@ test("hero upgrade overrides inherit FFA without replacing actual map identity",
     Upgrades:LoadUpgradesData("npc_dota_hero_axe")
     equal(loaded[1], "scripts/upgrades/heroes/npc_dota_hero_axe.txt")
     equal(loaded[2], "scripts/upgrades/overrides/ot3_necropolis_ffa/npc_dota_hero_axe.txt")
-    equal(GetMapName(), EPIC_ONLY_MAP_NAME, "actual map identity")
 end)
 
 test("epic rewards retain original trinket triggers and prevent recursive duplication", function()
     for _, rarity in ipairs({ 1, 2, 4 }) do
-        reset()
+        reset(true)
         local source_trinket = "bp_lucky_trinket_" .. RARITY_ENUM_TO_TEXT[rarity]
         inventory[source_trinket] = 7
         Upgrades:QueueSelection(heroes[0], rarity)
@@ -216,7 +197,7 @@ test("epic rewards retain original trinket triggers and prevent recursive duplic
 end)
 
 test("physical epic capture preserves source trigger and publishes epic stats/event", function()
-    reset()
+    reset(true)
     inventory.bp_lucky_trinket_common = 1
     local orb = GameMode:SpawnOrbDrop(Vector(12, 34, 0), 1, true)
     equal(orb.modifier_data.orb_type, 4)
@@ -241,7 +222,7 @@ test("physical epic capture preserves source trigger and publishes epic stats/ev
 end)
 
 test("passive and kill meters preserve thresholds while granting/stating epics", function()
-    reset()
+    reset(true)
     GameLoop.common_upgrades_progress[2] = 989
     GameLoop:CommonUpgradesTick()
     equal(GameLoop.common_upgrades_progress[2], 995)
@@ -278,8 +259,8 @@ local function make_item(name, cost)
 end
 test("shop rewards keep source prices and announce/account for epic rewards", function()
     for _, source in ipairs({ { "common", 2000 }, { "rare", 4000 }, { "epic", 8000 } }) do
-        reset()
-        local item = make_item("item_" .. source[1] .. "_orb_ffa_epic_only", source[2])
+        reset(true)
+        local item = make_item("item_" .. source[1] .. "_orb_ffa", source[2])
         local courier = { IsCourier = function() return true end }
         equal(Filters:OrbAddedToInventoryFilter(item, courier), true)
         assert_queue(4, 1)
@@ -294,20 +275,19 @@ test("shop rewards keep source prices and announce/account for epic rewards", fu
     end
 end)
 
-test("variant shop items reject normal-map orders and quickbuy, accept variant", function()
-    for _, map in ipairs({ "ot3_necropolis_ffa", SINGLE_DRAFT_MAP_NAME, EPIC_ONLY_MAP_NAME, EPIC_ONLY_SINGLE_DRAFT_MAP_NAME }) do
-        reset(map)
-        entities[1] = make_item("item_common_orb_ffa_epic_only", 2000)
+test("FFA shop orbs pass purchase orders and quickbuy under both orb rules", function()
+    for _, epic in ipairs({ false, true }) do
+        reset(epic)
+        entities[1] = make_item("item_common_orb_ffa", 2000)
         entities[2] = heroes[0]
         local event = {
             order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, issuer_player_id_const = 0,
             entindex_target = 0, entindex_ability = 0, units = { ["0"] = 2 },
             shop_item_name = entities[1]:GetName(),
         }
-        local expected = IsEpicOnlyMap()
-        equal(Filters:ExecuteOrderFilter(event), expected, "purchase order eligibility")
-        equal(Filters:ItemAddedToInventoryFilter({ item_entindex_const = 1, inventory_parent_entindex_const = 2 }), expected, "quickbuy eligibility")
-        equal(queue_count(), expected and 1 or 0)
+        equal(Filters:ExecuteOrderFilter(event), true, "purchase order eligibility")
+        equal(Filters:ItemAddedToInventoryFilter({ item_entindex_const = 1, inventory_parent_entindex_const = 2 }), true, "quickbuy eligibility")
+        assert_queue(epic and 4 or 1, 1)
     end
 end)
 
@@ -317,7 +297,7 @@ test("gift orbs to every team are removed", function()
 end)
 
 test("Epic Only spends all 30 rerolls at one each and rejects the 31st", function()
-    reset()
+    reset(true)
     UpgradeRerolls:Init()
     UpgradeRerolls:PreparePlayer(0)
     equal(observations.net["rerolls/0"].count, 30)
@@ -337,9 +317,9 @@ test("Epic Only spends all 30 rerolls at one each and rejects the 31st", functio
     equal(observations.client_event.upgrades.reroll_price, 1)
 end)
 
-test("ordinary maps retain rarity pricing and pending selection price", function()
+test("normal orbs retain rarity pricing and pending selection price", function()
     for _, rarity in ipairs({ 1, 2, 4 }) do
-        reset("ot3_necropolis_ffa")
+        reset(false)
         UpgradeRerolls:Init()
         UpgradeRerolls:PreparePlayer(0)
         Upgrades.pending_selection[0] = { upgrade_rarity = rarity }

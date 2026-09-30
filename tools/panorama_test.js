@@ -1,4 +1,4 @@
-// Behavioral checks for progress channels and the variant's shared map identity.
+// Behavioral checks for the Panorama logic, with mocked panels.
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -8,19 +8,17 @@ const scripts = path.join(sources, "panorama/layout/custom_game");
 
 const utils = fs.readFileSync(path.join(scripts, "scripts/utils.js"), "utf8");
 const declarations = utils.slice(0, utils.indexOf("Object.defineProperties"));
-for (const map of ["ot3_necropolis_ffa", "ot3_ffa_epic", "ot3_ffa_epic_draft", "ot3_ffa_draft", "ot3_gardens_duo", "ot3_demo"]) {
+{
+	// Before the match rules arrive, both rule flags are off.
 	const context = vm.createContext({ Game: {
 		GetLocalPlayerID: () => 0,
 		GetLocalPlayerInfo: () => ({ player_steamid: "0" }),
-		GetMapInfo: () => ({ map_display_name: map }),
+		GetMapInfo: () => ({ map_display_name: "ot3_necropolis_ffa" }),
 	} });
 	vm.runInContext(declarations, context);
-	const epic = map === "ot3_ffa_epic" || map === "ot3_ffa_epic_draft";
-	const singleDraft = map === "ot3_ffa_epic_draft" || map === "ot3_ffa_draft";
-	assert.equal(vm.runInContext("IS_SINGLE_DRAFT_MAP", context), singleDraft);
-	assert.equal(vm.runInContext("MAP_NAME", context), map);
-	assert.equal(vm.runInContext("IS_EPIC_ONLY_MAP", context), epic);
-	assert.equal(vm.runInContext("MAP_BASE_NAME", context), epic || singleDraft ? "ot3_necropolis_ffa" : map);
+	assert.equal(vm.runInContext("MAP_NAME", context), "ot3_necropolis_ffa");
+	assert.equal(vm.runInContext("IS_SINGLE_DRAFT_MAP", context), false);
+	assert.equal(vm.runInContext("IS_EPIC_ONLY_MAP", context), false);
 }
 
 class Panel {
@@ -396,7 +394,7 @@ for (const epic of [false, true]) {
 		}
 	}
 }
-console.log("PASS: real map identity, FFA inheritance, separate time/kill progress, epic presentation and original-map behavior");
+console.log("PASS: separate time/kill progress, epic presentation with Epic-Only orbs and normal presentation without");
 
 // Exercise the real selection and reroll handlers with empty rendered choices.
 const upgradesSource = fs.readFileSync(path.join(scripts, "upgrades_panel/upgrades_panel.js"), "utf8");
@@ -517,7 +515,7 @@ console.log("PASS: server-supplied reroll price, final 1–3 rerolls, empty bala
 	const context = vm.createContext({
 		$: { GetContextPanel: () => new Panel("Chat") },
 		DOTATeam_t: { DOTA_TEAM_GOODGUYS: 2, DOTA_TEAM_BADGUYS: 3 },
-		MAP_BASE_NAME: "ot3_necropolis_ffa",
+		MAP_NAME: "ot3_necropolis_ffa",
 		GameUI: { GetTeamColor: team => teams[team] },
 		Players: { GetTeam: id => id },
 	});

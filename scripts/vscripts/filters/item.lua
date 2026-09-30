@@ -13,14 +13,6 @@ function Filters:ItemAddedToInventoryFilter(event)
 		local purchaser = item:GetPurchaser()
 
 		if purchaser then
-			-- disallow purchasing of orbs on incorrect maps
-			-- order filter logic is no longer sufficient as quickbuy is not filtered anymore
-			local item_name = item:GetName()
-			if string.find(item_name, "_ffa_epic_only", 1, true) and not IsEpicOnlyMap() then return false end
-			if string.match(item_name, "_ffa") and not string.match(GetBaseMapName(), "_ffa") then return end
-			if string.match(item_name, "_duo") and not string.match(GetMapName(), "_duo") then return end
-			if string.match(item_name, "_quintet") and not string.match(GetMapName(), "_quintet") then return end
-			if string.match(item_name, "_octet") and not string.match(GetMapName(), "_octet") then return end
 			if self:OrbAddedToInventoryFilter(item, inventory_parent) then return true end
 
 			-- local purchaser_id = purchaser:GetPlayerID()

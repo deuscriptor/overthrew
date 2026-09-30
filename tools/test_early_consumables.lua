@@ -33,4 +33,4 @@ assert(#votes == 1 and votes[1] == 1 and sent[#sent][3].player_vote_kl == EXTRA_
 dota_time = 20
 EarlyConsumables:PlayerVoteAdditionalGoal(0)
 assert(#votes == 1, "votes close after the early window")
-print("PASS early consumables: hidden and inert with a host-fixed kill goal, original vote elsewhere")
+print("PASS early consumables: hidden and inert with a host-fixed kill goal, original vote without one")

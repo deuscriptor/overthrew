@@ -35,7 +35,6 @@ function Upgrades:Init()
 	EventStream:Listen("Upgrades:dev:request_upgrades", function(event) Upgrades:SendUpgradesData(event.PlayerID) end)
 	EventStream:Listen("Upgrades:dev:add_upgrade", function(event) Upgrades:AddToolsUpgrade(event) end)
 	EventStream:Listen("Upgrades:dev:add_generic_upgrade", function(event) Upgrades:AddToolsGenericUpgrade(event) end)
-	EventStream:Listen("Upgrades:get_debug_localization_check", function(event) Upgrades:SendDebugUpgrades(event.PlayerID) end)
 
 	EventStream:Listen("Upgrades:get_upgrades", Upgrades.SendPendingSelection, Upgrades)
 	EventStream:Listen("Upgrades:choose_upgrade", Upgrades.UpgradeSelected, Upgrades)
@@ -107,23 +106,6 @@ function Upgrades:SetFavorites(event)
 end
 
 
-function Upgrades:SendDebugUpgrades(player_id)
-	if not player_id or not IsInToolsMode() or GetMapName() ~= "ot3_demo" then return end
-
-	local player = PlayerResource:GetPlayer(player_id)
-	if not IsValidEntity(player) then return end
-
-	local all_upgrades = {}
-	for hero_name,_ in pairs(LoadKeyValues("scripts/npc/npc_heroes.txt")) do
-		if string.find(hero_name, "npc_dota_hero_") then
-			all_upgrades[hero_name] = LoadKeyValues("scripts/upgrades/heroes/" .. hero_name .. ".txt")
-		end
-	end
-
-	CustomGameEventManager:Send_ServerToPlayer(player, "Upgrades:send_debug_localization_check", all_upgrades)
-end
-
-
 function Upgrades:SendUpgradesData(player_id)
 	--	print("[Upgrades] Sending tools upgrades data to player", player_id)
 
@@ -159,7 +141,7 @@ end
 
 
 function Upgrades:AddToolsUpgrade(event)
-	if IsInToolsMode() or GetMapName() == "ot3_demo" then
+	if IsInToolsMode() then
 		local hero = PlayerResource:GetSelectedHeroEntity(event.target_player_id)
 		if not hero or not hero:IsRealHero() then return end
 		Upgrades:AddAbilityUpgrade(hero, event.ability_name, event.ability_special_name, event.value)
@@ -168,7 +150,7 @@ end
 
 
 function Upgrades:AddToolsGenericUpgrade(event)
-	if IsInToolsMode() or GetMapName() == "ot3_demo" then
+	if IsInToolsMode() then
 		local hero = PlayerResource:GetSelectedHeroEntity(event.target_player_id)
 		if not hero or not hero:IsRealHero() then return end
 
@@ -240,7 +222,7 @@ function Upgrades:Reroll(event)
 
 	local pending = Upgrades.pending_selection[player_id]
 	if not pending then return end
-	if UsesHostRules() and event.selection_id ~= pending.selection_id then return end
+	if event.selection_id ~= pending.selection_id then return end
 
 	local price = Upgrades:GetRerollPrice(pending.upgrade_rarity)
 
@@ -439,7 +421,7 @@ function Upgrades:UpgradeSelected(event)
 
 	local pending_selection = Upgrades.pending_selection[player_id]
 	if not pending_selection then print("no pending upgrades") return end
-	if UsesHostRules() and event.selection_id ~= pending_selection.selection_id then return end
+	if event.selection_id ~= pending_selection.selection_id then return end
 
 	local hero = PlayerResource:GetSelectedHeroEntity(player_id)
 	local subscription_tier = WebPlayer:GetSubscriptionTier(player_id)
@@ -518,7 +500,7 @@ function Upgrades:LoadUpgradesData(hero_name)
 	self.upgrades_kv[hero_name] = LoadKeyValues("scripts/upgrades/heroes/" .. hero_name .. ".txt")
 
 	-- per-map override
-	local kv_override = LoadKeyValues("scripts/upgrades/overrides/" .. GetBaseMapName() ..  "/" .. hero_name .. ".txt")
+	local kv_override = LoadKeyValues("scripts/upgrades/overrides/" .. GetMapName() ..  "/" .. hero_name .. ".txt")
 	print("override:")
 	DeepPrintTable(kv_override)
 	if kv_override then

@@ -52,8 +52,6 @@ function FlyingTreasureDrop:ThinkSpecialItemDrop()
 
 	local expected_spawn_tick = self.spawn_time * self.spawn_id
 
-	if GetMapName() == "ot3_desert_octet" then return end
-
 	if self.current_tick == expected_spawn_tick - 15 then
 		self:StageOrbLaunches()
 	end
@@ -81,13 +79,7 @@ function FlyingTreasureDrop:RollOrbLocations()
 		if i % 2 == 0 then
 			local previous_index = target_indices[i - 1]
 			-- for even indices in orbs per launch opposite of previous location is chosen
-			if GetBaseMapName() == "ot3_necropolis_ffa" then
-				expected_index = 1 + (previous_index - 1 + #self.orb_entities / 2) % #self.orb_entities
-			-- for other maps with uneven spawn count, just select any other spawn point
-			else
-				local _, randomed_index = table.random_with_condition(self.orb_entities, function(t, k, v) return k ~= previous_index end)
-				expected_index = randomed_index
-			end
+			expected_index = 1 + (previous_index - 1 + #self.orb_entities / 2) % #self.orb_entities
 
 			-- print("previous index: ", previous_index, "expected index: ", expected_index)
 		else
@@ -154,42 +146,6 @@ function FlyingTreasureDrop:LaunchStagedOrbs()
 		-- to properly remove vision revealers etc
 		treasure_courier.spawn_id = self.spawn_id
 		treasure_courier.target_index = target_index
-	end
-
-	self.spawn_id = self.spawn_id + 1
-end
-
-
-function FlyingTreasureDrop:LaunchStagedOctet()
-	print("octet staged launch")
-	EmitGlobalSound("powerup_05")
-	CustomGameEventManager:Send_ServerToAllClients("item_has_spawned", {})
-
-	local spawn_id = self.spawn_id
-
-	for i, target_index in pairs(self.staged_orbs) do
-		local launch_target = self.orb_entities[target_index]
-		local spawn_location = launch_target:GetAbsOrigin()
-		spawn_location.z = 400
-
-		local vision_revealer = self.current_vision_revealers[spawn_id][target_index]
-		self.current_vision_revealers[spawn_id][target_index] = nil
-
-		if table.count(self.current_vision_revealers[spawn_id]) == 0 then self.current_vision_revealers[spawn_id] = nil end
-
-		-- Spawn the orb capture area at the selected item spawn location
-		local capture_point = GameMode:SpawnOrbDrop(spawn_location, UPGRADE_RARITY_EPIC, false, function()
-			-- on orb capture - remove fow revealer and path particles
-			self:DestroyPathParticles(spawn_id, target_index)
-			UTIL_Remove(vision_revealer)
-		end)
-
-		capture_point:SetOrigin(GetGroundPosition(spawn_location, capture_point))
-
-		-- Stop the particle effect
-		DoEntFire("item_spawn_particle_" .. target_index, "stopplayendcap", "0", 0, self, self)
-
-		self:KnockBackFromTreasure(spawn_location, 375, 0.25, 400, 100)
 	end
 
 	self.spawn_id = self.spawn_id + 1

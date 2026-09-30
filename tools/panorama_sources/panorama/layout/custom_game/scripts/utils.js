@@ -3,25 +3,22 @@ const LOCAL_STEAM_ID = Game.GetLocalPlayerInfo() ? Game.GetLocalPlayerInfo().pla
 const MAP_NAME = Game.GetMapInfo().map_display_name;
 function MatchRuleEnabled(name) {
 	const rules = typeof CustomNetTables !== "undefined" && CustomNetTables.GetTableValue("game_options", "match_rules");
-	return MAP_NAME === "ot3_necropolis_ffa" && !!rules && rules[name] === 1;
+	return !!rules && rules[name] === 1;
 }
-let IS_SINGLE_DRAFT_MAP = MatchRuleEnabled("single_draft") || MAP_NAME === "ot3_ffa_epic_draft" || MAP_NAME === "ot3_ffa_draft";
-let IS_EPIC_ONLY_MAP = MatchRuleEnabled("epic_orbs") || MAP_NAME === "ot3_ffa_epic" || MAP_NAME === "ot3_ffa_epic_draft";
+let IS_SINGLE_DRAFT_MAP = MatchRuleEnabled("single_draft");
+let IS_EPIC_ONLY_MAP = MatchRuleEnabled("epic_orbs");
 let IS_FLAT_REROLL_MAP = IS_EPIC_ONLY_MAP;
 if (typeof CustomNetTables !== "undefined") CustomNetTables.SubscribeNetTableListener("game_options", function(table, key) {
-	if (key !== "match_rules" || MAP_NAME !== "ot3_necropolis_ffa") return;
+	if (key !== "match_rules") return;
 	IS_SINGLE_DRAFT_MAP = MatchRuleEnabled("single_draft");
 	IS_EPIC_ONLY_MAP = MatchRuleEnabled("epic_orbs");
 	IS_FLAT_REROLL_MAP = IS_EPIC_ONLY_MAP;
 });
-// Keep the actual map identity for labels; inherit FFA layout and configuration.
-const MAP_BASE_NAME = IS_EPIC_ONLY_MAP || IS_SINGLE_DRAFT_MAP ? "ot3_necropolis_ffa" : MAP_NAME;
 const B_LOCAL_LOBBY = true;
 
 // Shared by the hero-selection overlay and the in-game HUD during preparation.
 // Styled like the host settings (dark gradient panel, gold accents, green primary action).
 function CreateHeroSwapPanel() {
-	if (MAP_NAME !== "ot3_necropolis_ffa") return;
 	const GOLD = "#d4bb86";
 	function css(target, styles) {
 		for (const key in styles) target.style[key] = styles[key];
@@ -914,9 +911,6 @@ function CalculateUpgradeValue(ent_index, value, count, upgrade_data, round = tr
 	return isNaN(result) ? 0 : round ? Math.rd(result, 2) : result;
 }
 
-Game.IsDemoMode = () => {
-	return MAP_NAME == "ot3_demo";
-};
 function RemoveChildrenByID(parent, id) {
 	for (const c of parent.Children()) if (c.id == id) c.DeleteAsync(0);
 }

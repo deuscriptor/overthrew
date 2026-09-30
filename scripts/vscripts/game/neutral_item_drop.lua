@@ -2,40 +2,12 @@ NeutralItemDrop = NeutralItemDrop or {
 	neutral_item_list = {},
 	craft_costs = {},
 	drop_period = {
-		ot3_demo = {
-			120,
-			270,
-			420,
-			570,
-			900,
-		},
 		ot3_necropolis_ffa = {
 			120,
 			270,
 			420,
 			570,
 			900,
-		},
-		ot3_gardens_duo = {
-			120,
-			270,
-			420,
-			570,
-			900,
-		},
-		ot3_jungle_quintet = {
-			120,
-			270,
-			420,
-			570,
-			900,
-		},
-		ot3_desert_octet = {
-			120, -- 1200 - 18
-			270, -- 1200 - 15:30
-			420, -- 1200 - 13
-			570, -- 1200 - 10:30
-			900, -- 1200 - 5
 		},
 	},
 }
@@ -68,7 +40,7 @@ function NeutralItemDrop:Activate()
 end
 
 function NeutralItemDrop:GetTierTime(tier)
-	return self.drop_period[GetBaseMapName()][tier]
+	return self.drop_period[GetMapName()][tier]
 end
 
 function NeutralItemDrop:Drop(tier)

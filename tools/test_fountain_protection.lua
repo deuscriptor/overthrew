@@ -216,11 +216,8 @@ Dynamic_Wrap = function(scope, name) return scope[name] end
 require = function() end
 dofile("scripts/vscripts/filters/init.lua")
 require = original_require
-for _, host_map in ipairs({true, false}) do
-	registered = {}
-	UsesHostRules = function() return host_map end
-	Filters:Init()
-	assert((registered.damage == Filters.FountainDamageFilter) == host_map)
-	assert((registered.modifier == Filters.FountainModifierFilter) == host_map)
-end
-print("PASS fountain protection: own fountain zone plus 1.5 second linger, dark look until exposed, disarmed, untargetable and shielded until an active attempt while lingering, no damage or debuffs dealt, no orb captures, filters on FFA only")
+registered = {}
+Filters:Init()
+assert(registered.damage == Filters.FountainDamageFilter)
+assert(registered.modifier == Filters.FountainModifierFilter)
+print("PASS fountain protection: own fountain zone plus 1.5 second linger, dark look until exposed, disarmed, untargetable and shielded until an active attempt while lingering, no damage or debuffs dealt, no orb captures, filters registered")

@@ -117,28 +117,17 @@ CHALLENGE_ACCESSOR = {
 
 
 ---@class CHALLENGE_TARGETS @ default targets for a given challenge type (base)
----@type table<CHALLENGE_TYPE, table>
+---@type table<CHALLENGE_TYPE, number>
 CHALLENGE_TARGETS = {
-	-- Targets are an array of values per map:	ffa => duos => quintet => octet
-	[CHALLENGE_TYPE.DEAL_DAMAGE] 				= {55000, 65000, 65000, 60000},
-	[CHALLENGE_TYPE.TAKE_DAMAGE] 				= {115000, 150000, 150000, 140000},
-	[CHALLENGE_TYPE.HEAL] 						= {99999, 5500, 11000, 13000},
-	[CHALLENGE_TYPE.STUN] 						= {75, 85, 80, 75},
-	[CHALLENGE_TYPE.CAPTURE_TIME] 				= {75, 75, 75, 75},
-	-- [CHALLENGE_TYPE.BREAK_WARD] 				= {2, 2, 2, 2},
-	[CHALLENGE_TYPE.KILL] 						= {13, 15, 13, 12},
-	[CHALLENGE_TYPE.ASSIST] 					= {33, 53, 62, 68}, -- total possible assists: 30 * 7 = 210, 5 * 4 = 200, 90 * 2 = 180, 125 * 2 = 250
-	[CHALLENGE_TYPE.DEAL_DAMAGE_WITH_SUMMONS] 	= {13000, 17000, 16000, 14000},
-}
-
----@class CHALLENGE_MAP_INDEX @ maps map name to index in challenge targets
----@type table<string, number>
--- If you need to add new map - just add it in, in any place - only have to make sure targets follow same order in CHALLENGE_TARGETS
-CHALLENGE_MAP_INDEX = {
-	ot3_necropolis_ffa = 1,
-	ot3_gardens_duo = 2,
-	ot3_jungle_quintet = 3,
-	ot3_desert_octet = 4,
+	[CHALLENGE_TYPE.DEAL_DAMAGE] 				= 55000,
+	[CHALLENGE_TYPE.TAKE_DAMAGE] 				= 115000,
+	[CHALLENGE_TYPE.HEAL] 						= 99999,
+	[CHALLENGE_TYPE.STUN] 						= 75,
+	[CHALLENGE_TYPE.CAPTURE_TIME] 				= 75,
+	-- [CHALLENGE_TYPE.BREAK_WARD] 				= 2,
+	[CHALLENGE_TYPE.KILL] 						= 13,
+	[CHALLENGE_TYPE.ASSIST] 					= 33, -- total possible assists: 30 * 7 = 210
+	[CHALLENGE_TYPE.DEAL_DAMAGE_WITH_SUMMONS] 	= 13000,
 }
 
 ---@class BackendChallenge @ backend view of challenge

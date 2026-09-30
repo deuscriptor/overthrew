@@ -21,12 +21,7 @@ function Kicks:Init()
 	self.pre_voting = {}
 	self.stats = {}
 	self.init_voting_cooldowns = {}
-	self.is_enabled = true
-
-	local map_name = GetBaseMapName()
-	if map_name == "ot3_gardens_duo" or map_name == "ot3_necropolis_ffa" then
-		self.is_enabled = false
-	end
+	self.is_enabled = false
 
 	self.reasons_for_kick = {
 		["feeding"] = true,

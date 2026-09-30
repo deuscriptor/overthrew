@@ -31,7 +31,6 @@ function OT3Demo:Init(game_mode_entity)
 	Convars:SetInt("dota_easybuy", 0)
 
 	EventDriver:Listen("Events:npc_spawned", OT3Demo.OnNPCSpawned, self)
-	EventDriver:Listen("Events:entity_killed", OT3Demo.OnEntityKilled, self)
 
 	-- Events
 	ListenToGameEvent("dota_item_purchased", Dynamic_Wrap(OT3Demo, "OnItemPurchased"), self)

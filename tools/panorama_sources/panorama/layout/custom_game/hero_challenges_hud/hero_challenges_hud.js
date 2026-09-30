@@ -69,7 +69,7 @@ function PingChallengeProgress() {
 }
 
 (function () {
-	HUD.CONTEXT.SwitchClass("map_name", MAP_BASE_NAME);
+	HUD.CONTEXT.SwitchClass("map_name", MAP_NAME);
 	HUD.CONTEXT.SetHasClass("BPingProgressCooldown", false);
 
 	const frame = GameEvents.NewProtectedFrame(HUD.CONTEXT);

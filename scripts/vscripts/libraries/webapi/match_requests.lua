@@ -92,9 +92,7 @@ function WebApi:_HandleBeforeMatchResponse(data)
 
 	SeasonalEvents:SetFirstWeekends(data.epic_weekend_dates or {})
 
-	if GetMapName() ~= "ot3_demo" then
-		HeroChallenges:SubmitChallengesToBackend()
-	end
+	HeroChallenges:SubmitChallengesToBackend()
 
 	HostOptions:SetOptionAvailable(HOST_OPTION.TOURNAMENT, data.tournament_mode_state)
 

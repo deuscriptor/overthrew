@@ -27,13 +27,11 @@ function HostOptions:Init()
 	HostOptions.locked = false
 	HostOptions.players_ready = false
 	HostOptions.loading_wait_expired = false
-	if UsesHostRules() then
-		HostOptions.available_options.kill_goal = true
-		HostOptions.options.kill_goal = 50
-		for _, name in ipairs(MATCH_FLAGS) do
-			HostOptions.available_options[name] = true
-			HostOptions.options[name] = DEFAULT_ON_FLAGS[name] or false
-		end
+	HostOptions.available_options.kill_goal = true
+	HostOptions.options.kill_goal = 50
+	for _, name in ipairs(MATCH_FLAGS) do
+		HostOptions.available_options[name] = true
+		HostOptions.options[name] = DEFAULT_ON_FLAGS[name] or false
 	end
 	EventStream:Listen("HostOptions:apply_rules", function(event, user_id)
 		local sender = EntIndexToHScript(user_id)
@@ -98,7 +96,7 @@ function HostOptions:SetOptionState(option_name, state)
 	HostOptions.options[option_name] = state
 
 	CustomNetTables:SetTableValue("game_options", "host_options", HostOptions.options)
-	if UsesHostRules() then self:PublishRules() end
+	self:PublishRules()
 end
 
 -- Scripts get no lobby owner from the engine, and native host privileges and
@@ -130,12 +128,12 @@ function HostOptions:WatchLoading()
 	Timers:CreateTimer({useGameTime = false, endTime = HOST_LOADING_MAX_WAIT, callback = function()
 		if self.locked or GameRules:State_Get() ~= DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then return end
 		self.loading_wait_expired = true
-		if UsesHostRules() then self:PublishRules() end
+		self:PublishRules()
 	end})
 end
 
 function HostOptions:ClaimHost(player_id)
-	if not UsesHostRules() or self.locked or not self:ArePlayersReady() then return false end
+	if self.locked or not self:ArePlayersReady() then return false end
 	if self:ResolveHost() or not self:IsRealPlayerID(player_id) then return false end
 	if PlayerResource:GetConnectionState(player_id) ~= DOTA_CONNECTION_STATE_CONNECTED then return false end
 	self.host_id = player_id
@@ -146,13 +144,6 @@ function HostOptions:ClaimHost(player_id)
 end
 
 function HostOptions:ResolveHost()
-	if not UsesHostRules() then
-		for id = 0, DOTA_MAX_TEAM_PLAYERS - 1 do
-			local player = PlayerResource:GetPlayer(id)
-			if IsValidEntity(player) and GameRules:PlayerHasCustomGameHostPrivileges(player) then return player end
-		end
-		return nil
-	end
 	if not self.host_id then return nil end
 	local player = PlayerResource:GetPlayer(self.host_id)
 	-- A host who leaves before starting frees the role for anyone to claim.
@@ -196,7 +187,7 @@ function HostOptions:HoldSetup()
 end
 
 function HostOptions:ApplyRules(event)
-	if not UsesHostRules() or self.locked or GameRules:State_Get() ~= DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then return false end
+	if self.locked or GameRules:State_Get() ~= DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then return false end
 	local id = event.PlayerID
 	if type(id) ~= "number" or not PlayerResource:IsValidPlayerID(id) then return false end
 	local player = PlayerResource:GetPlayer(id)

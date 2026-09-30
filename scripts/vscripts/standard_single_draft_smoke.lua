@@ -1,8 +1,7 @@
--- Disposable Tools-mode game, after selecting a hero:
+-- Disposable Tools-mode game started with Single Draft on and Epic-Only orbs off, after selecting a hero:
 -- script_reload_code standard_single_draft_smoke
-assert(IsInToolsMode() and GetMapName() == SINGLE_DRAFT_MAP_NAME)
+assert(IsInToolsMode() and HostOptions.locked)
 assert(IsSingleDraftMap() and not IsEpicOnlyMap())
-assert(GetBaseMapName() == "ot3_necropolis_ffa")
 local hero = PlayerResource:GetSelectedHeroEntity(0)
 assert(IsValidEntity(hero) and hero.upgrades, "Wait for hero initialization")
 -- Exercise real item creation and inventory filtering. Shop files use repeated
@@ -18,12 +17,12 @@ for _, source in ipairs({ {"common", 1, 2000}, {"rare", 2, 4000}, {"epic", 4, 80
 end
 
 -- Spend real rerolls against real selections, preserving each reward rarity.
-assert(UpgradeRerolls.current_free_rerolls[0] == 30, "Expected fresh 30-point allowance")
-local remaining = 30
+local remaining = HostOptions:GetOption("infinite_rerolls") and 999 or 30
+assert(UpgradeRerolls.current_free_rerolls[0] == remaining, "Expected a fresh reroll allowance")
 for _, rarity in ipairs({1, 2, 4}) do
 	Upgrades:ShowSelection(hero, rarity, 0)
 	local selection_id = Upgrades.pending_selection[0].selection_id
-	Upgrades:Reroll({ PlayerID = 0 })
+	Upgrades:Reroll({ PlayerID = 0, selection_id = selection_id })
 	remaining = remaining - rarity
 	assert(UpgradeRerolls.current_free_rerolls[0] == remaining)
 	assert(Upgrades.pending_selection[0].upgrade_rarity == rarity)

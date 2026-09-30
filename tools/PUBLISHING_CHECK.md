@@ -7,10 +7,11 @@ FFA map. This is not a successful Workshop upload or downloaded-package test.
 
 - `addoninfo.txt`: `IsPlayable = 1`, `IsTemplate = false`, `HideInTools = false`.
 - Default map changed, with approval, to `ot3_necropolis_ffa`.
-- All five registered maps have compiled VPKs. Removed custom variants are not
-  registered. FFA has a map-specific eight-player limit and a one-player minimum.
+- Since 2026-09-30 `ot3_necropolis_ffa` is the only registered map, with a compiled
+  VPK, an eight-player limit (also the root `MaxPlayers`) and a one-player minimum.
+  The other original maps and the custom variants were removed.
 - Host options operate outside tools mode. Debug respawns, automatic demo setup
-  and cheat enabling are guarded by tools mode or the explicit `ot3_demo` map.
+  and cheat enabling are guarded by tools mode.
 - All 27 edited Panorama resources match their editable sources; resource bounds,
   CRCs, JavaScript syntax and the shop image alias verify successfully.
 - Full regression suite passes, including host authorization and Turbo item timing.
@@ -40,9 +41,6 @@ Reference: https://developer.valvesoftware.com/wiki/Dota_2_Workshop_Tools/Addon_
   (about 163 MiB) or `tools`, AGENTS.md, CLAUDE.md, editor thumbnail/asset caches or
   `panorama_debugger.cfg`. Inspect the publisher's file list; this check did not
   run the publisher or assume it excludes these automatically.
-- The other original maps remain advertised. Their map-specific limits are 10,
-  15 and 24 players; the root fallback MaxPlayers is still 10. Only FFA's
-  eight-player configuration was the target of this audit.
 - Some original backend integrations still run outside tools mode. Local premium
   and vanity access is independent of backend success; this check does not
   certify original account, leaderboard or online-service features.

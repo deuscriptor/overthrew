@@ -1,6 +1,6 @@
 -- Fresh tools session in CUSTOM_GAME_SETUP, before anyone has claimed host: settings are
 -- open once everyone has loaded, nobody is host until claimed, and the first claim wins.
-assert(IsInToolsMode() and UsesHostRules())
+assert(IsInToolsMode())
 assert(GameRules:State_Get() == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP and not HostOptions.locked)
 assert(HostOptions:ArePlayersReady(), "players not ready in a loaded tools session")
 local rules = CustomNetTables:GetTableValue("game_options", "match_rules")

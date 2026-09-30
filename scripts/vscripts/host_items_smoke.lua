@@ -1,5 +1,5 @@
 -- Run only in a disposable local game with a selected hero. Clears test inventory.
-assert(IsInToolsMode() and UsesHostRules())
+assert(IsInToolsMode())
 local hero = PlayerResource:GetSelectedHeroEntity(0)
 assert(IsValidEntity(hero))
 local courier = PlayerResource:GetPreferredCourierForPlayer(0)

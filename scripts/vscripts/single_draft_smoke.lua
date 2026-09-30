@@ -1,5 +1,5 @@
 -- Disposable Tools session: script_reload_code single_draft_smoke
-assert(IsInToolsMode() and IsSingleDraftMap(), "Load the Single Draft map in Tools mode")
+assert(IsInToolsMode() and IsSingleDraftMap(), "Turn on Single Draft in Tools mode")
 for _, rarity in ipairs({1, 2, 4}) do
 	assert(ResolveOrbRarity(rarity) == (IsEpicOnlyMap() and 4 or rarity))
 	assert(Upgrades:GetRerollPrice(rarity) == (IsEpicOnlyMap() and 1 or rarity))

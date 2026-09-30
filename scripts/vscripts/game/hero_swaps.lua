@@ -1,7 +1,6 @@
 HeroSwaps = HeroSwaps or {}
 
 function HeroSwaps:Init()
-	if not UsesHostRules() then return end
 	self.requests, self.accepted, self.cooldowns = {}, {}, {}
 	self.spent_orbs, self.base_generics = {}, {}
 	self.next_id = 0
@@ -21,7 +20,7 @@ end
 
 function HeroSwaps:IsOpen()
 	local state = GameRules:State_Get()
-	return UsesHostRules() and state >= DOTA_GAMERULES_STATE_HERO_SELECTION
+	return state >= DOTA_GAMERULES_STATE_HERO_SELECTION
 		and state < DOTA_GAMERULES_STATE_GAME_IN_PROGRESS and not GameRules:IsInBanPhase()
 end
 
@@ -114,7 +113,7 @@ function HeroSwaps:RecordOrbSelection(hero, selection)
 end
 
 function HeroSwaps:CaptureBaseUpgrades(hero)
-	if not UsesHostRules() or not self.base_generics then return end
+	if not self.base_generics then return end
 	self.base_generics[hero:GetPlayerOwnerID()] = table.deepcopy((hero.upgrades or {}).generic or {})
 end
 

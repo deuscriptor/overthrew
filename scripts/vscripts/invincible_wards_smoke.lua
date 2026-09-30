@@ -1,5 +1,5 @@
 -- Disposable tools match only. Run during setup, choose a hero, then run again.
-assert(IsInToolsMode() and UsesHostRules())
+assert(IsInToolsMode())
 if GameRules:State_Get() == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
 	GameRules:SetPreGameTime(600)
 	PlayerDC.CheckEndGame = function() end

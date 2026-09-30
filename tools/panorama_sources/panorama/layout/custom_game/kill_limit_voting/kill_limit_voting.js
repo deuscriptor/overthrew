@@ -30,19 +30,14 @@ function ShowKillLimitVoting() {
 
 const TOKENS_INC_KL_BY_MPA = {
 	ot3_necropolis_ffa: 10,
-	ot3_gardens_duo: 10,
-	ot3_jungle_quintet: 15,
-	ot3_desert_octet: 20,
 };
 
 (() => {
 	HideKillLimitVoting();
 	if (IsSpectating()) return;
 
-	if (Game.GetMapInfo().map_display_name === "ot3_demo") return;
-
-	CONTEXT.SetDialogVariableInt("kill_limit_inc", specific_kill_limit_by_map[MAP_BASE_NAME] || 2);
-	CONTEXT.SetDialogVariableInt("kill_limit_inc_token", TOKENS_INC_KL_BY_MPA[MAP_BASE_NAME] || 10);
+	CONTEXT.SetDialogVariableInt("kill_limit_inc", specific_kill_limit_by_map[MAP_NAME] || 2);
+	CONTEXT.SetDialogVariableInt("kill_limit_inc_token", TOKENS_INC_KL_BY_MPA[MAP_NAME] || 10);
 
 	const frame = GameEvents.NewProtectedFrame($.GetContextPanel());
 	frame.SubscribeProtected("kl_voting:show", ShowKillLimitVoting);

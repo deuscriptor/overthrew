@@ -2,8 +2,7 @@ DOTA_UNIT_ORDER_CAST_POSITION, DOTA_UNIT_ORDER_CAST_TARGET, DOTA_UNIT_ORDER_CAST
 DOTA_UNIT_ORDER_CAST_NO_TARGET, DOTA_UNIT_ORDER_CAST_TOGGLE, DOTA_UNIT_ORDER_MOVE_ITEM = 8, 9, 19
 DOTA_ITEM_SLOT_1, DOTA_ITEM_SLOT_7, DOTA_ITEM_SLOT_9, DOTA_STASH_SLOT_6 = 0, 6, 8, 14
 
-local hostMap, locked, enabled = true, true, true
-UsesHostRules = function() return hostMap end
+local locked, enabled = true, true
 HostOptions = {GetOption = function(_, name) return name == "backpack_items" and enabled end}
 setmetatable(HostOptions, {__index = function(_, key) if key == "locked" then return locked end end})
 local neutral = {item_trinket = "ItemIsNeutralActiveDrop", item_enhancement = "ItemIsNeutralPassiveDrop"}
@@ -76,14 +75,14 @@ end
 
 dofile("scripts/vscripts/game/backpack_items.lua")
 
--- Rules only apply once the host locks an enabled option on the configurable map.
-for _, case in ipairs({{false, true, true}, {true, false, true}, {true, true, false}}) do
-	hostMap, locked, enabled = case[1], case[2], case[3]
+-- Rules only apply once the host locks an enabled option.
+for _, case in ipairs({{false, true}, {true, false}}) do
+	locked, enabled = case[1], case[2]
 	BackpackItems:ApplyRules()
 	assert(gameMode.swap == nil and #timers == 0, "disabled rules must not configure the backpack")
 	assert(BackpackItems:FilterOrder({order_type = DOTA_UNIT_ORDER_CAST_NO_TARGET}, Unit(), Item("item_bkb")) == nil)
 end
-hostMap, locked, enabled = true, true, true
+locked, enabled = true, true
 BackpackItems:ApplyRules()
 BackpackItems:ApplyRules()
 assert(gameMode.swap == 0 and gameMode.percent == 1, "swap delay removed and backpack cooldowns at full rate")

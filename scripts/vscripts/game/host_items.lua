@@ -22,7 +22,7 @@ function HostItems:Init()
 end
 
 function HostItems:InitializeWardStock()
-	if self.ward_stock_initialized or not UsesHostRules() or not HostOptions.locked or not HostOptions:GetOption("longer_wards") then return end
+	if self.ward_stock_initialized or not HostOptions.locked or not HostOptions:GetOption("longer_wards") then return end
 	for _, team in ipairs(TEAMS_LAYOUTS[GetMapName()].teamlist) do
 		if GameRules:GetItemStockCount(team, "item_ward_observer", -1) <= 0 then return false end
 	end
@@ -41,7 +41,7 @@ end
 
 function HostItems:IsDisabled(name)
 	local option = self:OptionForItem(name or "")
-	return option ~= nil and not (UsesHostRules() and HostOptions.locked and HostOptions:GetOption(option))
+	return option ~= nil and not (HostOptions.locked and HostOptions:GetOption(option))
 end
 
 function HostItems:ApplyRules()
@@ -82,7 +82,7 @@ end
 
 function HostItems:ExtendWardLifetime(unit, name)
 	if name ~= "npc_dota_observer_wards" and name ~= "npc_dota_sentry_wards" then return end
-	if not UsesHostRules() or not HostOptions.locked or not HostOptions:GetOption("longer_wards") then return end
+	if not HostOptions.locked or not HostOptions:GetOption("longer_wards") then return end
 	if unit.host_lifetime_extended then return end
 	local lifetime = unit:FindModifierByName("modifier_item_buff_ward")
 	if lifetime and lifetime:GetDuration() > 0 then
@@ -98,7 +98,7 @@ end
 
 function HostItems:ProtectWard(unit, name)
 	if name ~= "npc_dota_observer_wards" and name ~= "npc_dota_sentry_wards" then return end
-	if not UsesHostRules() or not HostOptions.locked or not HostOptions:GetOption("invincible_wards") then return end
+	if not HostOptions.locked or not HostOptions:GetOption("invincible_wards") then return end
 	if not unit:HasModifier("modifier_host_invincible_ward") then
 		unit:AddNewModifier(unit, nil, "modifier_host_invincible_ward", {})
 	end

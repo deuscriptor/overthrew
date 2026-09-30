@@ -8,12 +8,11 @@ Development-only: never part of the Workshop package (see [Release and publishin
 `overthrew` is a Dota 2 custom game addon, a fork of Overthrow 3.0 (see `README.md` and `LICENSE`).
 It adds a host-configurable free-for-all mode on `ot3_necropolis_ffa`.
 
-- **Maps:** `ot3_necropolis_ffa` is the `DefaultMap` in `addoninfo.txt` (8 players, min 1) and the only map
-  with host rules: `UsesHostRules()` in `core_declarations.lua` checks the map name. The other registered maps
-  (`ot3_gardens_duo`, `ot3_jungle_quintet`, `ot3_desert_octet`, `ot3_demo`) keep original Overthrow behavior.
-- **No map sources:** maps ship as compiled VPKs only; there is no Hammer source.
-- **Historical leftovers:** the removed map variants `ot3_ffa_epic`, `ot3_ffa_draft` and `ot3_ffa_epic_draft`
-  still have overviews, shop files, `tools/Build-Map.ps1` and `tools/backups/`. Don't extend them.
+- **Map:** `ot3_necropolis_ffa` is the only registered map and the `DefaultMap` in `addoninfo.txt` (8 players,
+  min 1). The other Overthrow maps (Duo, Quintet, Octet, `ot3_demo`) and the earlier `ot3_ffa_*` variants were
+  removed; `run_tests.js` fails if a map package, overview, shop or upgrade override exists for an unregistered
+  map. The Hero Demo tooling (`game/demo`, the `ot3_demo` Panorama panel) still loads in Tools mode.
+- **No map sources:** the map ships as a compiled VPK only; there is no Hammer source.
 - **Spec:** `tools/README.md` is the authoritative feature specification. Keep it and `README.md` current (see
   [Documentation](#documentation)).
 
@@ -105,7 +104,7 @@ Update these five places together:
 3. **Localization:** add `host_rules_<name>` (label) and `host_rules_<name>_tip` (tooltip) to all three `addon_*.txt`
    files. Category headings are `host_rules_category_<id>`.
 4. **Consumer:** read the flag with `HostOptions:GetOption("<name>")` where the effect applies, guarded by
-   `UsesHostRules()` / `HostOptions.locked`.
+   `HostOptions.locked` when it must not act before Apply & Start.
 5. **Tests:** update the defaults and apply payloads in `tools/test_host_rules.lua` and the category order in
    `tools/panorama_test.js`. Also add the flag to every `ApplyRules({...})` call in `scripts/vscripts/*_smoke.lua`.
 
@@ -139,7 +138,8 @@ Then add the option to the table above, to `tools/README.md` and to `README.md` 
 
 - New engine API globals go into the `engine` list in `.luacheckrc`. The repo's own globals and the
   `table`/`string`/`math` extensions are collected automatically.
-- Gate FFA-only behavior with `UsesHostRules()` so the original maps are unaffected.
+- There is one map, so code doesn't branch on the map name. Per-map data stays keyed by `GetMapName()`
+  (`TEAMS_LAYOUTS`, MVP rewards, neutral drop times, `scripts/upgrades/overrides/<map>/`).
 
 ### Documentation
 

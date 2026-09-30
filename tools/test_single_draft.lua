@@ -44,16 +44,16 @@ for id = 0, 8 do
     players[id].SetSelectedHero = function(self, name) self.selected = name end
 end
 
-GetMapName = function() return EPIC_ONLY_MAP_NAME end
+local rules = { single_draft = false, epic_orbs = true }
+HostOptions = { GetOption = function(_, name) return rules[name] == true end }
+GameLoop.current_layout = TEAMS_LAYOUTS.ot3_necropolis_ffa
 SingleDraft:Init()
 equal(filtered, false)
-for _, draft_map in ipairs({ EPIC_ONLY_SINGLE_DRAFT_MAP_NAME, SINGLE_DRAFT_MAP_NAME }) do
+for _, epic_only in ipairs({ true, false }) do
 state = 2
 for _, player in pairs(players) do player.selected = nil; player.randomed = nil end
-GetMapName = function() return draft_map end
-GameLoop.current_layout = TEAMS_LAYOUTS[GetMapName()]
-equal(GetBaseMapName(), "ot3_necropolis_ffa")
-local epic_only = draft_map == EPIC_ONLY_SINGLE_DRAFT_MAP_NAME
+rules = { single_draft = true, epic_orbs = epic_only }
+equal(IsSingleDraftMap(), true)
 equal(IsEpicOnlyMap(), epic_only)
 for _, rarity in ipairs({1, 2, 4}) do
     equal(ResolveOrbRarity(rarity), epic_only and 4 or rarity)
@@ -96,4 +96,4 @@ SingleDraft:PickRandomHero(0)
 equal(players[0].selected, nil)
 equal(callback(), nil)
 end
-report("PASS Single Draft: four attributes, 32 distinct offers, native availability, no bans, reconnects, spectators, both random routes, map inheritance\n")
+report("PASS Single Draft: four attributes, 32 distinct offers, native availability, no bans, reconnects, spectators, both random routes, both orb rules\n")

@@ -1,4 +1,4 @@
-assert(IsInToolsMode() and UsesHostRules() and HeroSwaps:IsOpen())
+assert(IsInToolsMode() and HeroSwaps:IsOpen())
 GameRules:ForceGameStart()
 Timers:CreateTimer(1, function()
 	assert(GameRules:State_Get() >= DOTA_GAMERULES_STATE_GAME_IN_PROGRESS)

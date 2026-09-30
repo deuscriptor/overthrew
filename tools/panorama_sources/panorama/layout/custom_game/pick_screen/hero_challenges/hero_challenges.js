@@ -10,8 +10,6 @@ function CreateChallenges(data) {
 	HUD.TEMP_CONTAINER.RemoveAndDeleteChildren();
 	HUD.CC_CONTAINER.RemoveAndDeleteChildren();
 
-	if (Game.IsDemoMode()) return;
-
 	let temp_challenges = {};
 	for (const challenge of Object.values(data.challenges))
 		temp_challenges[challenge.hero_name.replace("npc_dota_hero_", "")] = challenge;
@@ -207,7 +205,7 @@ function AddChallengeToStrategyScreen() {
 }
 
 (function () {
-	HUD.CONTEXT.SwitchClass("map_name", MAP_BASE_NAME);
+	HUD.CONTEXT.SwitchClass("map_name", MAP_NAME);
 	RestyleSkipStrategyButton();
 	AddChallengeToStrategyScreen();
 	HUD.CONTEXT.RemoveClass("BLocalHeroSelected");

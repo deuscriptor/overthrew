@@ -1,5 +1,5 @@
 -- Disposable tools game only. Run after the map finishes loading.
-assert(IsInToolsMode() and UsesHostRules())
+assert(IsInToolsMode())
 local mode = GameRules:GetGameModeEntity()
 mode:SetFogOfWarDisabled(true)
 local target = CreateUnitByName("npc_dota_hero_axe", Vector(4000, 4000, 128), true, nil, nil, DOTA_TEAM_BADGUYS)

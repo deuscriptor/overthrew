@@ -154,7 +154,7 @@ function OverrideStrategyMap() {
 		map.style.width = "276px";
 		map.style.height = "276px";
 		strategy_minimap.GetParent().MoveChildBefore(map, strategy_minimap);
-		map.SetImage(`file://{images}/custom_game/maps/${MAP_BASE_NAME}.png`);
+		map.SetImage(`file://{images}/custom_game/maps/${MAP_NAME}.png`);
 	}
 }
 

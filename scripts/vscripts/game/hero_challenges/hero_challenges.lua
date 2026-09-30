@@ -202,8 +202,7 @@ function HeroChallenges:GetTarget(hero_name, challenge_type, difficulty)
 
 	if not challenges_definitions then error("[Hero Challenges] missing challenge definition for " .. hero_name) end
 
-	local map_index = CHALLENGE_MAP_INDEX[GetBaseMapName()]
-	local base_target = (CHALLENGE_TARGETS[challenge_type] or {})[map_index] or 99999
+	local base_target = CHALLENGE_TARGETS[challenge_type] or 99999
 
 	local difficulty_multiplier = CHALLENGE_DIFFICULTY_MULTIPLIER[difficulty] or 1
 

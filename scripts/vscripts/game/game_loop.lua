@@ -75,11 +75,6 @@ function GameLoop:OnStateChanged(event)
 		GameLoop.is_full_lobby = player_count == max_players
 
 		DebugMessage("[Game Loop] full lobby status: ", GameLoop.is_full_lobby, player_count, "/", max_players)
-
-		if not GameLoop.is_full_lobby and not UsesHostRules() then
-			--GameRules:LockCustomGameSetupTeamAssignment(false)
-			GameRules:SetCustomGameSetupAutoLaunchDelay(15)
-		end
 	end
 
 	if event.state == DOTA_GAMERULES_STATE_WAIT_FOR_MAP_TO_LOAD then
@@ -144,29 +139,27 @@ function GameLoop:OnStateChanged(event)
 	GameLoop:UpdateTeamsOrder()
 	print("[Game Loop] starting duration timer and common upgrades timer")
 
-	if GetMapName() ~= "ot3_demo" then
-		self.game_duration_timer = Timers:CreateTimer(function()
-			local time = GameRules:GetDOTATime(false, false)
+	self.game_duration_timer = Timers:CreateTimer(function()
+		local time = GameRules:GetDOTATime(false, false)
 
-			if time >= self.current_layout.game_base_duration then
+		if time >= self.current_layout.game_base_duration then
+			GameLoop:OnGameDurationFinished()
+			return
+		end
+
+		if not IsInToolsMode() and CountPlayers(false) > 2 and GameLoop.first_blood then
+			GameLoop.stalemate_game_timer = GameLoop.stalemate_game_timer + 1
+
+			if GameLoop.stalemate_game_timer >= GameLoop.current_layout.stalemate_game_time_limit then
 				GameLoop:OnGameDurationFinished()
 				return
 			end
+		end
 
-			if not IsInToolsMode() and CountPlayers(false) > 2 and GameLoop.first_blood then
-				GameLoop.stalemate_game_timer = GameLoop.stalemate_game_timer + 1
+		FlyingTreasureDrop:ThinkSpecialItemDrop()
 
-				if GameLoop.stalemate_game_timer >= GameLoop.current_layout.stalemate_game_time_limit then
-					GameLoop:OnGameDurationFinished()
-					return
-				end
-			end
-
-			FlyingTreasureDrop:ThinkSpecialItemDrop()
-
-			return 1
-		end)
-	end
+		return 1
+	end)
 
 	self.common_upgrades_timer = Timers:CreateTimer(1, function()
 		GameLoop:CommonUpgradesTick()
@@ -278,7 +271,6 @@ end
 
 
 function GameLoop:SetRespawnTime(player_id)
-	if GetMapName() == "ot3_demo" then return 5 end
 	local map_definition = TEAMS_LAYOUTS[GetMapName()] or {}
 	local hero_team = PlayerResource:GetTeam(player_id)
 	local hero_place = GameLoop.current_kill_order[hero_team]
@@ -344,7 +336,7 @@ function GameLoop:InitHero(hero)
 	hero:AddNewModifier(hero, nil, "modifier_primary_attribute_reader", {duration = -1})
 	hero:AddNewModifier(hero, nil, "modifier_bat_handler", {duration = -1})
 
-	if not IsInToolsMode() and GameRules:State_Get() < DOTA_GAMERULES_STATE_GAME_IN_PROGRESS and GetMapName() ~= "ot3_demo" then
+	if not IsInToolsMode() and GameRules:State_Get() < DOTA_GAMERULES_STATE_GAME_IN_PROGRESS then
 		hero:AddNewModifier(hero, nil, "modifier_pregame_stunned", {duration = PREGAME_TIME})
 	end
 
@@ -411,7 +403,7 @@ function GameLoop:InitFountains()
 		fountain:SetAttackCapability(DOTA_UNIT_CAP_NO_ATTACK)
 
 		-- Hides fountains in FFA so they can be at the proper placement (relevant for fear and similar abilities)
-		if GetBaseMapName() == "ot3_necropolis_ffa" then fountain:AddNewModifier(fountain, nil, "modifier_demo_tower_disabled", {}) end
+		fountain:AddNewModifier(fountain, nil, "modifier_demo_tower_disabled", {})
 	end
 end
 
@@ -429,7 +421,7 @@ function GameLoop:InitTowers()
 		-- fountain auras are placed on the tower to match the attack range, fountains are just props now
 		tower:AddNewModifier(tower, nil, "modifier_fountain_rejuvenation_lua", {duration = -1})
 		tower:AddNewModifier(tower, nil, "modifier_fountain_movespeed_lua", {duration = -1})
-		if UsesHostRules() then tower:AddNewModifier(tower, nil, "modifier_fountain_protection_lua", {duration = -1}) end
+		tower:AddNewModifier(tower, nil, "modifier_fountain_protection_lua", {duration = -1})
 
 		GameLoop.towers[tower:GetTeam()] = tower
 	end
@@ -452,7 +444,7 @@ function GameLoop:InitFOWRevealers()
 end
 
 function GameLoop:HasFixedKillGoal()
-	return UsesHostRules() and HostOptions.locked == true and HostOptions.options.kill_goal ~= nil
+	return HostOptions.locked == true and HostOptions.options.kill_goal ~= nil
 end
 
 function GameLoop:UpdateScoreGoal()

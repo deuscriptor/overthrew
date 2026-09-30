@@ -76,7 +76,7 @@ function SetSeasonResetStatus(event) {
 
 	const frame = GameEvents.NewProtectedFrame(CONTEXT);
 
-	CONTEXT.AddClass(MAP_BASE_NAME);
+	CONTEXT.AddClass(MAP_NAME);
 
 	frame.SubscribeProtected("SeasonReset:set_status", SetSeasonResetStatus);
 

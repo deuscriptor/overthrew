@@ -1,5 +1,5 @@
 -- Disposable local Tools session only; no online lobby is involved.
-assert(IsInToolsMode() and UsesHostRules())
+assert(IsInToolsMode())
 if GameRules:State_Get() == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
 	for id, callback in pairs(EventDriver.serverside_events["Events:npc_spawned"] or {}) do
 		if callback[1] == OT3Demo.OnNPCSpawned then EventDriver:CancelListener("Events:npc_spawned", id) end

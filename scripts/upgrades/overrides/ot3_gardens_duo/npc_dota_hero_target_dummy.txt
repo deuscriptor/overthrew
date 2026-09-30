@@ -1,3 +1,0 @@
-"npc_dota_hero_target_dummy"
-{
-}

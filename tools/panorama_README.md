@@ -27,25 +27,21 @@ URLs as `s2r://panorama/images/..._png.vtex`: there are no PNG sources, and
 `file://{images}` URLs compile to empty paths. The compiler accepts unknown
 properties, so check the client log after style changes.
 
-`MAP_NAME` remains the real map identity. `MAP_BASE_NAME` supplies the original
-FFA layout, art, and map-specific UI constants. The private map is not added to
-the public leaderboard/profile map list. The loading screen uses the same
-mapping locally because it does not load the shared HUD utilities.
-
-Both Epic Only variants and standard Single Draft use that FFA mapping.
-`IS_EPIC_ONLY_MAP` excludes standard Single Draft, which keeps normal orb
-visuals, shop items and rarity-dependent reroll prices. On both draft copies,
-`IS_SINGLE_DRAFT_MAP` hides smart random and bypasses the supporter pick delay.
-The native hero picker receives its four legal choices from server-side player
-availability; normal random remains available and uses the restricted pool.
+`MAP_NAME` (in `scripts/utils.js`) is the map name, `ot3_necropolis_ffa`, and keys the
+map-specific UI constants. `IS_SINGLE_DRAFT_MAP` and `IS_EPIC_ONLY_MAP` follow the
+host's `single_draft` and `epic_orbs` match rules from the `game_options` net table.
+With Single Draft, `IS_SINGLE_DRAFT_MAP` hides smart random and bypasses the
+supporter pick delay. The native hero picker receives its four legal choices from
+server-side player availability; normal random remains available and uses the
+restricted pool.
 
 Progress bars keep source channels 1 (time) and 2 (kills). Their reward visuals
-and tooltips use `reward_rarity`, with an epic fallback during initialization on
-the variant. Gift descriptions and the hero bonus icon also show epic rewards.
+and tooltips use `reward_rarity`, with an epic fallback during initialization with
+Epic-Only orbs. Gift descriptions and the hero bonus icon also show epic rewards.
 Gift inventory counts and consumption remain attached to the original items.
 The upgrade panel uses the server-provided reroll price for affordability and
 click handling. Epic Only charges 1 regardless of reward rarity and displays
-its own price tooltip; other maps retain their existing rarity prices.
+its own price tooltip; normal orbs keep their rarity prices.
 The missing `panorama/images/items/orb_epic_png.vtex_c` shop image is supplied
 as an identical copy of the addon's existing compiled epic orb texture; the
 builder maintains and verifies this alias. Existing common/rare assets are

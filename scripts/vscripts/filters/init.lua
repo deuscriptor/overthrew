@@ -14,12 +14,10 @@ function Filters:Init()
 
 	-- game_mode_entity:SetModifierGainedFilter(Dynamic_Wrap(Filters, "ModifierFilter"), Filters)
 	-- game_mode_entity:SetDamageFilter(Dynamic_Wrap(Filters, "DamageFilter"), Filters)
-	if UsesHostRules() then
-		game_mode_entity:SetModifyExperienceFilter(Dynamic_Wrap(Filters, "FilterModifyExperience"), Filters)
-		game_mode_entity:SetModifyGoldFilter(Dynamic_Wrap(Filters, "ModifyGoldFilter"), Filters)
-		game_mode_entity:SetDamageFilter(Dynamic_Wrap(Filters, "FountainDamageFilter"), Filters)
-		game_mode_entity:SetModifierGainedFilter(Dynamic_Wrap(Filters, "FountainModifierFilter"), Filters)
-	end
+	game_mode_entity:SetModifyExperienceFilter(Dynamic_Wrap(Filters, "FilterModifyExperience"), Filters)
+	game_mode_entity:SetModifyGoldFilter(Dynamic_Wrap(Filters, "ModifyGoldFilter"), Filters)
+	game_mode_entity:SetDamageFilter(Dynamic_Wrap(Filters, "FountainDamageFilter"), Filters)
+	game_mode_entity:SetModifierGainedFilter(Dynamic_Wrap(Filters, "FountainModifierFilter"), Filters)
 
 	game_mode_entity:SetExecuteOrderFilter(Dynamic_Wrap(Filters, "ExecuteOrderFilter"), Filters)
 	game_mode_entity:SetItemAddedToInventoryFilter(Dynamic_Wrap(Filters, "ItemAddedToInventoryFilter"), Filters)

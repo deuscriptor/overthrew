@@ -143,7 +143,7 @@ function PlayerDC:CheckEndGame()
 		end
 	end
 
-	if winner and amount_of_teams_remaining == 1 and GetMapName() ~= "ot3_demo" then
+	if winner and amount_of_teams_remaining == 1 then
 		GameLoop:SetGameWinner(winner)
 	end
 end
