@@ -825,7 +825,44 @@ function Upgrades:ProcessClone(clone, hero, skip_generics)
 
 	if skip_generics then return end
 
-	Upgrades:AddGenericUpgradeModifiers(clone, hero)
+	if clone:IsIllusion() then
+		Upgrades:AddIllusionGenericUpgrades(clone, hero)
+	else
+		Upgrades:AddGenericUpgradeModifiers(clone, hero)
+	end
+end
+
+
+--- An illusion carries the generic upgrades of `source` that IllusionGenericUpgrades can host in one modifier, and the
+--- rest as modifiers of their own; its stats are recalculated once.
+function Upgrades:AddIllusionGenericUpgrades(illusion, source)
+	-- creation keys of the host modifier: the hosted counts
+	local hosted = {duration = -1}
+	local hosts_any = false
+	local applied = illusion:HasModifier("modifier_illusion_generic_upgrades")
+	illusion:RemoveModifierByName("modifier_illusion_generic_upgrades")
+
+	for upgrade_name, upgrade_data in pairs(source.upgrades and source.upgrades.generic or {}) do
+		local count = upgrade_data and upgrade_data.count
+		if count and count > 0 then
+			local definition = self.generic_upgrades_kv[upgrade_name]
+			if IllusionGenericUpgrades.HOSTED[upgrade_name] and not (definition and definition.ignore_illusions) then
+				hosted[upgrade_name] = count
+				hosts_any = true
+			else
+				applied = Upgrades:AddGenericUpgradeModifier(illusion, upgrade_name, count, true) or applied
+			end
+		end
+	end
+
+	if hosts_any then
+		illusion:AddNewModifier(illusion, nil, "modifier_illusion_generic_upgrades", hosted)
+		applied = true
+	end
+
+	if applied and illusion.CalculateStatBonus then
+		illusion:CalculateStatBonus(true)
+	end
 end
 
 

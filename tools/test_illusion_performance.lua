@@ -267,43 +267,180 @@ IsServer = function() return false end
 assert(Modifier(modifier_base_generic_upgrade, Body({illusion = true})):RemoveOnDeath() == false, "clients leave it to the server")
 IsServer = function() return true end
 
--- Upgrades: clone stats are recalculated once.
-local generic_kv = {
+-- Hosted generic upgrades: an illusion carries them in one modifier.
+local PROPERTY_NAMES = {"STATS_STRENGTH_BONUS", "STATS_AGILITY_BONUS", "STATS_INTELLECT_BONUS", "PROCATTACK_FEEDBACK",
+	"PHYSICAL_ARMOR_BONUS", "MAGICAL_RESISTANCE_BONUS", "ATTACKSPEED_BONUS_CONSTANT", "SPELL_AMPLIFY_PERCENTAGE",
+	"MOVESPEED_BONUS_CONSTANT", "SLOW_RESISTANCE_STACKING", "EXTRA_HEALTH_PERCENTAGE", "PREATTACK_BONUS_DAMAGE",
+	"HEAL_AMPLIFY_PERCENTAGE_SOURCE", "HEAL_AMPLIFY_PERCENTAGE_TARGET", "HP_REGEN_AMPLIFY_PERCENTAGE",
+	"LIFESTEAL_AMPLIFY_PERCENTAGE", "SPELL_LIFESTEAL_AMPLIFY_PERCENTAGE", "PREATTACK_CRITICALSTRIKE",
+	"PROCATTACK_BONUS_DAMAGE_PHYSICAL", "CAST_RANGE_BONUS_STACKING", "ATTACK_RANGE_BONUS", "COOLDOWN_PERCENTAGE"}
+for index, name in ipairs(PROPERTY_NAMES) do _G["MODIFIER_PROPERTY_" .. name] = 300 + index end
+DOTA_ATTRIBUTE_STRENGTH, DOTA_ATTRIBUTE_AGILITY, DOTA_ATTRIBUTE_INTELLECT = 0, 1, 2
+DEFAULT_PATH = "game/upgrades/generic_upgrades/"
+-- per upgrade value and the primary attribute, instead of the KV files and the attribute reader
+local VALUES = {generic_armor = 3, generic_all_attributes = 5, generic_primary_attribute = 7, generic_secondary_attributes = 11}
+CDOTA_Modifier_Lua = {
+	-- like the extension, which looks for stat boost handlers on the parent
+	GetUpgradeValueFor = function(self) self:GetParent() return VALUES[self.upgrade_name] or 1 end,
+	GetPrimaryAttributeOfParent = function(self) return self:GetParent().primary end,
+}
+UpgradesUtilities = {CalculateUpgradeValue = function(_, _, value, count) return value * count end}
+local loaded = {}
+require = function(path)
+	if loaded[path] then return end
+	loaded[path] = true
+	dofile("scripts/vscripts/" .. path .. ".lua")
+end
+GenericUpgrades = {generic_upgrades_data = {}}
+dofile("scripts/vscripts/game/upgrades/illusion_generic_upgrades.lua")
+for upgrade_name in pairs(IllusionGenericUpgrades.HOSTED) do GenericUpgrades.generic_upgrades_data[upgrade_name] = {} end
+GENERIC_UPGRADES_DATA = GenericUpgrades.generic_upgrades_data -- the client's copy
+
+-- The rules that let an upgrade be hosted hold for every hosted upgrade, and only additive properties are shared.
+local ADDITIVE, providers = {}, {}
+for _, property in ipairs(IllusionGenericUpgrades.PROPERTIES) do
+	assert(property[1] ~= nil, property[2] .. ": constant defined")
+	if property.additive then ADDITIVE[property[1]] = true end
+end
+for upgrade_name in pairs(IllusionGenericUpgrades.HOSTED) do
+	local class_table = IllusionGenericUpgrades:GetClass(upgrade_name)
+	assert(class_table, upgrade_name .. ": class loads")
+	assert(class_table:IsHidden() == true, upgrade_name .. ": hidden")
+	for _, method in ipairs({"CheckState", "GetEffectName", "GetStatusEffectName", "OnIntervalThink", "AddCustomTransmitterData",
+		"HandleCustomTransmitterData", "OnStackCountChanged", "GetModifierAura", "GetBaseAttackTimeDirectBonus"}) do
+		assert(class_table[method] == nil, upgrade_name .. ": no " .. method)
+	end
+	for _, property in ipairs(class_table.DeclareFunctions and class_table:DeclareFunctions() or {}) do
+		local getter = IllusionGenericUpgrades.GETTERS[property]
+		assert(getter and class_table[getter], upgrade_name .. ": declares only hosted properties (" .. tostring(property) .. ")")
+		providers[property] = (providers[property] or 0) + 1
+		assert(ADDITIVE[property] or providers[property] == 1, upgrade_name .. ": shares " .. getter .. ", which is not additive")
+	end
+end
+
+local function HostParent(fields)
+	local unit = setmetatable(Unit(fields), {__index = CDOTA_BaseNPC})
+	function unit:GetLevel() return 30 end
+	function unit:IsRangedAttacker() return false end
+	function unit:IsRealHero() return not self.illusion end
+	function unit:GetUnitLabel() return "" end
+	return unit
+end
+dofile("scripts/vscripts/game/upgrades/modifier_illusion_generic_upgrades.lua")
+local function Host(parent)
+	local host = attach(parent, Modifier(modifier_illusion_generic_upgrades, parent, {name = "modifier_illusion_generic_upgrades"}))
+	host.SetHasCustomTransmitterData = function(self, value) self.transmits = value end
+	host.GetCaster = function(self) return self.parent end
+	return host
+end
+assert(#modifier_illusion_generic_upgrades:DeclareFunctions() == #IllusionGenericUpgrades.PROPERTIES,
+	"the host declares every hosted property: the engine asks before creation")
+
+-- Server: the creation keys hold the counts; getters ask the upgrades implementing them.
+local body = HostParent({illusion = true, primary = DOTA_ATTRIBUTE_STRENGTH})
+local host = Host(body)
+host:OnCreated({duration = -1, generic_armor = 2, generic_all_attributes = 1, generic_primary_attribute = 1,
+	generic_secondary_attributes = 1, generic_status_res_on_disable = 1, generic_universal_lifesteal = 1,
+	generic_armor_shred = 1, generic_universal_shield = 1, unrelated = 4})
+assert(host.transmits and #host.upgrades == 7, "hosts the hosted upgrades it was created with, and nothing else")
+assert(host:AddCustomTransmitterData().counts.generic_armor == 2 and host:AddCustomTransmitterData().counts.unrelated == nil)
+assert(host:GetModifierPhysicalArmorBonus() == 6, "a single upgrade answers alone")
+assert(host:GetModifierBonusStats_Strength() == 5 + 7 and host:GetModifierBonusStats_Agility() == 5 + 11,
+	"shared stats are summed (primary and secondary attributes follow the parent's primary attribute)")
+assert(host:GetModifierMoveSpeedBonus_Constant() == nil, "nothing for properties no hosted upgrade has")
+local feedback = 0
+for _, upgrade in ipairs(host.handlers.GetModifierProcAttack_Feedback) do
+	upgrade.GetModifierProcAttack_Feedback = function() feedback = feedback + 1 return 2 end
+end
+assert(host:GetModifierProcAttack_Feedback({}) == 4 and feedback == 2, "attack procs of every hosted upgrade run")
+-- hosted upgrades use UnitEvents like their own modifiers would, and stop with the host
+local hosted_status
+for _, upgrade in ipairs(host.upgrades) do
+	if upgrade.upgrade_name == "generic_status_res_on_disable" then hosted_status = upgrade end
+end
+local disables = 0
+hosted_status.OnModifierAdded = function() disables = disables + 1 end
+add(body, Plain("modifier_stunned"))
+assert(disables == 1 and hosted_status:GetParent() == body and hosted_status:GetStackCount() == 1, "a hosted upgrade hears its unit's events")
+assert(host:RemoveOnDeath() == true, "a killed illusion drops the host")
+host:Destroy()
+add(body, Plain("modifier_stunned"))
+assert(disables == 1 and #host.upgrades == 0, "the host's upgrades stop with it")
+
+-- Client: the counts arrive before OnCreated, when the modifier cannot tell its parent yet.
+IsServer = function() return false end
+local client_body = HostParent({illusion = true, primary = DOTA_ATTRIBUTE_AGILITY})
+local client_host = Host(client_body)
+local parent_ready = false
+client_host.GetParent = function(self)
+	assert(parent_ready, "the parent is asked for before OnCreated")
+	return self.parent
+end
+client_host:HandleCustomTransmitterData({counts = {generic_armor = 2, generic_primary_attribute = 1}})
+parent_ready = true
+client_host:OnCreated()
+assert(client_host:GetModifierPhysicalArmorBonus() == 6 and client_host:GetModifierBonusStats_Agility() == 7,
+	"clients host the same upgrades, for the stats they show")
+IsServer = function() return true end
+
+-- Upgrades: an illusion gets a new host with its counts; other clones get upgrade modifiers; stats are recalculated once.
+GenericUpgrades.generic_upgrades_data = {
 	generic_armor = {class = "modifier"},
 	generic_damage = {class = "modifier"},
 	generic_cleave = {class = "modifier", ignore_illusions = 1},
+	generic_universal_shield = {class = "modifier"},
 }
-GenericUpgrades = {generic_upgrades_data = generic_kv}
 CustomNetTables = {SetTableValue = function() end}
 EventStream = {Listen = function() end}
+require = function() end
 dofile("scripts/vscripts/game/upgrades/upgrades.lua")
 
 local source = Unit()
-source.upgrades = {generic = {generic_armor = {count = 2}, generic_damage = {count = 3}, generic_cleave = {count = 1}}}
-local clone = Unit({illusion = true})
-local added = {}
-function clone:HasModifier(name) for _, m in ipairs(self.modifiers) do if m.name == name then return true end end return false end
-function clone:FindModifierByName(name) for _, m in ipairs(self.modifiers) do if m.name == name then return m end end end
-function clone:FindAbilityByName() end
-function clone:IsAlive() return true end
-function clone:AddNewModifier(_, _, name)
-	local modifier = attach(self, Plain(name))
-	modifier.SetStackCount = function(m, value) m.stacks = value end
-	modifier.ForceRefresh = function() end
-	table.insert(added, name)
-	return modifier
+source.upgrades = {generic = {generic_armor = {count = 2}, generic_damage = {count = 3}, generic_cleave = {count = 1},
+	generic_universal_shield = {count = 1}}}
+local function Clone(fields)
+	local clone = Unit(fields)
+	clone.created = {}
+	function clone:HasModifier(name) return self:FindModifierByName(name) ~= nil end
+	function clone:FindModifierByName(name) for _, m in ipairs(self.modifiers) do if m.name == name then return m end end end
+	function clone:RemoveModifierByName(name) local m = self:FindModifierByName(name) if m then m:Destroy() end end
+	function clone:FindAbilityByName() end
+	function clone:IsAlive() return true end
+	function clone:AddNewModifier(_, _, name, kv)
+		local modifier = attach(self, Plain(name))
+		modifier.SetStackCount = function(m, value) m.stacks = value end
+		modifier.ForceRefresh = function() end
+		self.created[name] = kv or {}
+		return modifier
+	end
+	return clone
 end
-Upgrades:ProcessClone(clone, source)
-assert(clone.stat_bonus == 1, "a clone's stats are recalculated once, not per upgrade (" .. clone.stat_bonus .. ")")
-assert(clone:FindModifierByName("modifier_generic_armor_upgrade").stacks == 2, "generic upgrades keep their counts")
-assert(clone:FindModifierByName("modifier_generic_damage_upgrade").stacks == 3)
-assert(not clone:HasModifier("modifier_generic_cleave_upgrade"), "upgrades ignored by illusions are skipped")
+local illusion_clone = Clone({illusion = true})
+Upgrades:ProcessClone(illusion_clone, source)
+local kv = illusion_clone.created.modifier_illusion_generic_upgrades
+assert(kv and kv.generic_armor == 2 and kv.generic_damage == 3 and kv.duration == -1, "the host is created with the hosted counts")
+assert(kv.generic_cleave == nil and not illusion_clone:HasModifier("modifier_generic_cleave_upgrade"), "upgrades ignored by illusions are skipped")
+assert(kv.generic_universal_shield == nil and illusion_clone:FindModifierByName("modifier_generic_universal_shield_upgrade").stacks == 1,
+	"upgrades it cannot host stay modifiers of their own")
+assert(not illusion_clone:HasModifier("modifier_generic_armor_upgrade"), "hosted upgrades get no modifier of their own")
+assert(illusion_clone.stat_bonus == 1, "an illusion's stats are recalculated once (" .. illusion_clone.stat_bonus .. ")")
 for _, name in ipairs({"modifier_bat_handler", "modifier_primary_attribute_reader", "modifier_ability_upgrades_controller"}) do
-	assert(clone:HasModifier(name), name .. " added")
+	assert(illusion_clone:HasModifier(name), name .. " added")
 end
-local single = Unit()
-single.FindModifierByName, single.AddNewModifier = clone.FindModifierByName, clone.AddNewModifier
+local first_host = illusion_clone:FindModifierByName("modifier_illusion_generic_upgrades")
+source.upgrades.generic.generic_armor.count = 4
+Upgrades:ProcessClone(illusion_clone, source) -- Monkey King soldiers are processed again
+local hosts = 0
+for _, m in ipairs(illusion_clone.modifiers) do if m.name == "modifier_illusion_generic_upgrades" then hosts = hosts + 1 end end
+assert(first_host.null and hosts == 1 and illusion_clone.created.modifier_illusion_generic_upgrades.generic_armor == 4,
+	"processing an illusion again replaces its host")
+local meepo_clone = Clone({illusion = false})
+Upgrades:ProcessClone(meepo_clone, source)
+assert(meepo_clone:FindModifierByName("modifier_generic_armor_upgrade").stacks == 4 and not meepo_clone:HasModifier("modifier_illusion_generic_upgrades"),
+	"other clones keep a modifier per upgrade")
+assert(meepo_clone.stat_bonus == 1, "their stats are recalculated once too")
+local single = Clone()
 assert(Upgrades:AddGenericUpgradeModifier(single, "generic_armor", 1) == true and single.stat_bonus == 1, "a single upgrade still recalculates")
 
 assert(#errors == 0, "no handler errors: " .. tostring(errors[1]))
-print("PASS illusion performance: unit-scoped events, BAT handler, killed illusions drop upgrade modifiers, clone stats")
+print("PASS illusion performance: unit-scoped events, BAT handler, killed illusions drop upgrade modifiers, hosted generic upgrades, clone stats")

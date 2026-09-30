@@ -700,3 +700,24 @@ clients remain manual checks.
   5-15 s; `entity_killed` does not fire for illusions; `RemoveOnDeath` is asked at death, not at creation.
   Removing `modifier_item_skadi` from live illusions during one experiment crashed the client (access
   violation); the addon never does that.
+
+## 2026-09-30: Hosted generic upgrades on illusions (#24)
+
+- Offline: `run_tests.js` passes (36 groups). `test_illusion_performance.lua` now also covers the hosting rules for
+  every hosted upgrade and the host on server and client; it fails when Universal Shield is added to the hosted
+  list and when clients build the upgrades from transmitted data before `OnCreated`. `luacheck scripts/vscripts`
+  reports 0 warnings / 0 errors in 349 files.
+- Dota Tools, fresh sessions: `illusion_perf_smoke` passes all checks, including "hosted upgrades give an illusion
+  the same 18 stats as upgrade modifiers" (against a second illusion given upgrade modifiers, with all 24 hostable
+  upgrades on its hero) and a hosted attack proc (Universal Lifesteal on an illusion's attack). Numbers in
+  `tools/README.md`; with 30 illusions a damage instance costs about 1.4 ms (4.7 ms with separate modifiers).
+  A real Swashbuckle through 10 or 30 illusions, three casts each, had worst frames of 41-49 and 40-87 ms. Clients
+  show identical stats for a hosted illusion, an illusion with upgrade modifiers and the hero (read in the client
+  VM), and the client log has no script errors.
+- `backpack_items_multiplayer_smoke`: 60 checks pass (Manta illusions and Tempest Double included); the same four
+  hex checks fail as on the previous code. `hero_swaps_smoke` passes.
+- Found along the way: the engine calls `DeclareFunctions` before `OnCreated` on both sides, and clients get
+  transmitted data before `OnCreated`, when `GetParent` fails (building the upgrades there printed a script error per
+  upgrade per illusion and caused 400-1250 ms frames). On the server, illusions take no armor or magic resistance
+  from Lua modifiers (separate or hosted; clients show them), which predates this change. The kill-leader crown
+  is decided on real hero kills only and never copied to illusions: no cost.

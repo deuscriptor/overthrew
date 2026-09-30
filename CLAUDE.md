@@ -145,6 +145,10 @@ Then add the option to the table above, to `tools/README.md` and to `README.md` 
   declare a global `MODIFIER_EVENT_*` in them: register the handler with `UnitEvents` (`libraries/unit_events.lua`)
   and route the event through `modifier_event_proxy`. A modifier kept through death returns
   `self:GetParent():IsIllusionGoneOnDeath()` from `RemoveOnDeath` (server side). Measure with `illusion_perf_smoke`.
+- Illusions carry their generic upgrades in one modifier, `modifier_illusion_generic_upgrades`. A new generic upgrade
+  goes into `IllusionGenericUpgrades.HOSTED` (`game/upgrades/illusion_generic_upgrades.lua`) if it follows the rules
+  listed there; a new property it needs goes into `IllusionGenericUpgrades.PROPERTIES`. `test_illusion_performance.lua`
+  checks both.
 
 ### Documentation
 

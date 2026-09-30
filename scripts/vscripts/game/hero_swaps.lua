@@ -134,7 +134,8 @@ function HeroSwaps:ResetUpgrades(hero)
 	for name in pairs(previous.generic or {}) do
 		hero:RemoveModifierByName("modifier_" .. name .. "_upgrade")
 	end
-	for _, name in ipairs({"modifier_generic_common_stat_boost_upgrade_handler", "modifier_generic_rare_stat_boost_upgrade_handler", "modifier_generic_status_res_on_disable_bonus"}) do
+	for _, name in ipairs({"modifier_generic_common_stat_boost_upgrade_handler", "modifier_generic_rare_stat_boost_upgrade_handler",
+		"modifier_generic_status_res_on_disable_bonus", "modifier_illusion_generic_upgrades"}) do
 		hero:RemoveModifierByName(name)
 	end
 	local controller = hero:FindModifierByName("modifier_ability_upgrades_controller")

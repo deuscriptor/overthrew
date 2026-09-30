@@ -297,19 +297,65 @@ local function check(condition, message)
 		out("ILLPERF CHECKFAIL " .. message)
 	end
 end
-local checked
+local checked, reference
 step(0.5, function()
 	clear_illusions()
 end)
 step(0.5, function()
-	checked = spawn(1) and illusions[1]
+	-- every upgrade an illusion can host, for the stats comparison below
+	for name, count in pairs({generic_spell_amp = 2, generic_status_resistance = 2, generic_slow_resistance = 1, generic_reach = 2,
+		generic_heal_amp = 2, generic_item_cdr = 1, generic_primary_attribute = 2, generic_secondary_attributes = 2,
+		generic_all_attributes_per_level = 1, generic_primary_attribute_per_level = 1, generic_secondary_attributes_per_level = 1}) do
+		Upgrades:AddGenericUpgrade(lancer, name, count)
+	end
+	spawn(2)
+	checked, reference = illusions[1], illusions[2]
 	checked:SetHealth(checked:GetMaxHealth() * 0.5)
+	reference:SetHealth(reference:GetMaxHealth() * 0.5)
 	pango:SetHealth(pango:GetMaxHealth() * 0.5)
 	lancer:SetHealth(lancer:GetMaxHealth() * 0.5)
 end)
 step(0.3, function()
 	local slot = checked:GetItemInSlot(6)
 	check(slot and slot:GetItemState() == 1 and checked.backpack_reconciled, "an illusion's backpack item is equipped, once")
+	-- the hero has a modifier per generic upgrade, its illusion one modifier hosting them
+	check(checked:HasModifier("modifier_illusion_generic_upgrades") and not checked:HasModifier("modifier_generic_armor_upgrade")
+		and lancer:HasModifier("modifier_generic_armor_upgrade"), "the illusion's generic upgrades are hosted in one modifier")
+	-- the reference illusion carries its generic upgrades as modifiers of their own, as before they were hosted
+	reference:RemoveModifierByName("modifier_illusion_generic_upgrades")
+	Upgrades:AddGenericUpgradeModifiers(reference, lancer)
+end)
+step(0.3, function()
+	local STATS = {"GetIdealSpeed", "GetStrength", "GetAgility", "GetIntellect", "GetMaxHealth", "GetMaxMana",
+		"GetStatusResistance", "GetCastRangeBonus", "Script_GetAttackRange", "GetAverageTrueAttackDamage", "GetHealthRegen",
+		"GetManaRegen"}
+	-- methods that take arguments
+	local ARGS = {GetPhysicalArmorValue = {false}, GetSpellAmplification = {false}, GetAttackSpeed = {false}, GetIntellect = {false},
+		GetAverageTrueAttackDamage = {pango}, Script_GetMagicalArmorValue = {pango:GetAbilityByIndex(0)}}
+	for stat in pairs(ARGS) do table.insert(STATS, stat) end
+	local function read(unit, stat)
+		if ARGS[stat] then return unit[stat](unit, unpack(ARGS[stat])) end
+		return unit[stat](unit)
+	end
+	local mismatches, hero_differences = {}, {}
+	for _, stat in ipairs(STATS) do
+		local hosted, separate, hero_value = read(checked, stat), read(reference, stat), read(lancer, stat)
+		if math.abs(hosted - separate) > 0.01 + math.abs(separate) * 0.001 then
+			table.insert(mismatches, stat .. " " .. fmt(hosted) .. "/" .. fmt(separate))
+		end
+		if math.abs(hero_value - separate) > 0.01 + math.abs(separate) * 0.001 then
+			table.insert(hero_differences, stat .. " " .. fmt(hero_value) .. "/" .. fmt(separate))
+		end
+	end
+	check(#mismatches == 0, "hosted upgrades give an illusion the same " .. #STATS .. " stats as upgrade modifiers ("
+		.. table.concat(mismatches, ", ") .. ")")
+	-- the engine applies no armor or magic resistance from Lua modifiers to illusions, hosted or not
+	out("ILLPERF info hero/illusion differences: " .. table.concat(hero_differences, ", "))
+	local creep = CreateUnitByName("npc_dota_neutral_kobold", checked:GetAbsOrigin() + Vector(80, 0, 0), true, nil, nil, DOTA_TEAM_NEUTRALS)
+	local attacker_health = checked:GetHealth()
+	checked:PerformAttack(creep, true, true, true, false, false, false, true)
+	check(checked:GetHealth() > attacker_health, "a hosted upgrade works on attacks (universal lifesteal heals the illusion)")
+	creep:RemoveSelf()
 	-- enough damage to get through the universal shield upgrade
 	local pango_health = pango:GetHealth()
 	lancer:SetHealth(lancer:GetMaxHealth())
@@ -347,7 +393,7 @@ step(0.3, function()
 	local names = {}
 	for _, modifier in pairs(checked:FindAllModifiers()) do
 		local name = modifier:GetName()
-		if name:find("^modifier_generic_") or name == "modifier_ability_upgrades_controller"
+		if name:find("^modifier_generic_") or name == "modifier_ability_upgrades_controller" or name == "modifier_illusion_generic_upgrades"
 			or name == "modifier_primary_attribute_reader" or name == "modifier_bat_handler" then table.insert(names, name) end
 	end
 	check(#names == 0, "a killed illusion keeps no upgrade modifiers (" .. table.concat(names, ", ") .. ")")
