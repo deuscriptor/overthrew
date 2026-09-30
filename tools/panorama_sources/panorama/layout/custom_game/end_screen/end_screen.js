@@ -911,7 +911,11 @@ function UpdateMatchInfo() {
 	HUD.CONTEXT.SetDialogVariable("match_duration", FormatSeconds(match_duration, match_duration >= 3600));
 }
 
+// Panorama loads the images of every panel that exists, even hidden: the end screen parks its art until the game ends.
+let RestoreEndScreenArt;
 function StartEndScreen(data) {
+	if (RestoreEndScreenArt) RestoreEndScreenArt();
+	RestoreEndScreenArt = undefined;
 	GameUI.SetScoreboardVisibleState(false);
 	UpdateMatchInfo();
 	GameUI.SelectedUpgrades.CloseUpgrades();
@@ -1046,6 +1050,8 @@ function MoveChat(b_to_custom_root) {
 	HUD.CONTEXT.SetHasClass("BPromoEnabled", IS_PROMO_ENABLED);
 	Custom_HideServerErros();
 	Custom_HideFeedbackForm();
+
+	RestoreEndScreenArt = ParkImages(HUD.CONTEXT);
 
 	const frame = GameEvents.NewProtectedFrame(HUD.CONTEXT);
 	frame.SubscribeProtected("EndScreen:start", (data) => {

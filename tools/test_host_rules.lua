@@ -12,8 +12,10 @@ local players = {{id = 0}, {id = 1}}
 for _, player in ipairs(players) do player.GetPlayerID = function(self) return self.id end end
 -- Connection-order signals must not decide the host: players claim it.
 GetListenServerHost = function() return {GetController = function() return players[2] end} end
-local fallback
-Timers = {CreateTimer = function(_, args) fallback = args end}
+local fallback, setupEnd
+Timers = {CreateTimer = function(_, args)
+    if args.endTime == 120 then fallback = args else setupEnd = args end
+end}
 PlayerResource.IsValidPlayerID = function(_, id) return id == 0 or id == 1 end
 PlayerResource.GetPlayer = function(_, id) return players[id + 1] end
 IsValidEntity = function(p) return p ~= nil end
@@ -64,7 +66,12 @@ for draft = 0, 1 do for epic = 0, 1 do for turbo = 0, 1 do
     HostOptions:SetOptionState("flat_rerolls", epic == 0)
     assert(not HostOptions:GetOption("flat_rerolls"), "removed standalone option accepted")
     local before = finished
+    setupEnd = nil
     assert(HostOptions:ApplyRules(event))
+    -- Clients see the lock before setup ends, so the loading screen can free its art while it still updates.
+    assert(finished == before and publishedRules.locked == 1, "setup ended with the lock")
+    assert(setupEnd and setupEnd.useGameTime == false and setupEnd.endTime > 0 and setupEnd.endTime <= 1)
+    setupEnd.callback()
     assert(finished == before + 1)
     assert(bans == (draft == 1 and 0 or 1))
     assert(IsSingleDraftMap() == (draft == 1))

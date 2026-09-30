@@ -3,7 +3,13 @@ const REWARDS_CONTAINER = $("#ResetRewardsContainer");
 let INIT_FINISHED = false;
 let DELAYED_INIT = undefined;
 
+// Panorama loads the images of every panel that exists, even hidden: the trophy art is parked until shown.
+let RestoreTrophyArt;
 function SetStatus(status) {
+	if (status && RestoreTrophyArt) {
+		RestoreTrophyArt();
+		RestoreTrophyArt = undefined;
+	}
 	CONTEXT.SetHasClass("visible", status);
 }
 
@@ -73,6 +79,9 @@ function SetSeasonResetStatus(event) {
 
 (() => {
 	SetStatus(false);
+	RestoreTrophyArt = ParkImages(CONTEXT, [
+		[CONTEXT.FindChildrenWithClassTraverse("SeasonResetImage")[0], "s2r://panorama/images/custom_game/leaderboard/leaderboards_trophy_png.vtex"],
+	]);
 
 	const frame = GameEvents.NewProtectedFrame(CONTEXT);
 

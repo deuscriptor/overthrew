@@ -63,6 +63,7 @@ class Panel {
 	IsSelected() { return !!this.selected; }
 	IsValid() { return true; }
 	RemoveAndDeleteChildren() { this.children = []; }
+	ClearPropertyFromCode(name) { (this.cleared = this.cleared || []).push(name); }
 }
 
 {
@@ -160,6 +161,7 @@ for (let draft = 0; draft < 2; draft++) for (let epic = 0; epic < 2; epic++) {
 
 const loading = fs.readFileSync(path.join(scripts, "custom_loading_screen/custom_loading_screen.js"), "utf8");
 const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), loading.indexOf("function ToggleHostOption"));
+const releaseLoading = loading.slice(loading.indexOf("let loading_screen_released"), loading.indexOf("function InitHints()"));
 {
 	const root = new Panel("Loading");
 	let data;
@@ -168,6 +170,8 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	const waitingFrames = [];
 	const claimTimers = [];
 	const pagesRequested = [];
+	const releaseTimers = [];
+	let gameState = 2;
 	// The loading screen's own pager: arrows with a chevron image, and the bullets container.
 	const tipsRoot = new Panel("LS_Tips_Root", "Panel", root);
 	const arrowLeft = new Panel("LS_Tips_Left", "Button", tipsRoot, ["LS_Tips_Arrow"]);
@@ -186,12 +190,13 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	const context = vm.createContext({LOADING_HUD: {CONTEXT: root, MOVIE_CONTAINER: root, BULLETS_ROOT: bulletsRoot}, hints: [], InitHints: initHints,
 		SetHint: index => pagesRequested.push(index),
 		$: {CreatePanel: (type, parent, id) => new Panel(id, type, parent), Localize: value => value, DispatchEvent: () => {},
-			Schedule: (delay, callback) => { if (delay === 0.3) waitingFrames.push(callback); if (delay === 2) claimTimers.push(callback); }},
-		Game: {GetLocalPlayerID: () => 0, GetPlayerInfo: id => ({player_name: "Player " + id})},
+			Schedule: (delay, callback) => { if (delay === 0.3) waitingFrames.push(callback); if (delay === 2) claimTimers.push(callback); if (delay === 0.2) releaseTimers.push(callback); }},
+		Game: {GetLocalPlayerID: () => 0, GetPlayerInfo: id => ({player_name: "Player " + id}), GameStateIsAfter: state => gameState > state},
+		DOTA_GameState: {DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP: 2}, auto_hint_schedule: undefined,
 		GameEvents: {SendToServerEnsured: (name, args) => requests.push({name, args})},
 		CustomNetTables: {GetTableValue: () => data, SubscribeNetTableListener: (table, fn) => { listener = fn; }},
 	});
-	vm.runInContext(initRules + "InitMatchRules();", context);
+	vm.runInContext(releaseLoading + initRules + "InitMatchRules();", context);
 	assert.equal(root.children.length, 1, "wait for rules before constructing controls");
 	const logo = new Panel("Logo", "Image", root, ["LS_Tips_Logo"]);
 	const discord = new Panel("Discord", "Button", root, ["LS_DiscordButton"]);
@@ -339,8 +344,25 @@ const initRules = loading.slice(loading.indexOf("function InitMatchRules()"), lo
 	assert.equal(start.enabled, false, "locked settings cannot be edited");
 	assert.equal(waiting.visible, false, "no waiting message after start");
 	assert.equal(claim.visible, false, "no claim after start");
+	// The loading screen stops updating once the HUD takes over, so the locked rules release it: the content fades
+	// to the black root and is deleted, freeing its art, before the server ends setup.
+	assert.equal(vm.runInContext("IsMatchStarting()", context), true, "locked rules start the match");
+	data.locked = 0;
+	assert.equal(vm.runInContext("IsMatchStarting()", context), false);
+	gameState = 4;
+	assert.equal(vm.runInContext("IsMatchStarting()", context), true, "a player joining after setup");
+	data.locked = 1;
+	const content = root.children.slice();
+	vm.runInContext("ReleaseLoadingScreen(true); ReleaseLoadingScreen(true);", context);
+	assert.ok(content.every(child => child.style.opacity === "0" && child.style.transitionProperty === "opacity"), "content fades out");
+	assert.equal(releaseTimers.length, 1, "released once");
+	releaseTimers.shift()();
+	assert.equal(root.children.length, 0, "content deleted, freeing its art");
+	listener("game_options", "match_rules");
+	vm.runInContext("InitMatchRules();", context);
+	assert.equal(root.children.length, 0, "settings are not rebuilt after release");
 }
-console.log("PASS: independent rule flags, settings hidden until everyone loads, Claim Host, host controls and atomic Apply payload");
+console.log("PASS: independent rule flags, settings hidden until everyone loads, Claim Host, host controls and atomic Apply payload; locked rules release the loading screen");
 
 const source = fs.readFileSync(path.join(scripts, "top_bar/orbs_progress.js"), "utf8");
 for (const epic of [false, true]) {
@@ -622,4 +644,41 @@ console.log("PASS: server-supplied reroll price, final 1–3 rerolls, empty bala
 	tip(0, 1);
 	assert.ok(third.valid && fourth.valid, "a new tip under the cap removes nothing");
 	console.log("PASS tip toast: colour strips, bot names, tipped-player class and chime, three-toast cap");
+}
+
+{
+	// Hidden layouts park their art: Panorama loads the images of every panel that exists, even hidden ones.
+	const park = utils.slice(utils.indexOf("function ParkImages"), utils.indexOf("const FindDotaHudElement"));
+	const context = vm.createContext({});
+	vm.runInContext(park, context);
+	const root = new Panel("Root");
+	const frame = new Panel("Frame", "Panel", root);
+	const glow = new Panel("Glow", "Image", frame);
+	const restore = context.ParkImages(root, [[glow, "s2r://panorama/images/custom_game/collection/glow_png.vtex"]]);
+	assert.deepEqual([root, frame, glow].map(p => p.style.backgroundImage), ["none", "none", "none"], "stylesheet art overridden");
+	assert.equal(glow.image, "", "Image source emptied");
+	restore();
+	assert.deepEqual([root, frame, glow].map(p => p.cleared), [["background-image"], ["background-image"], ["background-image"]],
+		"the CSS property name clears the override; camelCase leaves it in place");
+	assert.equal(glow.image, "s2r://panorama/images/custom_game/collection/glow_png.vtex");
+	console.log("PASS parked art: stylesheet images and Image sources held back until restored");
+}
+{
+	const textures = require("./panorama_textures");
+	const image = { width: 3, height: 2, rgba: Buffer.from([255, 0, 0, 255, 0, 255, 0, 128, 0, 0, 255, 0, 10, 20, 30, 255, 40, 50, 60, 250, 70, 80, 90, 255]) };
+	assert.deepEqual(textures.decodePng(textures.encodePng(image, true)).rgba, image.rgba, "RGBA PNG round trip");
+	const opaque = textures.decodePng(textures.encodePng(image, false));
+	assert.ok(opaque.rgba.every((v, i) => (i % 4 === 3 ? v === 255 : v === image.rgba[i])), "dropping alpha keeps the colours");
+	assert.equal(textures.decodePng(textures.encodePng(image, true), 200), null, "alpha scan stops at the first see-through pixel");
+	// A transparent pixel adds no colour to the average (no dark fringes) and alpha averages linearly.
+	const half = textures.resize({ width: 2, height: 1, rgba: Buffer.from([255, 0, 0, 255, 0, 0, 0, 0]) }, 1, 1);
+	assert.deepEqual([...half.rgba], [255, 0, 0, 128]);
+	// Colour averages in linear light: black and white give sRGB 188, not 128.
+	assert.equal(textures.resize({ width: 2, height: 1, rgba: Buffer.from([0, 0, 0, 255, 255, 255, 255, 255]) }, 1, 1).rgba[0], 188);
+	assert.throws(() => textures.resize(image, 4, 4), /downscaled/);
+	// DXT1 block: red and blue endpoints, indices 0..3 along the first row.
+	const block = Buffer.from([0x00, 0xf8, 0x1f, 0x00, 0b11100100, 0, 0, 0]);
+	const dxt = textures.decodeDxt(block, 4, 4, textures.FORMAT.DXT1);
+	assert.deepEqual([...dxt.subarray(0, 16)], [255, 0, 0, 255, 0, 0, 255, 255, 170, 0, 85, 255, 85, 0, 170, 255]);
+	console.log("PASS textures: PNG round trip, alpha scan, alpha-weighted linear downscale, DXT1 decode");
 }

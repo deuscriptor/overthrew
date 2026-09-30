@@ -45,6 +45,28 @@ let players_loaded = {};
 
 let host_options_enabled = false;
 
+// Panorama keeps a panel's images in memory while the panel exists, and the loading screen stops updating as
+// soon as the HUD replaces it, so its content is deleted while it still updates: when the locked rules arrive
+// (the server ends setup half a second later), or at once for a player joining a match already past setup.
+let loading_screen_released = false;
+function ReleaseLoadingScreen(fade) {
+	if (loading_screen_released) return;
+	loading_screen_released = true;
+	if (auto_hint_schedule) auto_hint_schedule = $.CancelScheduled(auto_hint_schedule);
+	// The root stays: its black background is what the content fades to.
+	LOADING_HUD.CONTEXT.Children().forEach((child) => {
+		child.style.transitionProperty = "opacity";
+		child.style.transitionDuration = "0.2s";
+		child.style.opacity = "0";
+	});
+	$.Schedule(fade ? 0.2 : 0, () => LOADING_HUD.CONTEXT.RemoveAndDeleteChildren());
+}
+
+function IsMatchStarting() {
+	const rules = CustomNetTables.GetTableValue("game_options", "match_rules");
+	return (rules && rules.locked === 1) || Game.GameStateIsAfter(DOTA_GameState.DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP);
+}
+
 function InitHints() {
 	LOADING_HUD.BULLETS_ROOT.RemoveAndDeleteChildren();
 	hints.forEach((hint_name, idx) => {
@@ -61,6 +83,7 @@ function CheckCurrentHint() {
 }
 
 function SetHint(idx) {
+	if (loading_screen_released) return;
 	if (auto_hint_schedule) auto_hint_schedule = $.CancelScheduled(auto_hint_schedule);
 	idx = Math.clamp(idx, 0, hints.length - 1);
 
@@ -118,6 +141,7 @@ function PrevHint() {
 }
 
 function UpdatePlayersLoadState() {
+	if (loading_screen_released) return;
 	Object.entries(players).forEach(([player_id, panel]) => {
 		const player_info = Game.GetPlayerInfo(parseInt(player_id));
 		panel.SwitchClass("loading_state", LOADING_STATES_DATA[player_info.player_connection_state] || "BState_None");
@@ -163,6 +187,8 @@ function CreateLoadingPlayersPanel() {
 }
 
 function UpdateLoadingScreen() {
+	if (loading_screen_released) return;
+	if (IsMatchStarting()) return void ReleaseLoadingScreen(false);
 	const player_info = Game.GetPlayerInfo(Game.GetLocalPlayerID());
 	if (!player_info || player_info.player_connection_state != DOTAConnectionState_t.DOTA_CONNECTION_STATE_CONNECTED)
 		return void $.Schedule(0.1, UpdateLoadingScreen);
@@ -172,6 +198,8 @@ function UpdateLoadingScreen() {
 }
 
 function UpdateTimer() {
+	if (loading_screen_released) return;
+	if (IsMatchStarting()) return void ReleaseLoadingScreen(true);
 	var game_time = Game.GetGameTime();
 	var transition_time = Game.GetStateTransitionTime();
 	if (transition_time >= 0)
@@ -213,6 +241,7 @@ function UpdateChatStyle() {
 }
 
 function InitMatchRules() {
+	if (loading_screen_released) return;
 	// Loading panels can initialize before map information and net tables arrive. The settings stay
 	// hidden (the usual tips show instead) until every player has loaded.
 	const initialRules = CustomNetTables.GetTableValue("game_options", "match_rules");
@@ -528,6 +557,7 @@ function InitMatchRules() {
 		if (valid) GameEvents.SendToServerEnsured("HostOptions:set_option_state", {name: "kill_goal", state: Number(killGoal.text)});
 	});
 	function refresh() {
+		if (loading_screen_released) return;
 		const rules = CustomNetTables.GetTableValue("game_options", "match_rules") || {};
 		const canEdit = rules.host_id === Game.GetLocalPlayerID() && rules.locked === 0;
 		canEditRules = canEdit;
@@ -641,7 +671,7 @@ function InitMatchRules() {
 }
 
 function ToggleHostOption(name) {
-	if (!host_options_enabled) return;
+	if (!host_options_enabled || loading_screen_released) return;
 
 	const checkbox = $(`#${name}`);
 	const current_state = checkbox.selected || false;
@@ -655,6 +685,7 @@ function ToggleHostOption(name) {
 }
 
 function ShowHostOptions(event) {
+	if (loading_screen_released) return;
 	let data = event.event_data;
 	host_options_enabled = true;
 	LOADING_HUD.CONTEXT.SetHasClass("host_options_enabled", true);
@@ -697,17 +728,20 @@ function UpdateTournamentDates() {
 	LOADING_HUD.BANNER_TOURNAMENT_FFA.SetDialogVariableTime("t_ffa_end", 1711814400);
 }
 (() => {
+	UpdateChatStyle();
+	FindDotaHudElementInLS("SidebarAndBattleCupLayoutContainer").visible = false;
+	if (IsMatchStarting()) return void ReleaseLoadingScreen(false);
 	LOADING_HUD.CONTEXT.RemoveClass("BShowWeekendsEvent");
 	UdpateWeekendsDates();
 	UpdateLoadingScreen();
 	InitHints();
-	UpdateChatStyle();
 	// UpdateTournamentDates();
-	FindDotaHudElementInLS("SidebarAndBattleCupLayoutContainer").visible = false;
 
 	GameEvents.Subscribe("HostOptions:show", ShowHostOptions);
 	CustomNetTables.SubscribeNetTableListener("game_options", function(table, key) {
-		if (key === "match_rules") InitMatchRules();
+		if (key !== "match_rules") return;
+		if (IsMatchStarting()) ReleaseLoadingScreen(true);
+		else InitMatchRules();
 	});
 	InitMatchRules();
 })();

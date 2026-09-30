@@ -218,6 +218,26 @@ function SubscribeToNetTableKey(tableName, key, callback) {
 	});
 }
 
+// Panorama loads the images of every panel that exists, even a hidden one, and frees them only when the panel is
+// deleted or stops showing them. ParkImages keeps a hidden layout's art out of memory until it is needed: the
+// stylesheet background images of `root` and its descendants are overridden with an inline "none", and the given
+// [Image panel, src] pairs are emptied. The returned function restores both.
+function ParkImages(root, images = []) {
+	const parked = [];
+	const park = (panel) => {
+		panel.style.backgroundImage = "none";
+		parked.push(panel);
+		panel.Children().forEach(park);
+	};
+	park(root);
+	images.forEach(([image]) => image.SetImage(""));
+	return () => {
+		// The CSS name: "backgroundImage" leaves the inline "none" in place.
+		parked.forEach((panel) => panel.IsValid() && panel.ClearPropertyFromCode("background-image"));
+		images.forEach(([image, src]) => image.IsValid() && image.SetImage(src));
+	};
+}
+
 const FindDotaHudElement = (id) => dotaHud.FindChildTraverse(id);
 const dotaHud = (() => {
 	let panel = $.GetContextPanel();

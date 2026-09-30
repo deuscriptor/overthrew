@@ -50,6 +50,7 @@ function UpdateTeamPanel(team_panel) {
 	team_panel.SetHasClass("BTeamFull", team_players.length == team_max_players);
 }
 function OnTeamPlayerListChanged() {
+	if (team_selection_released) return;
 	players_panels.forEach((player_panel) => {
 		player_panel.SetParent(HUD.UNASSIGNED_ROOT);
 	});
@@ -68,6 +69,12 @@ function OnPlayerSelectedTeam(player_id, team_id, b_success) {
 }
 let team_panels = [];
 let players_panels = [];
+// Panorama keeps a hidden panel's images in memory, and setup never returns: once it ends, the screen is deleted.
+let team_selection_released = false;
+function ReleaseTeamSelection() {
+	team_selection_released = true;
+	HUD.CONTEXT.RemoveAndDeleteChildren();
+}
 function CreateTeams() {
 	var all_teams_ids = Game.GetAllTeamIDs();
 	var spectator = CustomNetTables.GetTableValue("game_options", "spectator_slots");
@@ -139,10 +146,12 @@ function CheckPrivileges() {
 function UpdateSchedule() {
 	HUD.CONTEXT.SetHasClass("BTeamsLocked", Game.GetTeamSelectionLocked());
 
-	if (Game.GameStateIsAfter(DOTA_GameState.DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP)) return;
+	if (Game.GameStateIsAfter(DOTA_GameState.DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP)) return void ReleaseTeamSelection();
 	$.Schedule(0.1, UpdateSchedule);
 }
 (() => {
+	// A player joining after setup never sees this screen.
+	if (Game.GameStateIsAfter(DOTA_GameState.DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP)) return void ReleaseTeamSelection();
 	HUD.CONTEXT.GetParent().style.margin = "0px";
 	HUD.CONTEXT.AddClass(MAP_NAME);
 
