@@ -84,7 +84,6 @@ end
 Timers = {CreateTimer = function() error("Equipment must not schedule backend writes") end}
 INVENTORY_SLOTS.PET, INVENTORY_SLOTS.SPRAY, INVENTORY_SLOTS.COSMETIC_SKILL = "5", "1", "6"
 dofile("scripts/vscripts/libraries/webapi/inventory/equipment.lua")
-MatchEvents = {event_handlers = {}}
 dofile("scripts/vscripts/libraries/webapi/payments.lua")
 require = originalRequire
 print("PASS free collection: local premium, all vanity items, no Misc boosts, zero cost, reusable consumables, unchanged account data and blocked backend writes")

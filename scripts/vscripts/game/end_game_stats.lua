@@ -218,8 +218,6 @@ function EndGameStats:AddCapturedOrb(team, capture_type, count)
 	EndGameStats.orbs_collected[team][capture_type] = (EndGameStats.orbs_collected[team][capture_type] or 0) + count
 
 	CustomNetTables:SetTableValue("game_state", "orbs_collected", EndGameStats.orbs_collected)
-
-	print("[EndGameStats] registered captured orb by", team, capture_type, count)
 end
 
 

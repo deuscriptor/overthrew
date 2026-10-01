@@ -2,8 +2,6 @@ marci_special_delivery = marci_special_delivery or class({})
 
 
 function marci_special_delivery:OnOwnerSpawned()
-	print("special delivery spawned!")
-
 	local caster = self:GetCaster()
 
 	local tower = GameLoop.towers[caster:GetTeam()]

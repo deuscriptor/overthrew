@@ -89,7 +89,6 @@ function Filters:ExecuteOrderFilter(event)
 	if FOUNTAIN_CAST_ORDERS[order_type] and ability and PROHIBITED_TO_CAST_ON_FOUNTAIN[ability_name] and IsValidEntity(unit) then
 		local is_caster_on_fountain = unit and unit:HasModifier("modifier_fountain_rejuvenation_effect_lua")
 		-- prohibit casting specific spells on fountain entirely if they don't have a target, or target is an enemy
-		print("cast filter: ", IsValidEntity(target), (not IsValidEntity(target) or target:GetTeamNumber() ~= unit:GetTeamNumber()))
 		if is_caster_on_fountain and (not IsValidEntity(target) or target:GetTeamNumber() ~= unit:GetTeamNumber()) then
 			DisplayError(player_id, "#dota_hud_error_cant_cast_this_on_fountain")
 			return false

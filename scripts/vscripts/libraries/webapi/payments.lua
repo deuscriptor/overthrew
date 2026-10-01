@@ -11,7 +11,6 @@ PAYMENT_MODES = {
 
 
 function WebPayments:Init()
-	WebPayments.pending_requests = {}
 	WebPayments.known_customer_portal_links = {}
 	if LOCAL_FREE_COLLECTION then return end
 
@@ -145,33 +144,6 @@ function WebPayments:RequestSubscriptionUpgradeUrl(event)
 end
 
 
-function WebPayments:SetPaymentStatus(player_id, status)
-	if status then
-		MatchEvents:SetActivePolling(true)
-		-- mark player as waiting for payment to complete, with timeout
-		WebPayments.pending_requests[player_id] = Timers:CreateTimer(
-			600,
-			function()
-				WebPayments.pending_requests[player_id] = nil
-				if not next(WebPayments.pending_requests) then
-					MatchEvents:SetActivePolling(false)
-				end
-			end
-		)
-	else
-		if WebPayments.pending_requests[player_id] then
-			Timers:RemoveTimer(WebPayments.pending_requests[player_id])
-			WebPayments.pending_requests[player_id] = nil
-		end
-
-		-- disable active polling if no other players wait for their purchases in a meantime
-		if not next(WebPayments.pending_requests) then
-			MatchEvents:SetActivePolling(false)
-		end
-	end
-end
-
-
 function WebPayments:ValidatePaymentRequest(event)
 	if not WebPayments.valid_payment_methods[event.payment_system] then return false end
 	if not WebPayments.valid_payment_methods[event.payment_system][event.payment_method] then return false end
@@ -212,8 +184,6 @@ function WebPayments:RequestPaymentUrl(event)
 
 			print("[WebPayments] created payment session with URL: ", data.url)
 			DeepPrintTable(data)
-
-			WebPayments:SetPaymentStatus(player_id, true)
 
 			CustomGameEventManager:Send_ServerToPlayer(player, "WebPayments:open_in_external_browser", {
 				method = data.method,
@@ -306,34 +276,6 @@ function WebPayments:PurchaseWithCurrencyEvent(event)
 			print("[Payments] failed to purchase subscription with currency!", event.product_name)
 		end
 	)
-end
-
-
-MatchEvents.event_handlers.payment_success = function(data)
-	print("[WebPayments] payment complete!")
-	DeepPrintTable(data)
-
-	local player_id = WebApi:GetPlayerIdBySteamId(data.steam_id)
-	if not player_id or not PlayerResource:IsValidPlayerID(player_id) then return end
-
-	WebApi:ProcessMetadata(player_id, data)
-
-	WebPayments:SetPaymentStatus(player_id, false)
-
-	Toasts:NewForPlayer(player_id, "payment_success", data)
-end
-
-
-MatchEvents.event_handlers.payment_fail = function(data)
-	print("[WebPayments] payment failed!")
-	DeepPrintTable(data)
-
-	local player_id = WebApi:GetPlayerIdBySteamId(data.steam_id)
-	if not player_id or not PlayerResource:IsValidPlayerID(player_id) then return end
-
-	WebApi:ProcessMetadata(player_id, data)
-
-	Toasts:NewForPlayer(player_id, "payment_fail", data)
 end
 
 

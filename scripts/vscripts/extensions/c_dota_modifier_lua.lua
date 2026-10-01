@@ -33,7 +33,3 @@ end
 function CDOTA_Modifier_Lua:GetPrimaryAttributeOfParent()
 	return self:GetParent():GetModifierStackCount("modifier_primary_attribute_reader", self:GetParent())
 end
-
-
-print("CLIENT EXTENTION LOADED IN")
-print(IsClient(), CDOTA_Modifier_Lua, CDOTA_Modifier_Lua.GetUpgradeValueFor, C_DOTA_Modifier_Lua)

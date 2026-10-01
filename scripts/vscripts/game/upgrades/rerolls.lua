@@ -49,7 +49,6 @@ function UpgradeRerolls:_ConsumeRerolls(player_id, rarity)
 
 	if current_free_rerolls >= rarity then
 		UpgradeRerolls.current_free_rerolls[player_id] = current_free_rerolls - rarity
-		print("[UpgradeRerolls] reroll funded by free rerolls: " .. current_free_rerolls .. " => " .. UpgradeRerolls.current_free_rerolls[player_id])
 		return true
 	end
 
@@ -57,11 +56,9 @@ function UpgradeRerolls:_ConsumeRerolls(player_id, rarity)
 	if current_free_rerolls > 0 and (current_free_rerolls + current_consumable_rerolls) >= rarity then
 		rarity = rarity - current_free_rerolls
 		UpgradeRerolls.current_free_rerolls[player_id] = 0
-		print("[UpgradeRerolls] reroll partially compensated by free rerolls: " .. rarity + current_free_rerolls .. " => " .. rarity)
 	end
 
 	if current_consumable_rerolls >= rarity then
-		print("[UpgradeRerolls] reroll funded by consumable rerolls: ", rarity)
 		UpgradeRerolls.used_rerolls[player_id] = (UpgradeRerolls.used_rerolls[player_id] or 0) + rarity
 		WebInventory:ModifyBackendItemCount(player_id, "bp_reroll", -rarity)
 		return true

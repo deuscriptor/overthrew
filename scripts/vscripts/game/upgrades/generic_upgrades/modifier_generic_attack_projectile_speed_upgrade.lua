@@ -25,7 +25,6 @@ end
 
 
 function modifier_generic_attack_projectile_speed_upgrade:GetModifierProjectileSpeedBonus()
-	print("projectile speed bonus:", self.bonus)
 	return self.bonus
 end
 

@@ -8,7 +8,4 @@ function Events:OnInventoryItemChange(event)
 
 	if not IsValidEntity(item) or not IsValidEntity(hero) or hero:IsIllusion() then return end
 	HostItems:CheckAssembly(item, hero)
-	if not event.removed and not event.dropped then print("discarded item change - not applicable to neutrals") return end
-
-	local container = item:GetContainer()
 end

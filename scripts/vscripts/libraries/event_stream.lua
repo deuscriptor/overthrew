@@ -64,7 +64,6 @@ function EventStream:Listen(event_name, callback, context)
 		if args._id then
 			-- saving after processing, for cases where callback affects global state (i.e. ProtectedCustomEvents)
 			EventStream.accepted_events[args._id] = GameRules:GetGameTime() + TOKEN_TIMEOUT
-			print(GameRules:GetGameTime(), "[Event Stream] recorded new event token", args._id)
 
 			EventStream:AcknowledgeEvent(user_id, event_name, args, true)
 		end
@@ -79,7 +78,6 @@ function EventStream:PurgeAcceptedEvents()
 	for token, expire_time in pairs(EventStream.accepted_events or {}) do
 		if expire_time < time then
 			EventStream.accepted_events[token] = nil
-			print("[Event Stream] event token", token, "expired")
 		end
 	end
 end

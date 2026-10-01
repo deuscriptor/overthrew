@@ -45,7 +45,7 @@ function modifier_undying_tombstone_intrinsic_lua:GetModifierProcAttack_Feedback
 	if self.ability:GetLevel() == 0 then return end
 
 	local spawn_zombie_on_attack = self.ability:GetSpecialValueFor("spawn_zombie_on_attack") == 1
-	if not spawn_zombie_on_attack then print("no zombie on attack?") return end
+	if not spawn_zombie_on_attack then return end
 
 	self.ability:SpawnOrUpgradeZombie(params.target, self.parent)
 end

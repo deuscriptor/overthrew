@@ -19,7 +19,7 @@ end
 
 
 function dark_seer_wall_of_replica_lua:CastFilterResultLocation(location)
-	if IsServer() then print(location) return end
+	if IsServer() then return end
 
 	local player = Entities:GetLocalPlayer()
 	local click_behavior = player:GetClickBehaviors()
