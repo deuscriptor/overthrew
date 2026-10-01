@@ -200,9 +200,6 @@ function GameLoop:OnUnitKilled(event)
 	GameLoop.current_kills_count[killer_team] = current_kills_count + 1
 	CustomNetTables:SetTableValue("game_state", "team_score", GameLoop.current_kills_count)
 
-	print("[GameLoop] registered kill by", event.killer:GetUnitName(), "of", killed:GetUnitName())
-	DeepPrintTable(GameLoop.current_kills_count)
-
 	killer:QueueMadstones(IsTurboMode() and 2 or 1)
 
 	local kill_difference = GameLoop.current_kills_count[killed_team] - current_kills_count
@@ -219,7 +216,6 @@ function GameLoop:OnUnitKilled(event)
 		else
 			team_gold_reward = team_gold_reward * NONLEADER_KILL_MULTIPLIER
 		end
-		print("[Game Loop] distributing reward: ", is_killed_leader, team_gold_reward)
 
 		local team_share = math.ceil(team_gold_reward / (#GameLoop.heroes_by_team[killer_team] + 1))
 
@@ -291,8 +287,6 @@ function GameLoop:SetRespawnTime(player_id)
 	local hero = PlayerResource:GetSelectedHeroEntity(player_id)
 
 	if hero and IsValidEntity(hero) and not hero:IsReincarnating() then
-		print("[GameLoop] set respawn time of", hero:GetUnitName(), "to", new_respawn_time or 1)
-
 		if not hero:IsAlive() then
 			hero:SetTimeUntilRespawn(new_respawn_time or 1)  -- Very long code just to fix meepo respawn time
 		else

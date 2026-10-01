@@ -9,7 +9,7 @@ end
 function EventDriver:Dispatch(event_name, args_tbl)
     if not event_name then print("[Event Driver] no event name in dispatch") return end
     local callbacks = EventDriver.serverside_events[event_name]
-    if not callbacks then print("[Event Driver] no callback in dispatch") return end
+    if not callbacks then return end
     for id, callback_info in pairs(callbacks) do
 		if not callback_info[1] then
 			print("[Event Driver] WARNING: callback of event", event_name, "at id", id, "is deleted! Unsubscribing...")

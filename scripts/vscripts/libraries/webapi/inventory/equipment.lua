@@ -42,7 +42,6 @@ function Equipment:ApplyEquippedItems(player_id)
 		return
 	end
 	-- print("[Equipment] setting equipped items", player_id)
-	DeepPrintTable(Equipment.__assigned_equipped_items[player_id])
 	for slot, item in pairs(Equipment.__assigned_equipped_items[player_id] or {}) do
 		if type(item) == "string" then
 			Equipment:Equip(player_id, item)
@@ -57,7 +56,6 @@ end
 
 
 function Equipment:Equip(player_id, item_name)
-	print("[Equipment] Equip", player_id, item_name)
 	Equipment.equipped_items[player_id] = Equipment.equipped_items[player_id] or {}
 
 	if not WebInventory:HasItem(player_id, item_name) then
@@ -83,7 +81,6 @@ function Equipment:Equip(player_id, item_name)
 
 	local resource_list = Equipment:GetItemResourceList(item_definition)
 	PrecacheManager:PrecacheResourceListAsync(resource_list, function()
-		print("Resource list precached for", item_name)
 		if Equipment.slot_callbacks[slot] then
 			local _, modifiers, particles, units = Equipment:SpecialSlotEquipped(player_id, hero, item_name, item_definition)
 			-- print("[Equipment] special slot returned:", modifiers, particles, units)
@@ -129,14 +126,12 @@ function Equipment:GetItemResourceList(item_definition)
 
 	if item_definition.particles then
 		for _, particle_data in pairs(item_definition.particles) do
-			print("[Resource List] precaching particle", particle_data.path)
 			-- PrecacheResource("particle", particle_data.path, context)
 			resource_list[particle_data.path] = "particle"
 		end
 	end
 	if item_definition.particle_variants then
 		for _, particle_data in pairs(item_definition.particle_variants) do
-			print("[Resource List] precaching particle variant", particle_data.path)
 			-- PrecacheResource("particle", particle_data.path, context)
 			resource_list[particle_data.path] = "particle"
 		end
@@ -153,7 +148,6 @@ function Equipment:GetItemResourceList(item_definition)
 	end
 
 	if item_definition.model_path then
-		print("[Resource List] precaching model", item_definition.model_path)
 		-- PrecacheResource("model", item_definition.model_path, context)
 		resource_list[item_definition.model_path] = "model"
 	end
@@ -210,10 +204,8 @@ function Equipment:ParticleFromData(player_id, particle_data, unit, target_table
 
 	-- unset `persists` flag defaults to true
 	if particle_data.persists == nil or particle_data == true then
-		print("[Equipment] saving persistent particle id", p_id)
 		table.insert(target_table, p_id)
 	else
-		print("[Equipment] releasing particle id", p_id)
 		ParticleManager:ReleaseParticleIndex(p_id)
 	end
 
@@ -462,7 +454,6 @@ function Equipment:StartBackendUpdateTimer()
 			local steam_id = tostring(PlayerResource:GetSteamID(player_id))
 			equipped_items[steam_id] = Equipment:GetEquippedItems(player_id)
 		end
-		DeepPrintTable(equipped_items)
 		WebApi:Send(
 			"api/lua/inventory/set_equipped_items",
 			{

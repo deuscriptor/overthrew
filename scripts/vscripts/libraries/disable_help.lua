@@ -9,7 +9,6 @@ EventStream:Listen("set_disable_help", function(data)
 
 		local disableHelp = CustomNetTables:GetTableValue("disable_help", tostring(playerId)) or {}
 		disableHelp[tostring(to)] = disable
-		DeepPrintTable(disableHelp)
 		CustomNetTables:SetTableValue("disable_help", tostring(playerId), disableHelp)
 	end
 end)

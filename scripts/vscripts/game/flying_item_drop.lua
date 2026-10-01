@@ -126,7 +126,6 @@ end
 
 
 function FlyingTreasureDrop:LaunchStagedOrbs()
-	print("default staged launch")
 	-- self:TreasureDrop(npc)
 	EmitGlobalSound("powerup_05")
 	CustomGameEventManager:Send_ServerToAllClients("item_has_spawned", {})
@@ -252,7 +251,7 @@ end
 
 function FlyingTreasureDrop:OnPlayerSettingsChanged(event)
 	-- toggle active path particles
-	if event.setting_name ~= "disable_epic_path" then print("discarded changed settings", event.setting_name) return end
+	if event.setting_name ~= "disable_epic_path" then return end
 
 	local player_id = event.player_id
 

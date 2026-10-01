@@ -147,3 +147,13 @@ assert.equal(fountainProtection.error, undefined);
 assert.equal(fountainProtection.status, 0);
 assert.equal((fountainProtection.stderr || '').trim(), '');
 assert.match(fountainProtection.stdout, /PASS fountain protection:/);
+const logNoise = spawnSync(process.execPath, [
+  path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
+  'tools/test_log_noise.lua',
+], { cwd: root, encoding: 'utf8' });
+if (logNoise.stdout) process.stdout.write(logNoise.stdout);
+if (logNoise.stderr) process.stderr.write(logNoise.stderr);
+assert.equal(logNoise.error, undefined);
+assert.equal(logNoise.status, 0);
+assert.equal((logNoise.stderr || '').trim(), '');
+assert.match(logNoise.stdout, /PASS log noise:/);

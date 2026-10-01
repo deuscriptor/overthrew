@@ -30,7 +30,6 @@ function GameMode:SpawnOrbDrop(spawn_point, orb_type, should_launch, on_destroye
 	local origin = GetGroundPosition(capture_point:GetOrigin(), capture_point)
 	ParticleManager:SetParticleControl(capture_point.orb_fx, 0, origin)
 	ParticleManager:SetParticleControl(capture_point.orb_fx, 3, origin)
-	print("created orb particle", particle_name, capture_point.orb_fx, orb_type)
 
 	return capture_point
 end

@@ -501,8 +501,6 @@ function Upgrades:LoadUpgradesData(hero_name)
 
 	-- per-map override
 	local kv_override = LoadKeyValues("scripts/upgrades/overrides/" .. GetMapName() ..  "/" .. hero_name .. ".txt")
-	print("override:")
-	DeepPrintTable(kv_override)
 	if kv_override then
 		for ability_name, upgrades in pairs(kv_override or {}) do
 			for special_name, data in pairs(upgrades) do
@@ -510,8 +508,6 @@ function Upgrades:LoadUpgradesData(hero_name)
 			end
 		end
 	end
-	print("complete:")
-	DeepPrintTable(self.upgrades_kv[hero_name])
 
 	for ability_name, upgrades in pairs(self.upgrades_kv[hero_name] or {}) do
 		for upgrade_name, upgrade_data in pairs(self.upgrades_kv[hero_name][ability_name]) do

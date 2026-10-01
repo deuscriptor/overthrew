@@ -115,23 +115,4 @@ function WebMail:UpdateClient(player_id)
 end
 
 
--- handle match event type for incoming mail
--- in case feedback reply is sent while player is in active game
-MatchEvents.event_handlers.mail_incoming = function(data)
-	print("[WebMail] mail received from match event")
-	DeepPrintTable(data)
-
-	local player_id = WebApi:GetPlayerIdBySteamId(data.steam_id)
-	if not player_id or not PlayerResource:IsValidPlayerID(player_id) then return end
-
-	local player = PlayerResource:GetPlayer(player_id)
-	if not IsValidEntity(player) then return end
-
-	WebMail:AddMail(player_id, data.mail)
-
-	WebMail:UpdateClient(player_id)
-	Toasts:NewForPlayer(player_id, "mail_incoming", data.mail)
-end
-
-
 WebMail:Init()

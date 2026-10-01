@@ -206,12 +206,7 @@ function ChatWheel:UpdateFavorites(event)
 
 	if not event.favorites then return end
 
-	print(">> Before validation")
-	DeepPrintTable(event.favorites)
-
-	print(">> After validation")
 	local valided_favorites = ChatWheel:FilterValidFavorites(player_id, event.favorites)
-	DeepPrintTable(valided_favorites)
 
 	self.favorites[player_id] = valided_favorites
 
@@ -233,8 +228,6 @@ end
 
 
 function ChatWheel:SetMutedPlayers(event)
-	print("ChatWheel:SetMutedPlayers")
-	DeepPrintTable(event)
 	local player_id = event.PlayerID
 	if not IsValidPlayerID(player_id) then return end
 

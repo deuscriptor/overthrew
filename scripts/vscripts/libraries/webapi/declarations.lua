@@ -4,12 +4,6 @@ DEFAULT_RATING = 1500
 -- This addon provides its collection locally; no paid account entitlement is changed.
 LOCAL_FREE_COLLECTION = true
 
--- Poll match events from backend every 240 seconds by default, every 10 seconds when polling is active
--- (i.e. when payment was initiated and we expect purchase result)
--- is always at 10 seconds in tools
-MATCH_EVENT_DEFAULT_POLL_DELAY = IsInToolsMode() and 10 or 240
-MATCH_EVENT_ACTIVE_POLL_DELAY = 10
-
 -- send errors (if any) to backend server every 120 seconds
 ERROR_TRACKING_REQUEST_DELAY = 120
 

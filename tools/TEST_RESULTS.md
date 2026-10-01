@@ -764,3 +764,23 @@ clients remain manual checks.
 - Screenshots before and after (pool with hero vision 1800 and 400) match apart from animated light shafts,
   particles and drifting fog clouds (RMSE 0.047 and 0.051). Ground heights sampled every 200 units show that the water
   plane (z ≈ 106) lies under the floor inside the walls (pool floor z ≈ 129), so no water is visible on this map.
+
+## 2026-10-01: Script log noise (#35)
+
+- Offline: `run_tests.js` passes (40 groups), including the new `test_log_noise.lua`. A copy that reports instead of
+  failing, run against the scripts of `c05c603` (before this change), shows the old output per section: 1 line for
+  an event without listeners, 2 for a client event and its token expiry, 1 for an item change, 2 for a fountain cast
+  order, 4 for loading a hero's upgrades, 1 for a projectile speed read, 8 for equipping and playing cosmetics, and
+  the match start schedules a match-event poll. `luacheck scripts/vscripts` reports 0 warnings / 0 errors. `panorama_resources.js verify` passes.
+- Dota Tools, `illusion_perf_smoke.lua`, script lines from `ILLPERF bot created` to `ILLPERF DONE` other than the
+  smoke's own:
+  - Original code (second map load in the client): 985, of which 762 `discarded item change - not applicable to
+    neutrals` and 58 `[Event Driver] no callback in dispatch`. The session sent 5 `api/lua/match/events` requests.
+  - This change before the chat-wheel and disable-help edits (fresh client): 20, of which 14 were the
+    `ChatWheel:SetMutedPlayers` dump that each client triggers on load.
+  - Final code (fresh client): 4, all once per match (`Initializing hero`, a hero challenge note, and the Tools-only
+    before-match failure with its match ID). No script errors. The only backend request was `api/lua/match/before`.
+- Final code on a third map load in the same client: one `Script Runtime Error: ... c_dota_modifier_lua.lua:15:
+  Invalid object passed to GetParent` from `IllusionGenericUpgrades:Build` (slow resistance upgrade `OnCreated`) as
+  the smoke built illusion hosts. It did not occur in either fresh client run and comes from code this change does
+  not touch; class scopes linked by `LinkLuaModifier` persist across map loads in one client.

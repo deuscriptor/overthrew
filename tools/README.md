@@ -265,6 +265,12 @@ inventory writes and match reward submissions to the original backend are blocke
 `test_free_collection.lua` checks local entitlements, item use and backend-write
 isolation; `free_collection_smoke.lua` checks native access and equipping.
 
+The server does not poll the backend for match events. The original asked every
+240 seconds (10 in Tools) for payment results and for feedback replies sent during
+the match. Payments never start in this addon, and mail is still read from the
+before-match player data. `test_log_noise.lua` checks that the before-match request
+is the only one sent when the match starts, and that nothing is scheduled after it.
+
 ## Backpack Items
 
 **Backpack Items**, below Epic-Only in Core, defaults off. When on, items in a
@@ -522,6 +528,24 @@ the single stat recalculation; `test_backpack_items.lua` the reconcile-once rule
 illusion the same stats as upgrade modifiers, a hosted attack proc, the routed lifesteal, disable status
 resistance, magic resistance reduction and BAT handler, the backpack of an illusion and the modifiers left on a
 killed one.
+
+## Script log
+
+Code that runs during play writes nothing to the console, so script errors stand out (issue #35). The server
+used to print a line for every item change (including the items each new illusion receives), every server event dispatched without listeners, every accepted Panorama event and the expiry of its
+token, and every hero kill (with the whole score table), death, orb spawn and capture, staged orb launch and
+reroll. The projectile speed upgrade printed on every read of the property and Undying's Tombstone on every Flesh
+Golem attack without the zombie facet. Each hero's upgrade data was dumped on its first spawn, and the order filter,
+cosmetics (equips, precache lists, particle IDs), Dark Seer's Wall of Replica, the chat wheel (mutes and favorites)
+and the disable-help toggle printed debug output.
+
+Console output that stays: one-time lines (initialization, precache, game state changes, host claim, end-of-game
+summaries), warnings about abnormal conditions, Tools-only request logging and chat command output.
+
+`illusion_perf_smoke.lua` in Tools, from the bot's creation to `ILLPERF DONE` (about 30 seconds, waves of 10 and 30
+Phantom Lancer illusions): 985 script lines besides the smoke's own before (762 of them item changes, 58 dispatches
+without listeners), 4 one-time lines after. `test_log_noise.lua` runs the main per-event paths with `print` and
+`DeepPrintTable` captured and fails on any output.
 
 ## Texture memory
 

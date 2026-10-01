@@ -150,6 +150,4 @@ EventDriver:Listen("Events:state_changed", function(event)
 	WebApi:InitSteamIdTable()
 	WebApi.before_match_sent = true
 	WebApi:RequestBeforeMatch()
-
-	MatchEvents:ScheduleNextRequest()
 end)

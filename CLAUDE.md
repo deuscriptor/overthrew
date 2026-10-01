@@ -94,8 +94,8 @@ Always-on FFA features, each documented in `tools/README.md`:
   dealt, untargetable by enemies and no damage taken until an attempt to harm while lingering; no orb captures; dark
   look of the native AFK fountain invulnerability
   (`game/fountain_protection.lua`, `Filters:FountainDamageFilter`, `Filters:FountainModifierFilter`).
-- Free local premium and collection. Backend writes are blocked, Misc-slot gameplay boosts are not granted,
-  and the Collection shows only the Cosmetics tab.
+- Free local premium and collection. Backend writes are blocked, match events are not polled, Misc-slot gameplay
+  boosts are not granted, and the Collection shows only the Cosmetics tab.
 - Scoreboard player tips (`libraries/webapi/tips.lua`). They are local only: a toast, a chat line and an
   end-screen tally, limited to 3 per match with a 30s cooldown. No currency moves.
 - A host-fixed kill goal: the original "+1 kill goal" vote is suppressed server-side, and GG Tokens are refused.
@@ -162,6 +162,9 @@ Then add the option to the table above, to `tools/README.md` and to `README.md` 
   goes into `IllusionGenericUpgrades.HOSTED` (`game/upgrades/illusion_generic_upgrades.lua`) if it follows the rules
   listed there; a new property it needs goes into `IllusionGenericUpgrades.PROPERTIES`. `test_illusion_performance.lua`
   checks both.
+- Don't `print` or `DeepPrintTable` in code that runs during play: per event, order, item change, attack, kill,
+  UI event or property read. Console output is for one-time lines and warnings about abnormal conditions (see
+  "Script log" in `tools/README.md`). `test_log_noise.lua` fails if the main per-event paths print.
 
 ### Documentation
 
