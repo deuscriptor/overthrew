@@ -580,3 +580,26 @@ alpha weighting, recompiled by Valve's resourcecompiler). `node tools/panorama_r
 the committed textures match the list and that no uncompressed texture keeps an unused alpha channel.
 `panorama_test.js` covers the loading screen release, `ParkImages` and the texture decoding, resizing and PNG
 encoding; `test_host_rules.lua` that setup ends only after the locked rules are published.
+
+## Map textures
+
+The map's two `ent_dota_lightinfo` entities reference `maps/ot3_necropolis_ffa/water_flow_map.vtex`,
+`fog_flow_map.vtex` and `fog_opacity_map.vtex` (issue #36). Hammer bakes these next to a map, and Valve's maps and the
+original Overthrow maps carry them in their VPKs, but the `ot3_necropolis_ffa` VPK does not. Without them the client
+logged `Failed loading resource ... (ERROR_FILEOPEN: File not found)` for each at map load, then a burst of 50
+`Texture manager doesn't know about texture "maps/ot3_necropolis_ffa/water_flow_map.vtex" ... returning error
+texture` lines once the world was drawn.
+
+The addon ships them as loose files in `maps/ot3_necropolis_ffa/`, which the engine loads as if they were in the VPK.
+Each holds the uniform value Hammer bakes when nothing is painted, the same in Valve's `test_basic` and the original
+Overthrow maps: source RGB (10, 20, 0), decoded (11, 20, 0), for both flow maps, and (0, 255, 0) for fog opacity. Like
+Hammer's they are linear, DXT1, single-mip and exempt from texture quality (`NO_LOD`). A uniform texture samples the
+same at any size, so each is one 4x4 block (2 KB per file). `node tools/map_textures.js build` recompiles them with
+Valve's resourcecompiler (Windows, Workshop Tools). `run_tests.js` runs `map_textures.js verify`, which fails if one is
+missing, is not single-mip DXT1, or holds other values.
+
+Checked in Tools with All Vision off: screenshots of the centre pool from its south stairs (hero vision 1800 and 400)
+match before and after, apart from animation. No water is visible on this map: its water plane (`phys_level_water`,
+z ≈ 106) lies under the floor everywhere inside the walls (the centre pool's floor is at z ≈ 129), and only the void
+outside them drops lower. Fog of war looks the same too. The fix removes the failed loads and error-texture lookups,
+without a visible change.

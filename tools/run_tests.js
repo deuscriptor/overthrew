@@ -14,6 +14,7 @@ assert.deepEqual([...new Set(mapFiles)], registeredMaps, 'Map packages, overview
 const overviewMaterial = read('resource/overviews/ot3_necropolis_ffa.txt').match(/material\s+(\S+)/)[1];
 assert.ok(fs.existsSync(path.join(root, overviewMaterial + '_c')), 'Minimap material exists');
 console.log('PASS only ot3_necropolis_ffa is registered and shipped, with its minimap material');
+require('./map_textures').verify();
 const localizationKeys = language => new Set([...read(`resource/addon_${language}.txt`).matchAll(/^\s*"([^"]+)"[ \t]*"/gm)].map(match => match[1]));
 const englishKeys = localizationKeys('english');
 for (const language of ['russian', 'ukrainian']) {
