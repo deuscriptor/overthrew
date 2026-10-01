@@ -12,7 +12,9 @@ It adds a host-configurable free-for-all mode on `ot3_necropolis_ffa`.
   min 1). The other Overthrow maps (Duo, Quintet, Octet, `ot3_demo`) and the earlier `ot3_ffa_*` variants were
   removed; `run_tests.js` fails if a map package, overview, shop or upgrade override exists for an unregistered
   map. The Hero Demo tooling (`game/demo`, the `ot3_demo` Panorama panel) still loads in Tools mode.
-- **No map sources:** the map ships as a compiled VPK only; there is no Hammer source.
+- **No map sources:** the map ships as a compiled VPK only; there is no Hammer source. Three water/fog textures
+  its lighting entities reference but the VPK lacks ship as loose placeholders in `maps/ot3_necropolis_ffa/`
+  (`tools/map_textures.js`, "Map textures" in `tools/README.md`).
 - **Spec:** `tools/README.md` is the authoritative feature specification. Keep it and `README.md` current (see
   [Documentation](#documentation)).
 
@@ -21,6 +23,7 @@ It adds a host-configurable free-for-all mode on `ot3_necropolis_ffa`.
 | Path | Contents |
 | --- | --- |
 | `addoninfo.txt` | Map registration, default map, player limits |
+| `maps/` | Compiled map VPK; loose placeholder water/fog textures in `maps/ot3_necropolis_ffa/` |
 | `scripts/vscripts/` | Game Lua. Entry points: `addon_game_mode.lua` (server) and `addon_game_mode_client.lua` (client) |
 | `scripts/vscripts/*_smoke.lua` | In-game smoke tests, run by hand in Workshop Tools (they ship in the package) |
 | `scripts/npc/`, `scripts/shops/`, `scripts/upgrades/` | KeyValues data: heroes, items, abilities, shops, orb upgrades |
@@ -41,11 +44,12 @@ Run everything from the addon root. Requires Node.js 24. In Git Bash, if `node` 
 
 ```sh
 npm ci --prefix tools/runtime --ignore-scripts --no-audit --no-fund   # once, or when runner deps are missing
-node tools/run_tests.js                  # full offline suite: Lua tests on Fengari, localization parity, Panorama tests
+node tools/run_tests.js                  # full offline suite: Lua tests on Fengari, localization parity, map textures, Panorama tests
 node tools/panorama_test.js              # Panorama logic only (already included in run_tests.js)
 node tools/panorama_resources.js build   # after editing tools/panorama_sources/: rebuild panorama/*_c
 node tools/panorama_resources.js verify  # compiled resources match their sources, textures their list (CI runs this)
 node tools/panorama_textures.js build    # after editing tools/panorama_textures.json: re-encode the listed textures
+node tools/map_textures.js build         # after editing tools/map_textures.js: recompile the map's placeholder textures
 luacheck scripts/vscripts                # luacheck 1.2.0 (CI downloads the release binary)
 node tools/vconsole.js 'script_reload_code host_rules_smoke'   # send console commands to a running Dota client
 ```

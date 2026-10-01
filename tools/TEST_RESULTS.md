@@ -746,3 +746,21 @@ clients remain manual checks.
   changes after the HUD takes over (its script keeps running), also when its panels are reparented into the HUD;
   with 0.5 s between the lock and the end of setup it frees its art. In one run the Tools window had lost focus and
   the art stayed. `panorama_apply_styles_for_invisible_parents` is `false`.
+
+## 2026-10-01: Map water and fog textures (#36)
+
+- Offline: `run_tests.js` passes (39 groups), including the new `map_textures.js verify`; it fails as expected with
+  `fog_opacity_map.vtex_c` moved away. `luacheck scripts/vscripts` reports 0 warnings / 0 errors.
+  `panorama_resources.js verify` passes.
+- Reference values: Source2Viewer and the repo's DXT1 decoder agree that the unpainted textures in Valve's
+  `test_basic` and in the removed Overthrow maps (`ot3_desert_octet`, `ot3_demo`) are uniform (11, 20, 0) for both
+  flow maps and (0, 255, 0) for fog opacity, linear single-mip DXT1 with `NO_LOD`. The 4x4 placeholders built by
+  `map_textures.js build` decode to the same values and have the same format, flags and reflectivity.
+- Dota Tools, fresh client per run, All Vision off, Sven on the centre pool's south stairs. Without the textures:
+  three `Failed loading resource "maps/ot3_necropolis_ffa/{fog_flow,water_flow,fog_opacity}_map.vtex_c"
+  (ERROR_FILEOPEN)` lines at map load and 50 `Texture manager doesn't know about texture
+  "maps/ot3_necropolis_ffa/water_flow_map.vtex" ... returning error texture` lines in one burst once the world was
+  drawn. With them: none in a session of the same steps plus a camera move to the outer corner.
+- Screenshots before and after (pool with hero vision 1800 and 400) match apart from animated light shafts,
+  particles and drifting fog clouds (RMSE 0.047 and 0.051). Ground heights sampled every 200 units show that the water
+  plane (z ≈ 106) lies under the floor inside the walls (pool floor z ≈ 129), so no water is visible on this map.

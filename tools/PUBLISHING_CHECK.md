@@ -37,8 +37,9 @@ Reference: https://developer.valvesoftware.com/wiki/Dota_2_Workshop_Tools/Addon_
 ## Packaging and remaining limits
 
 - Keep runtime files: `addoninfo.txt`, maps, scripts, resource, Panorama, materials,
-  models, particles and soundevents. Do not include development folders `.git`
-  (about 163 MiB) or `tools`, AGENTS.md, CLAUDE.md, editor thumbnail/asset caches or
+  models, particles and soundevents. `maps` is more than the VPKs: since #36,
+  `maps/ot3_necropolis_ffa/` holds three loose water/fog textures the map needs.
+  Do not include development folders `.git` (about 163 MiB) or `tools`, AGENTS.md, CLAUDE.md, editor thumbnail/asset caches or
   `panorama_debugger.cfg`. Inspect the publisher's file list; this check did not
   run the publisher or assume it excludes these automatically.
 - Some original backend integrations still run outside tools mode. Local premium
