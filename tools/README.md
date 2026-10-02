@@ -384,11 +384,11 @@ and passes the decision to clients through the stack count, which `CheckState` r
 
 ## Fountain protection
 
-On the configurable FFA map a fountain is a safe zone for its own team, and stays one for 1.5 seconds
-after leaving it by any means (walking, blinks, teleports, forced movement). The zone is the same as
+On the configurable FFA map a fountain is a safe zone for its own team. The zone is the same as
 fountain rejuvenation (radius 1,194 around the tower) and covers heroes and units alike. It exists to
-stop deaths on the fountain and spawn-camping, and to stop kills from the safety of the base,
-including teleporting in from the fountain with full resources and back out.
+stop deaths on the fountain and spawn-camping, and to stop damage dealt from the safety of the base.
+The protection ends as soon as a unit leaves the zone by any means (walking, blinks, teleports, forced
+movement); there is no linger.
 
 While protected, a unit:
 
@@ -396,35 +396,22 @@ While protected, a unit:
 - is disarmed;
 - deals no damage of any kind (attacks, spells, damage over time applied earlier, HP removal,
   self damage);
-- applies no debuffs to enemies (stuns, hexes, slows, forced movement, aura debuffs);
-- cannot capture or contest orbs, even when exposed (`capture_point_area:ValidCapturingUnit`);
-- cannot be targeted by enemies and takes no damage of any kind, unless it is exposed.
+- cannot capture or contest orbs (`capture_point_area:ValidCapturingUnit`);
+- cannot be targeted by enemies and takes no damage of any kind.
 
-A unit becomes exposed when it tries to harm another team while lingering: damage or a debuff from one
-of its active abilities or items, even though the filters block it. Exposed, it can be targeted and takes
-damage, but stays disarmed and harmless until the linger ends. Returning to the fountain forgives the
-exposure. The buff icon changes from Guardian Angel to Decrepify, and the dark look goes away.
+Debuffs are not restricted: a protected unit can stun, slow or hex enemies with its abilities and auras,
+though any damage they carry is dropped while it stays on the fountain. Damage over time it applied
+there hurts again once it leaves.
 
-Never exposing:
+Fountain rejuvenation's own aura still lingers 0.5 s, so its debuff immunity, which also stops pure
+damage, covers the first half second after leaving.
 
-- anything done inside the fountain (it is blocked anyway);
-- passive sources: abilities with the passive behavior flag, plus the enemy auras of Radiance and
-  Shiva's Guard (their items have actives, so they are listed in `game/fountain_protection.lua`);
-- self damage and harm to the unit's own team;
-- modifiers without an ability (game mode code) and true sight, which pass unfiltered.
-
-Active abilities that deal damage over time (Leshrac's Diabolic Edict and Pulse Nova) do expose.
-Enemy AoE can still apply debuffs to a lingering unit. Fountain rejuvenation's own aura lingers 0.5 s,
-so its debuff immunity, which also stops pure damage, covers the first half second after leaving.
-
-`modifier_fountain_protection_lua` is an aura on each tower (added in `GameLoop:InitTowers`) with a
-1.5 second linger. Inside the zone the aura keeps the effect's remaining time full; it runs down only after
-leaving, which is how the effect tells lingering from inside (with 0.1 s of slack). The effect blocks
-incoming damage with the absolute no-damage properties and sets the disarm and enemy-untargetable states.
-Its stack count carries the exposure to clients. `Filters:FountainDamageFilter` and
-`Filters:FountainModifierFilter`, registered only on this map, drop damage and enemy debuffs from
-protected units and register exposure through `FountainProtection:BlocksHarm`. Unprotected sources cost
-one modifier lookup; the older full damage and modifier filters stay disabled.
+`modifier_fountain_protection_lua` is an aura on each tower (added in `GameLoop:InitTowers`) with an aura
+duration of 0, so the effect is removed on the aura's next update after the unit leaves the zone. The
+effect blocks incoming damage with the absolute no-damage properties and sets the disarm and
+enemy-untargetable states. `Filters:FountainDamageFilter`, registered only on this map, drops damage from
+and to protected units (`FountainProtection:Protects`), which also catches HP removal and flagged damage.
+It costs two modifier lookups per damage instance; the older full damage and modifier filters stay disabled.
 
 The look is the status effect of Dota's own AFK fountain invulnerability. In `client.dll`,
 `CDOTA_Modifier_FountainInvulnerabilityBuff` (found through its RTTI vtable) returns
@@ -435,18 +422,18 @@ status effect drives the hero shader with `materials/models/heroes/statuseffects
 `electric.vtex`. It keeps the model's own brightness: dark heroes (Primal Beast) turn black, light ones (Sven)
 icy chrome.
 
-`modifier_fountain_protection_look_lua` returns that status effect with priority 20000, and tints the model and
+`modifier_fountain_protection_effect_lua` returns that status effect with priority 20000, and tints the model and
 its cosmetics (`dota_item_wearable`, `additional_wearable` and `prop_dynamic` children) to render color 40,
 so every hero turns black like a dark one. It re-applies the tint every 0.5 s for cosmetics equipped on the fountain,
-and restores 255 when it ends; nothing else in the addon sets render colors. It is a separate hidden modifier
-that the effect adds and removes, because the engine reads a status effect only when its modifier is created. The
-particle is precached in `precache.lua`: without it, the native modifier added from script showed no effect.
+and restores 255 when it ends; nothing else in the addon sets render colors. The engine reads a status effect only
+when its modifier is created, which is enough because the look lasts as long as the effect. The particle is
+precached in `precache.lua`: without it, the native modifier added from script showed no effect.
 
-`test_fountain_protection.lua` covers the aura, the effect states, the look and tint, and the filters.
-`fountain_protection_smoke.lua` checks everything in a tools match: on the fountain, a passive-only
-exit with Radiance and Shiva's Guard, exposure by damage and by a debuff, a real Storm Bolt cast
-right after leaving, the look and tint at each step, and a real orb: protected Sven neither captures it
-alone nor contests the unprotected Pudge, and contests once the linger ends.
+`test_fountain_protection.lua` covers the aura, the effect states, the look and tint, and the damage filter.
+`fountain_protection_smoke.lua` checks it in a tools match: on the fountain (no damage either way, debuffs
+land, the effect stays one instance), the protection ending at once after leaving, a real Storm Bolt cast
+right after leaving, the look and tint at each step, and a real orb at the zone's edge: protected Sven
+doesn't capture it, and captures one step outside.
 
 ## Illusions and performance
 
