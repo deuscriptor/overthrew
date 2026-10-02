@@ -808,3 +808,19 @@ clients remain manual checks.
 - A first version attached the target to the hero (`SetParticleControlEnt`, `PATTACH_ABSORIGIN_FOLLOW`) to avoid
   per-frame updates: the ring edge brightened towards the hero, but the marker stayed on the fountain, with or without
   `SetParticleAlwaysSimulate`.
+
+## 2026-10-02: Top bar and collection key loops (#33)
+
+- Offline: `run_tests.js` passes, including the new top bar Alt check in `panorama_test.js`. It fails against the
+  scripts of `52954bc` (the old top bar sets its class at once and then every frame; the old collection reads the
+  modifier keys). `luacheck scripts/vscripts` reports 0 warnings / 0 errors. `panorama_resources.js verify` passes.
+- Key-class probe in Tools (temporary top bar script reporting through a server listener, collection loop off):
+  with Alt held no parent of the custom top bar has `AltPressed` or `AltIsDown`; Dota sets `AltPressed` on 19 of its
+  own panels (`buffs`, `debuffs`, `death_panel_buyback`, `xp`, `stats`, `stragiint`, ...), and `ShiftPressed` and
+  `CtrlPressed` only on `quickbuy`. The quantity hints are in `cosmetics.xml` (currency purchase dialog) and
+  `payments.xml`.
+- Dota Tools, one client with `-condebug`, Axe idle on its own fountain, `vprof` for 20 s, `$.Schedule() - run JS
+  func`: the scripts of `c776111` 0.345 ms and 4.33 calls per frame (142 fps); this change 0.152 ms and 0.46 calls
+  (143 fps); this change inside an enemy fountain's ring 0.301 ms and 1.40 calls (140 fps). In another client, with
+  both key loops switched off on top of `52954bc`: 0.165 ms and 0.40 calls.
+- With a bot in the top bar, holding Alt shows its Tip button and releasing Alt hides it (screenshots).

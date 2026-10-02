@@ -549,16 +549,16 @@ without listeners), 4 one-time lines after. `test_log_noise.lua` runs the main p
 
 ## HUD script time
 
-Two HUD scripts ran a `$.Schedule(0)` loop, every frame for the whole match (issue #33). Measured in Workshop Tools
+Four HUD scripts ran a `$.Schedule(0)` loop, every frame for the whole match (issue #33). Measured in Workshop Tools
 with `vprof` (`$.Schedule() - run JS func`, 20 s, one hero idle on its own fountain, about 140 fps, same client):
 
 | Scheduled HUD scripts | Before | After |
 | --- | --- | --- |
-| Time per frame | 0.353 ms | 0.215 ms |
-| Calls per frame | 4.33 | 2.40 |
+| Time per frame | 0.345 ms | 0.152 ms |
+| Calls per frame | 4.33 | 0.46 |
 
-Inside an enemy fountain's ring the indicator runs every frame again: 0.322 ms and 3.33 calls per frame. The 2 calls
-per frame left are the per-frame loops of `top_bar.js` (Alt check) and `collection.js`, unchanged.
+Inside an enemy fountain's ring the indicator runs every frame again: 0.301 ms and 1.40 calls per frame. What is
+left comes from scripts on timers of 0.1 s and longer, about 65 calls per second.
 
 - **Fountain range indicator** (`scripts/fountain_range.js`): it set the in-range, target and targeted controls of
   every enemy fountain's ring (7 on a full map) each frame, and forced the rings to simulate off-screen
@@ -577,10 +577,21 @@ per frame left are the per-frame loops of `top_bar.js` (Alt check) and `collecti
   panel has children, so lines still move one frame after they arrive. In Tools, a typed line and a
   `GameRules:SendCustomMessage` line each raised the event, idle chat raised none, and handlers registered by an
   earlier map load in the same client did not fire.
+- **Top bar** (`top_bar/top_bar.js`): holding Alt shows the Tip button on the other players' slots
+  (`.BAltPressed #TopBar_Tip`). It checked Alt every frame and now checks it every 0.1 s, changing the class only
+  when Alt goes down or up, so the button can appear up to 0.1 s after the key. Dota sets its own `AltPressed` class,
+  but only on 19 of its own panels (buffs, stats, buyback, XP and others), none of them a parent of the custom HUD,
+  so the custom stylesheet cannot use it.
+- **Collection** (`collection/collection.js`): it set `ShiftPressed`, `AltPressed` and `CtrlPressed` on `DotaHud`
+  every frame. Their only use was to light the ×5, ×10 and ×50 quantity hints in the currency purchase dialog and
+  the payments window, which never open with the free collection, so the loop is removed. Purchases read the keys
+  themselves when clicked. Dota's own key styles do not depend on it: Dota sets `AltPressed` on its panels itself,
+  and `ShiftPressed` and `CtrlPressed` on its quick buy.
 
-`panorama_test.js` runs both scripts with mocked panels and particles: the fountain checks (interval, controls only
-on change, per-frame target inside a ring only, a newly selected unit, Alt, no forced simulation) and the chat
-redirect (one move per arrival, spacers dropped, nothing scheduled while the chat is idle).
+`panorama_test.js` runs these scripts with mocked panels and particles: the fountain checks (interval, controls only
+on change, per-frame target inside a ring only, a newly selected unit, Alt, no forced simulation), the chat redirect
+(one move per arrival, spacers dropped, nothing scheduled while the chat is idle), and the top bar's Alt check
+(interval, class only on change). It also checks that the collection reads no modifier keys.
 
 ## Texture memory
 

@@ -689,6 +689,37 @@ console.log("PASS: server-supplied reroll price, final 1–3 rerolls, empty bala
 	console.log("PASS fountain range: 0.1 s checks, controls only on change, per-frame target only inside a ring, Alt, no forced off-screen simulation");
 }
 
+// Top bar: the Tip buttons follow Alt from a 0.1 s check, not a per-frame loop. The collection tracks no keys: its
+// key classes only lit quantity hints in purchase dialogs, which the free collection never opens.
+{
+	const topBarSource = fs.readFileSync(path.join(scripts, "top_bar/top_bar.js"), "utf8");
+	const [altSource] = topBarSource.match(/(let alt_pressed.*\n)?function CheckAltPress\(\) \{[\s\S]*?\n\}\n/);
+	let alt = false;
+	let scheduled = [];
+	const classes = [];
+	const context = vm.createContext({
+		$: { Schedule: (delay, fn) => scheduled.push({ delay, fn }) },
+		GameUI: { IsAltDown: () => alt },
+		HUD: { CONTEXT: { SetHasClass: (name, value) => classes.push([name, value]) } },
+	});
+	vm.runInContext(altSource + "CheckAltPress();", context);
+	const tick = () => {
+		assert.deepEqual(scheduled.map(s => s.delay), [0.1], "one check every 0.1 s");
+		scheduled.pop().fn();
+	};
+	assert.deepEqual(classes, [], "Alt up: no class change");
+	alt = true;
+	tick();
+	tick();
+	assert.deepEqual(classes, [["BAltPressed", true]], "set once when Alt goes down");
+	alt = false;
+	tick();
+	assert.deepEqual(classes, [["BAltPressed", true], ["BAltPressed", false]], "cleared once when Alt goes up");
+	const collectionSource = fs.readFileSync(path.join(scripts, "collection/collection.js"), "utf8");
+	assert.doesNotMatch(collectionSource, /GameUI\.Is(Shift|Alt|Control)Down/, "the collection tracks no modifier keys");
+	console.log("PASS top bar Alt: 0.1 s check, class only on change; the collection tracks no keys");
+}
+
 // Tip toast: player strips, bot name fallback, highlight for the tipped player, coin pop, at most three at once.
 {
 	const toastsSource = fs.readFileSync(path.join(scripts, "toasts/toasts.js"), "utf8");
