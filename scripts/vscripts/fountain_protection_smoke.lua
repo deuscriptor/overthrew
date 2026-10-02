@@ -1,6 +1,6 @@
--- Local tools-mode check for fountain protection: on their own fountain and for 1.5 seconds after leaving, units are
--- disarmed and deal no damage or debuffs to enemies; they are untargetable by enemies and take no damage until they
--- try to harm an enemy while lingering. Player 0 (Sven) plus one bot on another FFA team, and two neutral dummies.
+-- Local tools-mode check for fountain protection: on their own fountain units are disarmed, deal no damage (debuffs
+-- still land), are untargetable by enemies and take no damage; all of it ends as soon as they leave.
+-- Player 0 (Sven) plus one bot on another FFA team, and two neutral dummies.
 -- Rerun until "FPROT DONE"; later reruns print the log again.
 if not PlayerResource or not HostOptions then print("FPROT waiting for the map") return end
 assert(IsInToolsMode(), "requires tools mode")
@@ -48,10 +48,9 @@ end
 local EFFECT = "modifier_fountain_protection_effect_lua"
 local function own_fountain(unit) return GameLoop.towers[unit:GetTeam()]:GetAbsOrigin() end
 local function effect() return sven:FindModifierByName(EFFECT) end
-local function exposed() return effect() ~= nil and effect():GetStackCount() == 1 end
 -- the look: native fountain invulnerability status effect plus a dark tint on the model
-local function dark() return sven:HasModifier("modifier_fountain_protection_look_lua") and sven:GetRenderColor().x == 40 end
-local function normal() return not sven:HasModifier("modifier_fountain_protection_look_lua") and sven:GetRenderColor().x == 255 end
+local function dark() return effect() ~= nil and sven:GetRenderColor().x == 40 end
+local function normal() return effect() == nil and sven:GetRenderColor().x == 255 end
 -- true when the damage changed the victim's health; health is restored afterwards
 local function hurts(attacker, victim, damage_type, flags, ability)
 	victim:SetHealth(victim:GetMaxHealth())
@@ -103,19 +102,25 @@ elseif stage == 1 then
 	check(sven:IsDisarmed() and sven:IsUntargetableFrom(dummy) and sven:IsUntargetableFrom(pudge), "on fountain: disarmed, untargetable by enemies")
 	check(not hurts_any(dummy, sven), "on fountain: takes no damage (all types, HP removal)")
 	check(not hurts_any(sven, dummy) and not hurts_any(sven, pudge) and not hurts_any(sven, sven), "on fountain: deals no damage, self damage included")
-	check(not stun(dummy, bolt), "on fountain: applies no debuffs to enemies")
-	check(not exposed(), "attempts on the fountain don't expose")
+	check(stun(dummy, bolt), "on fountain: applies debuffs to enemies")
 	check(dark(), "on fountain: dark look")
+
+	-- the aura has no linger: inside the zone the effect must stay the same instance, not be recreated every aura tick
+	local first = effect()
+	local created = first:GetCreationTime()
+	Timers:CreateTimer(1, function()
+		check(effect() == first and effect():GetCreationTime() == created, "on fountain: the effect stays put (no flicker)")
+	end)
 
 	local function leave(offset)
 		FindClearSpaceForUnit(sven, dummy:GetAbsOrigin() + offset, true)
 		return GameRules:GetGameTime()
 	end
-	local function after_linger(left, callback)
+	local function on_end(left, callback)
 		Timers:CreateTimer(0, function()
 			if effect() then
-				if GameRules:GetGameTime() - left < 4 then return 0.03 end
-				check(false, "protection still on 4 s after leaving")
+				if GameRules:GetGameTime() - left < 2 then return 0.03 end
+				check(false, "protection still on 2 s after leaving")
 				finish()
 			else
 				callback(GameRules:GetGameTime() - left)
@@ -127,116 +132,62 @@ elseif stage == 1 then
 		Timers:CreateTimer(0.5, callback)
 	end
 
-	local leg_b, leg_c, leg_d, leg_e
-	-- A: passive auras (Radiance, Shiva's Guard) are blocked while lingering but don't expose
-	local radiance = sven:AddItemByName("item_radiance")
-	local shivas = sven:AddItemByName("item_shivas_guard")
-	local left = leave(Vector(0, 250, 0))
-	Timers:CreateTimer(0.5, function()
-		check(effect() ~= nil and not exposed(), "A: lingering 0.5 s after leaving, not exposed")
-		check(sven:IsDisarmed() and sven:IsUntargetableFrom(dummy), "A: lingering: disarmed, untargetable by enemies")
-		check(not dummy:HasModifier("modifier_item_radiance_debuff") and not dummy:HasModifier("modifier_item_shivas_guard_aura"), "A: Radiance and Shiva's Guard auras blocked")
-		check(not hurts_any(sven, dummy, radiance) and not hurts_any(sven, sven) and not exposed(), "A: Radiance damage and self damage blocked without exposing")
-		check(not hurts_any(dummy, sven), "A: takes no damage")
-		check(dark(), "A: lingering: dark look")
-	end)
-	after_linger(left, function(linger)
-		check(linger >= 1.4 and linger <= 1.85, string.format("A: protection ended %.2f s after leaving", linger))
-		check(not sven:IsDisarmed() and not sven:IsUntargetableFrom(dummy) and normal(), "A: after the linger: armed, targetable, normal look")
-		check(hurts_all(dummy, sven) and hurts_all(sven, dummy) and stun(dummy, bolt), "A: after the linger: damage and debuffs both ways")
-		Timers:CreateTimer(0.5, function()
-			check(dummy:HasModifier("modifier_item_radiance_debuff") and dummy:HasModifier("modifier_item_shivas_guard_aura"), "A: auras reach the dummy after the linger")
-			sven:RemoveItem(radiance)
-			sven:RemoveItem(shivas)
-			go_home(leg_b)
-		end)
-	end)
-
-	-- B: an attempted damage exposes: targetable and hittable, still disarmed and harmless
-	leg_b = function()
-		local left_b = leave(Vector(0, 250, 0))
-		Timers:CreateTimer(0.3, function()
-			check(effect() ~= nil and not exposed(), "B: lingering, not exposed yet")
-			check(not hurts(sven, dummy, DAMAGE_TYPE_PHYSICAL) and exposed(), "B: attempted damage blocked and exposes")
-			check(normal(), "B: exposed: normal look")
-			-- unit states refresh on the next frame
-			Timers:CreateTimer(0.1, function()
-				check(not sven:IsUntargetableFrom(dummy) and sven:IsDisarmed(), "B: exposed: targetable, still disarmed")
-			end)
+	local leg_b, leg_c
+	-- A: leaving ends the protection at once
+	Timers:CreateTimer(1.2, function()
+		local left = leave(Vector(0, 250, 0))
+		on_end(left, function(ended)
+			check(ended <= 0.35, string.format("A: protection ended %.2f s after leaving", ended))
+			check(not sven:IsDisarmed() and not sven:IsUntargetableFrom(dummy) and normal(), "A: off the fountain: armed, targetable, normal look")
+			check(hurts(sven, dummy, DAMAGE_TYPE_PHYSICAL), "A: off the fountain: deals damage")
 			-- fountain rejuvenation lingers 0.5 s after leaving, and its debuff immunity also blocks pure damage
-			Timers:CreateTimer(0.3, function()
-				check(not sven:HasModifier("modifier_fountain_rejuvenation_effect_lua"), "B: rejuvenation linger over")
-				for _, case in ipairs({{"physical", DAMAGE_TYPE_PHYSICAL}, {"magical", DAMAGE_TYPE_MAGICAL}, {"pure", DAMAGE_TYPE_PURE}, {"HP removal", DAMAGE_TYPE_PURE, DOTA_DAMAGE_FLAG_HPLOSS}}) do
-					check(hurts(dummy, sven, case[2], case[3]), "B: exposed: takes " .. case[1] .. " damage")
-				end
-				check(not hurts_any(sven, dummy) and not stun(dummy, bolt), "B: exposed: still deals no damage or debuffs")
+			Timers:CreateTimer(0.6, function()
+				check(not sven:HasModifier("modifier_fountain_rejuvenation_effect_lua"), "A: rejuvenation linger over")
+				check(hurts_all(dummy, sven) and hurts_all(sven, dummy), "A: damage of all types both ways")
+				go_home(leg_b)
 			end)
 		end)
-		after_linger(left_b, function(linger)
-			check(linger >= 1.4 and linger <= 1.85, string.format("B: protection ended %.2f s after leaving", linger))
-			go_home(function()
-				check(effect() ~= nil and not exposed() and not hurts_any(dummy, sven) and dark(), "B: back on the fountain: exposure forgiven, dark look again")
-				leg_c()
-			end)
-		end)
-	end
+	end)
 
-	-- C: an attempted debuff exposes too
-	leg_c = function()
-		local left_c = leave(Vector(0, 250, 0))
-		Timers:CreateTimer(0.3, function()
-			check(not stun(dummy, bolt) and exposed(), "C: attempted debuff blocked and exposes")
-			check(hurts(dummy, sven, DAMAGE_TYPE_MAGICAL), "C: exposed: takes damage")
-		end)
-		after_linger(left_c, function()
-			go_home(leg_d)
-		end)
-	end
-
-	-- D: a real Storm Bolt cast right after leaving lands during the linger: no stun, no damage, exposed
-	leg_d = function()
+	-- B: back on the fountain: protected again; a real Storm Bolt cast right after leaving lands
+	leg_b = function()
+		check(effect() ~= nil and dark() and not hurts_any(dummy, sven) and not hurts_any(sven, dummy), "B: back on the fountain: protected, dark look")
 		dummy:SetHealth(dummy:GetMaxHealth())
-		local left_d = leave(Vector(0, 200, 0))
+		leave(Vector(0, 200, 0))
 		sven:SetForwardVector((dummy:GetAbsOrigin() - sven:GetAbsOrigin()):Normalized())
 		sven:GiveMana(sven:GetMaxMana())
 		bolt:EndCooldown()
 		sven:CastAbilityOnTarget(dummy, bolt, 0)
 		Timers:CreateTimer(0.9, function()
-			check(not bolt:IsCooldownReady(), "D: Storm Bolt cast")
-			check(exposed() and not dummy:IsStunned() and dummy:GetHealth() == dummy:GetMaxHealth(), "D: Storm Bolt blocked (no stun, no damage) and exposes")
-		end)
-		after_linger(left_d, function()
-			go_home(leg_e)
+			check(not bolt:IsCooldownReady(), "B: Storm Bolt cast")
+			check(dummy:IsStunned() and dummy:GetHealth() < dummy:GetMaxHealth(), "B: Storm Bolt stuns and damages")
+			dummy:SetHealth(dummy:GetMaxHealth())
+			go_home(leg_c)
 		end)
 	end
-	-- E: a real orb. Protected Sven neither captures it alone nor contests Pudge; he contests once the linger ends.
-	leg_e = function()
-		local spot = dummy:GetAbsOrigin() + Vector(-450, 0, 0)
-		FindClearSpaceForUnit(pudge, spot + Vector(500, 0, 0), true) -- off his fountain, so his own protection ends
-		Timers:CreateTimer(2, function()
-			local orb = GameMode:SpawnOrbDrop(spot, UPGRADE_RARITY_COMMON, false)
-			local area = orb:FindModifierByName("capture_point_area")
-			if not area then check(false, "E: orb spawned") finish() return end
-			check(not pudge:HasModifier(EFFECT), "E: Pudge unprotected next to the orb")
-			local left_e = leave(spot - dummy:GetAbsOrigin())
+
+	-- C: a real orb on the edge of Sven's fountain zone. Protected Sven doesn't capture it; one step out, he does.
+	leg_c = function()
+		local tower = own_fountain(sven)
+		local direction = (Vector(0, 0, 0) - tower):Normalized()
+		direction.z = 0
+		local spot = GetGroundPosition(tower + direction * 1150, nil)
+		local orb = GameMode:SpawnOrbDrop(spot, UPGRADE_RARITY_COMMON, false)
+		local area = orb:FindModifierByName("capture_point_area")
+		if not area then check(false, "C: orb spawned") finish() return end
+		FindClearSpaceForUnit(sven, tower + direction * 1080, true)
+		Timers:CreateTimer(0.5, function()
+			check(effect() ~= nil and not area.is_capturing and area.progress == 0, "C: protected Sven inside the zone doesn't capture")
+			FindClearSpaceForUnit(sven, tower + direction * 1300, true)
 			Timers:CreateTimer(0.5, function()
-				check(effect() ~= nil and not area.is_capturing and area.progress == 0, "E: protected Sven alone doesn't capture")
-				FindClearSpaceForUnit(pudge, spot + Vector(-60, 0, 0), true)
-			end)
-			Timers:CreateTimer(1.0, function()
-				check(effect() ~= nil and area.is_capturing and not area.is_contesting and area.current_team == pudge:GetTeam(), "E: Pudge captures, protected Sven doesn't contest")
-			end)
-			after_linger(left_e, function()
-				Timers:CreateTimer(0.2, function()
-					check(area.is_contesting and area.heroes_in_radius[sven:GetTeam()] ~= nil, "E: Sven contests once the linger ends")
-					area:StopPoint()
-					go_home(finish)
-				end)
+				check(effect() == nil and area.is_capturing and area.current_team == sven:GetTeam(), "C: one step out, Sven captures")
+				area:StopPoint()
+				go_home(finish)
 			end)
 		end)
 	end
 	_G.fprot_stage = 2
-	out("FPROT stage 1 done, timers running; rerun in 15 s")
+	out("FPROT stage 1 done, timers running; rerun in 10 s")
 	return
 elseif stage == 2 then
 	print("FPROT timers still running, rerun")

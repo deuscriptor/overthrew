@@ -5,9 +5,9 @@ with a single map, `ot3_necropolis_ffa`: a free-for-all for up to eight players 
 rules the host configures before hero pick (Single Draft, Turbo, kill goal, item toggles,
 All Vision and more). The other Overthrow maps (Duo, Quintet, Octet and the hero demo)
 are not included. Fountains
-are safe zones there: on your own fountain and for 1.5 seconds after leaving it you cannot attack,
-damage or disable enemies or capture orbs, and enemies cannot target or damage you unless you try to. Protected
-heroes turn dark, like Dota's own fountain invulnerability.
+are safe zones there: on your own fountain you cannot attack, deal damage or capture orbs, and enemies
+cannot target or damage you. The protection ends as soon as you leave. Protected heroes turn dark, like
+Dota's own fountain invulnerability.
 
 ## Not an original work
 

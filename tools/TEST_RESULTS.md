@@ -784,3 +784,21 @@ clients remain manual checks.
   Invalid object passed to GetParent` from `IllusionGenericUpgrades:Build` (slow resistance upgrade `OnCreated`) as
   the smoke built illusion hosts. It did not occur in either fresh client run and comes from code this change does
   not touch; class scopes linked by `LinkLuaModifier` persist across map loads in one client.
+
+## 2026-10-02: Fountain protection without linger (#41)
+
+- Offline: `test_fountain_protection.lua` covers the aura (zone, team and unit types match fountain rejuvenation,
+  aura duration 0), the effect (disarmed, untargetable by enemies, no damage taken, native status effect and
+  priority, dark tint on the model and cosmetics, restored on destroy, server only), the damage filter (no damage
+  dealt or taken by protected units, HP removal and world damage included), no modifier gained filter, and orb
+  captures. `run_tests.js`, `luacheck scripts/vscripts` (0 warnings) pass.
+- Dota Tools, `fountain_protection_smoke.lua` on `ot3_necropolis_ffa` with Sven, a Pudge bot on another team and
+  two neutral dummies: all 19 checks ok (`FPROT DONE`).
+  - On the fountain: disarmed, untargetable by enemies, no damage either way (all types, HP removal, self), a stun
+    from Storm Bolt lands on a dummy, dark look and tint 40. The effect kept one instance (same creation time) for
+    1 s, so an aura duration of 0 doesn't recreate it while inside.
+  - Teleported out: the effect ended 0.07 s after leaving; armed, targetable, normal look, damage both ways.
+  - A real Storm Bolt cast right after leaving stunned and damaged the dummy.
+  - A real orb at the zone's edge: Sven inside the zone didn't capture it; 0.5 s after stepping out he captured.
+- Screenshot after the run: Sven back on his fountain shows the dark marbled look from the merged effect modifier.
+  The only script-log error was the usual Tools-mode backend `[DEBUG] Unknown Error` (match ID 0) at bot spawn.

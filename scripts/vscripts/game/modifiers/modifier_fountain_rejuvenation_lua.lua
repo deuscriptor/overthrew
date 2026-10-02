@@ -110,7 +110,7 @@ end
 
 
 -- The invisible state alone hides the unit from enemies; a level of 0 skips the translucent model, so the own team
--- sees the dark fountain protection look (modifier_fountain_protection_look_lua) instead.
+-- sees the dark fountain protection look (modifier_fountain_protection_effect_lua) instead.
 function modifier_fountain_rejuvenation_effect_lua:GetModifierInvisibilityLevel()
 	return 0
 end
