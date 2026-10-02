@@ -33,6 +33,15 @@ for (const [rarity, price] of [['common', 2000], ['rare', 4000], ['epic', 8000]]
   assert.ok(shop.includes(`"${name}"`), `${rarity} orb in the FFA shop`);
 }
 console.log('PASS the FFA shop sells the three FFA orbs at their original prices');
+const luaFiles = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+  const file = path.join(dir, entry.name);
+  return entry.isDirectory() ? luaFiles(file) : entry.name.endsWith('.lua') ? [file] : [];
+});
+const baseKeyValueLoaders = luaFiles(path.join(root, 'scripts/vscripts'))
+  .filter(file => /scripts\/npc\/(npc_abilities|items|npc_units|npc_heroes)\.txt/.test(fs.readFileSync(file, 'utf8')))
+  .map(file => path.relative(root, file));
+assert.deepEqual(baseKeyValueLoaders, [], 'Read base game data with GetAbilityKeyValuesByName/GetUnitKeyValuesByName, not by loading its files');
+console.log('PASS no Lua script loads the base game ability, item, unit or hero KeyValues');
 
 const result = spawnSync(process.execPath, [
   path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),

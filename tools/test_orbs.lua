@@ -181,6 +181,21 @@ test("hero upgrade overrides load from the FFA map folder", function()
     equal(loaded[2], "scripts/upgrades/overrides/ot3_necropolis_ffa/npc_dota_hero_axe.txt")
 end)
 
+test("win rate orbs take hero names from the hero list", function()
+    reset(false)
+    local loaded = {}
+    LoadKeyValues = function(path)
+        table.insert(loaded, path)
+        return { npc_dota_hero_axe = "1", npc_dota_hero_lina = "1" }
+    end
+    GameLoop:InitWinrates({ npc_dota_hero_axe = 0 })
+    equal(#loaded, 1, "files loaded")
+    equal(loaded[1], "scripts/npc/herolist.txt")
+    equal(GameLoop.winrateOrbs.npc_dota_hero_axe, 1)
+    equal(GameLoop.winrateOrbs.npc_dota_hero_lina, -1, "a hero without a win rate")
+    equal(observations.net["winrates/orbs"], GameLoop.winrateOrbs)
+end)
+
 test("epic rewards retain original trinket triggers and prevent recursive duplication", function()
     for _, rarity in ipairs({ 1, 2, 4 }) do
         reset(true)

@@ -14,7 +14,7 @@ function SingleDraft:Init()
 	for _, attribute in ipairs(self.attributes) do self.pools[attribute] = {} end
 	for name, enabled in pairs(LoadKeyValues("scripts/npc/herolist.txt")) do
 		if tonumber(enabled) and tonumber(enabled) ~= 0 then
-			local attribute = GetUnitKV(name, "AttributePrimary")
+			local attribute = (GetUnitKeyValuesByName(name) or {}).AttributePrimary
 			local hero_id = DOTAGameManager:GetHeroIDByName(name)
 			if self.pools[attribute] and hero_id and hero_id > 0 then
 				table.insert(self.pools[attribute], { name = name, id = hero_id })

@@ -534,6 +534,38 @@ Phantom Lancer illusions): 985 script lines besides the smoke's own before (762 
 without listeners), 4 one-time lines after. `test_log_noise.lua` runs the main per-event paths with `print` and
 `DeepPrintTable` captured and fails on any output.
 
+## Base game KeyValues
+
+The server loaded every base game ability, item, unit and hero file into Lua tables at start-up
+(`libraries/keyvalues.lua`, merged with the addon's custom and override files) for five lookups: each hero's
+primary attribute (Single Draft) and guide name (smart random), the Shard's initial stock time (Turbo) and the two
+neutral item flags (Backpack Items). Win rate setup loaded the base hero file again only to list hero names, and the
+client loaded every ability for a function nothing called (issue #32).
+
+- The lookups use the engine's `GetUnitKeyValuesByName` (heroes too) and `GetAbilityKeyValuesByName` (items too).
+  They return the data the engine itself uses, with the addon's custom and override files applied (the Shard's
+  120 s comes from `npc_abilities_override.txt`), and `nil` for an unknown name. Each call builds a new table:
+  Single Draft's 127 heroes take about 10 ms, once, at Apply & Start. Backpack Items checks every backpack item each
+  tick, so it looks each item name up once and keeps the answer.
+- Win rates take hero names from `scripts/npc/herolist.txt`, like Single Draft.
+- The client's ability table and `GetKeyValueNoOverride` are removed.
+
+Measured in Workshop Tools, one client, during custom game setup right after the map loads (temporary probe with
+`collectgarbage("count")` and `Plat_FloatTime`; the old loads were timed by running them again):
+
+| | Before | After |
+| --- | --- | --- |
+| Server Lua memory | 7362 KB, of which 4376 KB KeyValues tables | 2852 KB |
+| Client Lua memory | 1281 KB, of which 520 KB ability table | 761 KB |
+| Server KeyValues tables | 54.7 ms | none |
+| Win rate setup | 40.7 ms | 0.24 ms |
+| Client ability table | 4.7 ms | none |
+
+Before the switch, the engine functions matched the old tables for all 127 heroes (attribute and guide name), all
+555 items (both neutral flags; 179 items are neutral), the Shard's stock time and the recipes' requirements and
+costs. `run_tests.js` fails if a script under `scripts/vscripts` names one of the base files
+(`scripts/npc/npc_abilities.txt`, `items.txt`, `npc_units.txt` or `npc_heroes.txt`).
+
 ## HUD script time
 
 Four HUD scripts ran a `$.Schedule(0)` loop, every frame for the whole match (issue #33). Measured in Workshop Tools

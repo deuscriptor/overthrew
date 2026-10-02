@@ -5,9 +5,13 @@ DOTA_ITEM_SLOT_1, DOTA_ITEM_SLOT_7, DOTA_ITEM_SLOT_9, DOTA_STASH_SLOT_6 = 0, 6, 
 local locked, enabled = true, true
 HostOptions = {GetOption = function(_, name) return name == "backpack_items" and enabled end}
 setmetatable(HostOptions, {__index = function(_, key) if key == "locked" then return locked end end})
-local neutral = {item_trinket = "ItemIsNeutralActiveDrop", item_enhancement = "ItemIsNeutralPassiveDrop"}
+local neutral = {item_trinket = {ItemIsNeutralActiveDrop = "1"}, item_enhancement = {ItemIsNeutralPassiveDrop = "1"}}
 local notInBackpack = {item_rapier = true, item_gem = true}
-GetItemKV = function(name, key) return neutral[name] == key and 1 or nil end
+local kvLookups = {}
+GetAbilityKeyValuesByName = function(name)
+	kvLookups[name] = (kvLookups[name] or 0) + 1
+	return neutral[name] or {ItemIsNeutralActiveDrop = "0"}
+end
 local gameMode = {}
 function gameMode:SetCustomBackpackSwapCooldown(value) self.swap = value end
 function gameMode:SetCustomBackpackCooldownPercent(value) self.percent = value end
@@ -109,6 +113,9 @@ for _, name in ipairs({"item_sphere", "item_aeon_disk", "item_trinket", "item_en
 	assert(excluded.state == 0, name .. " must be inert in the backpack")
 end
 assert(#timers == 1, "reconcile keeps running")
+tick()
+assert(kvLookups.item_butterfly == 1 and kvLookups.item_black_king_bar == 1 and kvLookups.item_trinket == 1,
+	"each item's KeyValues are read once, not on every tick")
 
 -- Active backpack items may be used out of the inventory: the engine casts them natively.
 hero = Unit()

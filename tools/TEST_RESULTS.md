@@ -841,3 +841,24 @@ clients remain manual checks.
   - A real orb at the zone's edge: Sven inside the zone didn't capture it; 0.5 s after stepping out he captured.
 - Screenshot after the run: Sven back on his fountain shows the dark marbled look from the merged effect modifier.
   The only script-log error was the usual Tools-mode backend `[DEBUG] Unknown Error` (match ID 0) at bot spawn.
+
+## 2026-10-02: Base game KeyValues no longer loaded into Lua (#32)
+
+- Offline: `run_tests.js` passes, including the new check that no script names a base ability, item, unit or hero
+  file (it flags `c_dota_ability_lua.lua` and `game_loop.lua` at `ef7d649`), the win rate test (hero names from
+  `herolist.txt`) and the backpack test (each item's KeyValues read once across ticks). `luacheck scripts/vscripts`
+  reports 0 warnings / 0 errors.
+- Dota Tools, one client with `-condebug`, temporary probe during custom game setup right after the map loads:
+  - `ef7d649`: server Lua 7362 KB, of which the KeyValues tables 4376 KB; loading them again took 54.7 ms; win rate
+    setup 40.7 ms. Client Lua 1281 KB, of which the ability table 520 KB, 4.7 ms to load.
+  - Engine functions against the old tables in the same session: 127 heroes, 0 differences in attribute and guide
+    name; all 555 items, 0 differences in either neutral flag (179 neutral); Shard stock time 120 from both (the
+    addon override); identical requirements and costs for the Rapier, Dagon and Radiance recipes; `nil`, no error,
+    for unknown names. One item lookup costs about 4-5 µs; Single Draft's 127 hero lookups 9-10 ms.
+  - This change: server Lua 2852 KB, client Lua 761 KB, win rate setup 0.24 ms; the `KeyValues`, `GetUnitKV`,
+    `GetItemKV`, `ABILITY_KV` and `GetKeyValueNoOverride` globals are gone, `GetUpgradeValueFor` remains.
+- Same session, Single Draft, Turbo and Backpack Items on: `single_draft_smoke` passes (Mars, Kez, Dark Willow,
+  Nature's Prophet offered); Single Draft's random pick works; `host_items_smoke` passes all 7 cases (recipes read
+  through `GetAbilityKeyValuesByName`); `IsEligible` refuses Occult Bracelet and Brawny (neutral active and passive)
+  and accepts Black King Bar and Butterfly; the Shard stock went from 0 at 0:05 to 1 at 1:15 (Turbo grant at 1:00).
+  No Lua errors in the log.

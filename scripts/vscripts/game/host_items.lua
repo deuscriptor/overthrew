@@ -11,7 +11,7 @@ function HostItems:Init()
 			end)
 		end
 		if event.state == DOTA_GAMERULES_STATE_GAME_IN_PROGRESS and IsTurboMode() then
-			local initialTime = tonumber(GetItemKV("item_aghanims_shard", "ItemInitialStockTime"))
+			local initialTime = tonumber(GetAbilityKeyValuesByName("item_aghanims_shard").ItemInitialStockTime)
 			Timers:CreateTimer(initialTime / 2, function()
 				for _, team in ipairs(TEAMS_LAYOUTS[GetMapName()].teamlist) do
 					GameRules:IncreaseItemStock(team, "item_aghanims_shard", 1, -1)

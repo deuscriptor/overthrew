@@ -1,6 +1,3 @@
-C_DOTA_Ability_Lua.ABILITY_KV = LoadKeyValues("scripts/npc/npc_abilities.txt")
-table.merge(C_DOTA_Ability_Lua.ABILITY_KV, LoadKeyValues("scripts/npc/npc_abilities_custom.txt"))
-
 function C_DOTA_Ability_Lua:GetUpgradeValueFor(value_name)
 	if self.upgrade_values and self.upgrade_values[value_name] then return self.upgrade_values[value_name] end
 
@@ -15,29 +12,6 @@ function C_DOTA_Ability_Lua:GetUpgradeValueFor(value_name)
 
 	self.upgrade_values[value_name] = GENERIC_UPGRADES_DATA[self.upgrade_name]["specials"][value_name]
 	return self.upgrade_values[value_name]
-end
-
--- function C_DOTA_Ability_Lua:GetKeyValueNoOverride(value_name, level)
-function GetKeyValueNoOverride(ability, value_name, level)
-	if not level then level = ability:GetLevel() end
-	level = level + 1 -- level starts at 0, need to increment to work properly
-
-	if C_DOTA_Ability_Lua.ABILITY_KV[ability:GetAbilityName()] then
-		if C_DOTA_Ability_Lua.ABILITY_KV[ability:GetAbilityName()][value_name] and level then
-			local s = string.split(C_DOTA_Ability_Lua.ABILITY_KV[ability:GetAbilityName()][value_name])
-
-			if s[level] then
-				return tonumber(s[level]) or s[level] -- Try to cast to number
-			else
-				return tonumber(s[#s]) or s[#s]
-			end
-		else
-			return C_DOTA_Ability_Lua.ABILITY_KV[ability:GetAbilityName()][value_name]
-		end
-	else
-		print("No kv found for ability:", ability:GetAbilityName())
-		return
-	end
 end
 
 -- Talent helpers

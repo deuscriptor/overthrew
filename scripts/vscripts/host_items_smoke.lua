@@ -13,7 +13,7 @@ local function names(unit)
 	return result
 end
 local function build(unit, recipe)
-	local definition = KeyValues.ItemKV[recipe]
+	local definition = GetAbilityKeyValuesByName(recipe)
 	for component in definition.ItemRequirements["01"]:gmatch("[^;]+") do unit:AddItemByName(component) end
 	if tonumber(definition.ItemCost) > 0 then unit:AddItemByName(recipe) end
 end
@@ -48,10 +48,11 @@ local function nextTest()
 		local blocked = HostItems:IsDisabled(result)
 		assert((inventory[result] ~= nil) == not blocked, result .. " assembly policy failed on " .. unit:GetUnitName())
 		if blocked then
-			for component in KeyValues.ItemKV[recipe].ItemRequirements["01"]:gmatch("[^;]+") do
+			local definition = GetAbilityKeyValuesByName(recipe)
+			for component in definition.ItemRequirements["01"]:gmatch("[^;]+") do
 				assert(inventory[component] and inventory[component]:IsCombineLocked(), component .. " not preserved")
 			end
-			if tonumber(KeyValues.ItemKV[recipe].ItemCost) > 0 then assert(inventory[recipe], "Recipe not preserved") end
+			if tonumber(definition.ItemCost) > 0 then assert(inventory[recipe], "Recipe not preserved") end
 		end
 		assert(hero:GetGold() == gold, "Component restoration changed gold")
 		print("HOST_ITEMS_CASE_PASS", index, result, unit:GetUnitName(), enabled)

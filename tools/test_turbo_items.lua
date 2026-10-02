@@ -22,9 +22,9 @@ GameRules = {SetWhiteListEnabled = function() end,
         stocks[team] = (stocks[team] or 0) + count
     end,
 }
-GetItemKV = function(name, key)
-    assert(name == "item_aghanims_shard" and key == "ItemInitialStockTime")
-    return "120"
+GetAbilityKeyValuesByName = function(name)
+    assert(name == "item_aghanims_shard")
+    return {ItemInitialStockTime = "120"}
 end
 dofile("scripts/vscripts/game/neutral_item_drop.lua")
 dofile("scripts/vscripts/game/host_items.lua")
