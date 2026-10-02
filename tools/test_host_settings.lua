@@ -7,10 +7,8 @@ function HostOptions:GetOption(name) return self.options[name] or false end
 GameRules = {
 	SetWhiteListEnabled = function(_, value) assert(not value) end,
 }
-KeyValues = {ItemKV = {item_branches = {}, item_epic_orb_ffa = {}, removed = "REMOVED"}}
 local restricted = {"item_rapier", "item_recipe_rapier", "item_dagon", "item_recipe_dagon"}
 for level = 1, 5 do table.insert(restricted, "item_dagon_" .. level) end
-for _, name in ipairs(restricted) do KeyValues.ItemKV[name] = {} end
 dofile("scripts/vscripts/game/host_items.lua")
 local stockCalls = 0
 local stockReady = false

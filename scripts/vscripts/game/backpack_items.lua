@@ -17,6 +17,17 @@ local CAST_ORDERS = {
 	[DOTA_UNIT_ORDER_CAST_NO_TARGET] = true,
 	[DOTA_UNIT_ORDER_CAST_TOGGLE] = true,
 }
+-- Item name -> neutral or not. The engine builds a new KeyValues table on every lookup, and
+-- reconciliation checks every backpack item each tick, so each name is looked up once.
+local neutral_items = {}
+
+local function IsNeutralItem(name)
+	if neutral_items[name] == nil then
+		local kv = GetAbilityKeyValuesByName(name) or {}
+		neutral_items[name] = tonumber(kv.ItemIsNeutralActiveDrop) == 1 or tonumber(kv.ItemIsNeutralPassiveDrop) == 1
+	end
+	return neutral_items[name]
+end
 
 function BackpackItems:IsEnabled()
 	return HostOptions.locked and HostOptions:GetOption("backpack_items")
@@ -48,9 +59,7 @@ function BackpackItems:IsEligible(item)
 	local name = item:GetAbilityName()
 	if EXCLUDED_ITEMS[name] or name:find("^item_recipe_") then return false end
 	-- Neutral items keep their dedicated slots.
-	if tonumber(GetItemKV(name, "ItemIsNeutralActiveDrop")) == 1 then return false end
-	if tonumber(GetItemKV(name, "ItemIsNeutralPassiveDrop")) == 1 then return false end
-	return true
+	return not IsNeutralItem(name)
 end
 
 --- Backpack items that function: the first eligible copy of each item name.

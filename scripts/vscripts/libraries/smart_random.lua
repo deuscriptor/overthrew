@@ -76,7 +76,8 @@ function SmartRandom:PickRandomHero(event)
 	UTIL_Remove(CreateHeroForPlayer(hero_name, player))
 
 	-- TODO: replace with localized text (not viable for this method)
-	GameRules:SendCustomMessage("%s1 has smart-randomed " .. (GetUnitKV(hero_name, "workshop_guide_name") or ""), player_id, -1)
+	local hero_kv = GetUnitKeyValuesByName(hero_name) or {}
+	GameRules:SendCustomMessage("%s1 has smart-randomed " .. (hero_kv.workshop_guide_name or ""), player_id, -1)
 end
 
 

@@ -165,6 +165,10 @@ Then add the option to the table above, to `tools/README.md` and to `README.md` 
   goes into `IllusionGenericUpgrades.HOSTED` (`game/upgrades/illusion_generic_upgrades.lua`) if it follows the rules
   listed there; a new property it needs goes into `IllusionGenericUpgrades.PROPERTIES`. `test_illusion_performance.lua`
   checks both.
+- Read base game data with the engine's `GetAbilityKeyValuesByName` (items too) and `GetUnitKeyValuesByName`
+  (heroes too), never by loading `npc_abilities.txt`, `items.txt`, `npc_units.txt` or `npc_heroes.txt` into Lua
+  (`run_tests.js` fails on it). Each call builds a new table, so cache what a per-tick path needs. Hero names come
+  from `scripts/npc/herolist.txt` (see "Base game KeyValues" in `tools/README.md`).
 - Don't `print` or `DeepPrintTable` in code that runs during play: per event, order, item change, attack, kill,
   UI event or property read. Console output is for one-time lines and warnings about abnormal conditions (see
   "Script log" in `tools/README.md`). `test_log_noise.lua` fails if the main per-event paths print.

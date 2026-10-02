@@ -19,7 +19,7 @@ metadata.npc_dota_hero_disabled = { AttributePrimary = attributes[1], id = 999 }
 enabled.npc_dota_hero_invalid = "1"
 metadata.npc_dota_hero_invalid = { AttributePrimary = "bad", id = 998 }
 LoadKeyValues = function() return enabled end
-GetUnitKV = function(name, key) return metadata[name][key] end
+GetUnitKeyValuesByName = function(name) return metadata[name] end
 DOTAGameManager = { GetHeroIDByName = function(_, name) return metadata[name].id end }
 RandomInt = function(low, high) return high end
 DOTA_MAX_TEAM_PLAYERS = 24

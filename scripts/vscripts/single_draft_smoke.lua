@@ -9,7 +9,7 @@ local seen, count = {}, 0
 for player_id, offers in pairs(SingleDraft.offers) do
 	assert(#offers == 4)
 	for index, hero in ipairs(offers) do
-		assert(GetUnitKV(hero.name, "AttributePrimary") == SingleDraft.attributes[index])
+		assert(GetUnitKeyValuesByName(hero.name).AttributePrimary == SingleDraft.attributes[index])
 		assert(not seen[hero.name], "Overlapping hero offers")
 		seen[hero.name] = true
 		print("SINGLE_DRAFT_OFFER player=" .. player_id .. " hero=" .. hero.name .. " id=" .. hero.id)

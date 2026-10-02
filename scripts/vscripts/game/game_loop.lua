@@ -720,16 +720,14 @@ function GameLoop:InitWinrates(winrates)
 	GameLoop.winrates = {}
 	GameLoop.winrateOrbs = {}
 
-	for k,v in pairs(LoadKeyValues("scripts/npc/npc_heroes.txt")) do
-		if k ~= "Version" then
-			if winrates then
-				GameLoop.winrates[k] = winrates[k] or 1
-			elseif DEV_RANDOM_WINRATES then
-				GameLoop.winrates[k] = RandomFloat(0.1, 0.9)
-			end
-			if GameLoop.winrates[k] ~= nil then
-				GameLoop.winrateOrbs[k] = math.floor((0.5 - GameLoop.winrates[k]) / 0.5)
-			end
+	for k in pairs(LoadKeyValues("scripts/npc/herolist.txt")) do
+		if winrates then
+			GameLoop.winrates[k] = winrates[k] or 1
+		elseif DEV_RANDOM_WINRATES then
+			GameLoop.winrates[k] = RandomFloat(0.1, 0.9)
+		end
+		if GameLoop.winrates[k] ~= nil then
+			GameLoop.winrateOrbs[k] = math.floor((0.5 - GameLoop.winrates[k]) / 0.5)
 		end
 	end
 	CustomNetTables:SetTableValue("winrates", "orbs", GameLoop.winrateOrbs)
