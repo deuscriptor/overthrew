@@ -22,18 +22,12 @@ end
 
 
 -- Configurable FFA only (Filters:Init): fountain protection, kept to two modifier lookups per damage instance.
--- Protected units deal no damage. Shielded ones also take none: the modifier blocks it itself,
+-- Protected units deal no damage and take none: the modifier blocks incoming damage itself,
 -- and the victim check here also catches HP removal and other flagged damage.
 function Filters:FountainDamageFilter(event)
-	local victim = event.entindex_victim_const and EntIndexToHScript(event.entindex_victim_const)
 	local attacker = event.entindex_attacker_const and EntIndexToHScript(event.entindex_attacker_const)
+	if FountainProtection:Protects(attacker) then return false end
 
-	-- the attacker goes first, so an attempt on a shielded victim still exposes it
-	if attacker then
-		local inflictor = event.entindex_inflictor_const and EntIndexToHScript(event.entindex_inflictor_const)
-		if FountainProtection:BlocksHarm(attacker, victim, inflictor) then return false end
-	end
-	if FountainProtection:Shields(victim) then return false end
-
-	return true
+	local victim = event.entindex_victim_const and EntIndexToHScript(event.entindex_victim_const)
+	return not FountainProtection:Protects(victim)
 end
