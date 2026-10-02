@@ -547,6 +547,41 @@ Phantom Lancer illusions): 985 script lines besides the smoke's own before (762 
 without listeners), 4 one-time lines after. `test_log_noise.lua` runs the main per-event paths with `print` and
 `DeepPrintTable` captured and fails on any output.
 
+## HUD script time
+
+Two HUD scripts ran a `$.Schedule(0)` loop, every frame for the whole match (issue #33). Measured in Workshop Tools
+with `vprof` (`$.Schedule() - run JS func`, 20 s, one hero idle on its own fountain, about 140 fps, same client):
+
+| Scheduled HUD scripts | Before | After |
+| --- | --- | --- |
+| Time per frame | 0.353 ms | 0.215 ms |
+| Calls per frame | 4.33 | 2.40 |
+
+Inside an enemy fountain's ring the indicator runs every frame again: 0.322 ms and 3.33 calls per frame. The 2 calls
+per frame left are the per-frame loops of `top_bar.js` (Alt check) and `collection.js`, unchanged.
+
+- **Fountain range indicator** (`scripts/fountain_range.js`): it set the in-range, target and targeted controls of
+  every enemy fountain's ring (7 on a full map) each frame, and forced the rings to simulate off-screen
+  (`SetParticleAlwaysSimulate`). It now checks every 0.1 s and sends a control only when its value changes, so
+  entering or leaving a ring, and holding Alt (every ring, target on its fountain), shows up to 0.1 s late. While the
+  selected unit is inside a ring (attack range + 450) without Alt, it runs every frame and moves that ring's target
+  to the unit, as before. The target marker (`fountain_indicator_alt_target`) follows its control point through
+  `C_OP_PositionLock`, which does not track a control point attached to the unit (`SetParticleControlEnt`), and a
+  marker moved every 0.1 s would trail a running hero. The rings are no longer forced to simulate, so the engine
+  treats them like other world effects. That gain could not be measured: particles simulate off the main thread,
+  and `cl_particles_dumpsimlist` shows no system asleep either way.
+- **Chat** (`custom_chat/custom_chat.js`): the custom chat moves the lines Dota adds to its own chat panel into the
+  custom chat area, and drops Dota's spacer panels, so both kinds of lines share one list. It checked Dota's panel
+  every frame. Panel events bubble up to the parents: a new line raises `PanelLayoutInvalidated` on Dota's panel,
+  and the line's own panels raise more. A handler on Dota's panel now schedules one move for the next frame when the
+  panel has children, so lines still move one frame after they arrive. In Tools, a typed line and a
+  `GameRules:SendCustomMessage` line each raised the event, idle chat raised none, and handlers registered by an
+  earlier map load in the same client did not fire.
+
+`panorama_test.js` runs both scripts with mocked panels and particles: the fountain checks (interval, controls only
+on change, per-frame target inside a ring only, a newly selected unit, Alt, no forced simulation) and the chat
+redirect (one move per arrival, spacers dropped, nothing scheduled while the chat is idle).
+
 ## Texture memory
 
 Custom UI textures took 76 MB mid-match (issue #30): loading screen art stayed loaded for the whole match, the

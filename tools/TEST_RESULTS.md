@@ -784,3 +784,27 @@ clients remain manual checks.
   Invalid object passed to GetParent` from `IllusionGenericUpgrades:Build` (slow resistance upgrade `OnCreated`) as
   the smoke built illusion hosts. It did not occur in either fresh client run and comes from code this change does
   not touch; class scopes linked by `LinkLuaModifier` persist across map loads in one client.
+
+## 2026-10-02: HUD script time (#33)
+
+- Offline: `run_tests.js` passes (42 groups), including the new chat redirect and fountain range checks in
+  `panorama_test.js`. Both fail against the original scripts (`custom_chat.js` from its backup, `fountain_range.js`
+  from `c776111`). `luacheck scripts/vscripts` reports 0 warnings / 0 errors. `panorama_resources.js verify` passes.
+- Dota Tools, one client with `-condebug`, Axe idle on its own fountain, `vprof` for 20 s, `$.Schedule() - run JS
+  func`: the original scripts 0.353 ms and 4.33 calls per frame (141 fps); this change 0.215 ms and 2.40 calls
+  (140 fps); this change with Axe inside an enemy fountain's ring 0.322 ms and 3.33 calls. A day earlier, in another
+  client, the original scripts measured 0.339 ms and 4.33 calls.
+- Chat probe (temporary handlers on Dota's `ChatLinesPanel`, its wrapper and the custom area, `$.Msg` to
+  `console.log`): a `say` line and a `GameRules:SendCustomMessage` line each raised `PanelLayoutInvalidated` on
+  Dota's panel, followed by layout, style and image events from the line's panels. 15 s of idle chat raised none.
+  After a map reload in the same client each event reached each handler once. With the change, typed, server and
+  custom lines all show in the custom area (screenshot).
+- Fountain range indicator (enemy fountain disarmed, hero invulnerable, camera on the hero; `cl_particles_dumpsimlist`
+  for the target marker's position; screenshots compared with the original build): ring shown with the marker under
+  the hero after entering, the marker following a walking hero, red crosshair when targeted, rings hidden after
+  leaving, and with Alt held every ring with the marker on its fountain, all as with the original build. Without
+  `SetParticleAlwaysSimulate` the marker reached the hero entering a ring 1286 units from its fountain. A 346-unit
+  teleport inside a ring left the marker behind until the hero walked (not compared with the original build).
+- A first version attached the target to the hero (`SetParticleControlEnt`, `PATTACH_ABSORIGIN_FOLLOW`) to avoid
+  per-frame updates: the ring edge brightened towards the hero, but the marker stayed on the fountain, with or without
+  `SetParticleAlwaysSimulate`.

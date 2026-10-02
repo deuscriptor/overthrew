@@ -1,35 +1,45 @@
 const particle_name = "particles/ui/fountain_range/fountain_range.vpcf";
 const aura_bonus_range = 450;
+// range checks while the unit is away from every enemy fountain
+const update_interval = 0.1;
 
 const fountain_particles = {};
 
 function UpdateFountainParticles() {
 	const portrait_unit = Players.GetLocalPlayerPortraitUnit();
-	if (!portrait_unit || portrait_unit == -1) {
-		return $.Schedule(0.3, UpdateFountainParticles);
-	}
+	if (!portrait_unit || portrait_unit == -1) return void $.Schedule(update_interval, UpdateFountainParticles);
 
-	for (const [team, config] of Object.entries(fountain_particles)) {
-		const current_pos = Entities.GetAbsOrigin(portrait_unit);
+	const current_pos = Entities.GetAbsOrigin(portrait_unit);
+	const alt_down = GameUI.IsAltDown();
+	let tracking = false;
+
+	for (const config of Object.values(fountain_particles)) {
 		const current_attack_radius = Entities.GetAttackRange(config.unit);
 
 		const distance = Vector.len(Vector.sub(current_pos, config.position));
-		let is_in_range = distance <= current_attack_radius + aura_bonus_range;
-		let is_targeted = distance <= current_attack_radius;
-		let target_position = is_in_range ? current_pos : config.position;
+		const is_in_range = alt_down || distance <= current_attack_radius + aura_bonus_range;
+		const is_targeted = alt_down || distance <= current_attack_radius;
+		// the target marker only follows a control point set by script, not one attached to the unit
+		const follows_unit = is_in_range && !alt_down;
+		const target_position = follows_unit ? current_pos : config.position;
+		tracking = tracking || follows_unit;
 
-		if (GameUI.IsAltDown()) {
-			target_position = config.position;
-			is_in_range = true;
-			is_targeted = true;
+		if (is_in_range != config.is_in_range) {
+			config.is_in_range = is_in_range;
+			Particles.SetParticleControl(config.p_id, 6, [is_in_range ? 1 : 0, 0, 0]);
 		}
-
-		Particles.SetParticleControl(config.p_id, 6, [is_in_range ? 1 : 0, 0, 0]);
-		Particles.SetParticleControl(config.p_id, 7, target_position);
-		Particles.SetParticleControl(config.p_id, 13, [is_targeted, is_targeted, 2]);
+		if (target_position.some((value, i) => value != config.target_position[i])) {
+			config.target_position = target_position;
+			Particles.SetParticleControl(config.p_id, 7, target_position);
+		}
+		if (is_targeted != config.is_targeted) {
+			config.is_targeted = is_targeted;
+			Particles.SetParticleControl(config.p_id, 13, [is_targeted ? 1 : 0, is_targeted ? 1 : 0, 2]);
+		}
 	}
 
-	$.Schedule(0, UpdateFountainParticles);
+	// every frame only while the marker follows the unit inside a ring
+	$.Schedule(tracking ? 0 : update_interval, UpdateFountainParticles);
 }
 
 function CreateFountainParticleAt(unit, team) {
@@ -61,19 +71,20 @@ function CreateFountainParticleAt(unit, team) {
 	);
 	// 6 - is in range
 	Particles.SetParticleControl(p_id, 6, [0, 0, 0]);
-	// 7 - target hero pos
-	Particles.SetParticleControl(p_id, 7, [0, 0, 0]);
+	// 7 - target hero pos (the fountain while out of range)
+	Particles.SetParticleControl(p_id, 7, position);
 	// 9 - danger level (always on here as fountain is deadly)
 	Particles.SetParticleControl(p_id, 9, [2, 0, 0]);
 	// 13 - config [is_in_range, is_targeted, danger_level]
-	Particles.SetParticleControl(p_id, 13, [0, 0, 0]);
-
-	Particles.SetParticleAlwaysSimulate(p_id);
+	Particles.SetParticleControl(p_id, 13, [0, 0, 2]);
 
 	fountain_particles[team] = {
 		unit: unit,
 		position: position,
 		p_id: p_id,
+		is_in_range: false,
+		is_targeted: false,
+		target_position: position,
 	};
 }
 

@@ -135,6 +135,10 @@ Then add the option to the table above, to `tools/README.md` and to `README.md` 
 - UI textures are no larger than 4/3 of the largest box they are drawn in and keep no unused alpha channel (the
   compiler stores any alpha uncompressed; `verify` fails on it). Re-encode through `tools/panorama_textures.json`
   and `panorama_textures.js build`, which needs Windows with Workshop Tools and the full git history.
+- No `$.Schedule(0, ...)` loop that runs for the whole match. React to events instead (panel events bubble to the
+  parents: a panel that gains a child raises `PanelLayoutInvalidated`), or check every 0.1 s or slower, and set
+  particle controls only when they change. Run every frame only while something visibly tracks a moving unit (see
+  "HUD script time" in `tools/README.md`).
 - Server-to-client events go through `ProtectedCustomEvents`. Payloads arrive under `event_data`; subscribe with
   `GameEvents.NewProtectedFrame(panel).SubscribeProtected(...)`.
 
