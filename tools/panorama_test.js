@@ -560,6 +560,166 @@ console.log("PASS: server-supplied reroll price, final 1–3 rerolls, empty bala
 	console.log("PASS chat tip colours: dark team colours readable, bright colours exact, hue kept");
 }
 
+// Chat: native lines move to the custom area when they arrive, not from a per-frame loop.
+{
+	const chatSource = fs.readFileSync(path.join(scripts, "custom_chat/custom_chat.js"), "utf8");
+	class ChatPanel extends Panel {
+		GetChildCount() { return this.children.length; }
+		DeleteAsync() { this.deleted = true; this.parent.children = this.parent.children.filter(child => child !== this); }
+		AddClass(name) { this.classes.push(name); }
+	}
+	const wrapper = new ChatPanel("ChatLinesWrapper");
+	const native = new ChatPanel("ChatLinesPanel", "Panel", wrapper);
+	const stale = new ChatPanel("ChatLinesPanel", "Panel", wrapper);
+	stale.custom_area = true;
+	let scheduled = [];
+	const handlers = [];
+	const dollar = {
+		CreatePanel: (type, parent, id) => new ChatPanel(id, type, parent),
+		Schedule: (delay, fn) => scheduled.push({ delay, fn }),
+		RegisterEventHandler: (name, panel, fn) => handlers.push({ name, panel, fn }),
+	};
+	const context = vm.createContext({
+		$: dollar, MAX_CHAT_SIZE: 15,
+		FindDotaHudElement: id => wrapper.FindChildTraverse(id),
+		GameEvents: { SendEventClientSide: () => {} },
+	});
+	vm.runInContext(chatSource.slice(0, chatSource.lastIndexOf("(function () {")) + "InitCustomChatOverrideArea();", context);
+	const custom = wrapper.children.find(child => child.custom_area && child !== stale);
+	assert.ok(stale.deleted, "the previous load's custom area is removed");
+	assert.deepEqual(handlers.map(h => [h.name, h.panel]), [["PanelLayoutInvalidated", native]]);
+	assert.deepEqual(scheduled.map(s => s.delay), [5], "only the 5 s buffer trim keeps running");
+	const invalidate = () => handlers[0].fn(native);
+	scheduled = [];
+	invalidate();
+	assert.equal(scheduled.length, 0, "nothing to move: no redirect");
+	const filler = new ChatPanel("", "Panel", native);
+	const line = new ChatPanel("", "Label", native);
+	for (let i = 0; i < 4; i++) invalidate();
+	assert.deepEqual(scheduled.map(s => s.delay), [0], "one redirect per arrival, however many events the line raises");
+	scheduled.shift().fn();
+	assert.deepEqual(native.children, [], "native area emptied");
+	assert.ok(filler.deleted, "native spacer panels are dropped");
+	assert.deepEqual(custom.children, [line], "the line moved to the custom area");
+	assert.deepEqual(scheduled.map(s => s.delay), [7], "only the line's expiry is scheduled");
+	scheduled.shift().fn();
+	assert.ok(line.classes.includes("Expired"));
+	new ChatPanel("", "Label", native);
+	invalidate();
+	assert.deepEqual(scheduled.map(s => s.delay), [0], "the next line schedules a new redirect");
+	console.log("PASS chat redirect: native lines move when they arrive, once per arrival, no per-frame loop");
+}
+
+// Fountain range indicator: range checks every 0.1 s, controls sent only on change, per-frame target updates only
+// inside a ring.
+{
+	const fountainSource = fs.readFileSync(path.join(scripts, "scripts/fountain_range.js"), "utf8");
+	const units = { 1: { team: 3, pos: [1000, 0, 400] }, 2: { team: 4, pos: [-1000, 0, 400] }, 3: { team: 2, pos: [0, 1000, 400] },
+		10: { pos: [0, -3000, 400] }, 11: { pos: [0, -3000, 400] } };
+	let scheduled = [];
+	let calls = [];
+	let next_particle = 100;
+	let portrait = 10;
+	let alt = false;
+	const context = vm.createContext({
+		$: { Schedule: (delay, fn) => scheduled.push({ delay, fn }) },
+		Game: {
+			GameStateIsBefore: () => false,
+			GetLocalPlayerInfo: () => ({ player_id: 0, player_team_id: 2 }),
+		},
+		DOTA_GameState: { DOTA_GAMERULES_STATE_PRE_GAME: 8 },
+		Entities: {
+			GetAllEntitiesByClassname: () => [1, 2, 3],
+			GetTeamNumber: id => units[id].team,
+			GetAbsOrigin: id => units[id].pos.slice(),
+			GetAttackRange: () => 600,
+		},
+		Players: { GetLocalPlayerPortraitUnit: () => portrait },
+		GameUI: { IsAltDown: () => alt, CustomUIConfig: () => ({ team_colors_rgb: {} }) },
+		Vector: {
+			sub: (a, b) => a.map((v, i) => v - b[i]),
+			len: v => Math.hypot(v[0], v[1], v[2]),
+		},
+		ParticleAttachment_t: { PATTACH_WORLDORIGIN: 0, PATTACH_ABSORIGIN_FOLLOW: 1 },
+		Particles: {
+			CreateParticle: () => { calls.push(["create"]); return next_particle++; },
+			SetParticleControl: (p, cp, value) => calls.push(["cp", p, cp, value]),
+			SetParticleControlEnt: (p, cp, unit, attach) => calls.push(["ent", p, cp, unit, attach]),
+			SetParticleAlwaysSimulate: p => calls.push(["always", p]),
+		},
+	});
+	vm.runInContext(fountainSource, context);
+	assert.equal(calls.filter(c => c[0] === "create").length, 2, "enemy fountains only");
+	assert.ok(!calls.some(c => c[0] === "always"), "the indicators are not simulated off-screen");
+	const [a, b] = [100, 101];
+	const plain = value => JSON.parse(JSON.stringify(value)); // arrays made in the context fail deepStrictEqual
+	const initial = Object.fromEntries(plain(calls).filter(c => c[0] === "cp" && c[1] === a).map(c => [c[2], c[3]]));
+	assert.deepEqual(initial[7], [1000, 0, 117], "target starts on the fountain, at the indicator height");
+	assert.deepEqual(initial[13], [0, 0, 2], "danger level set from the start");
+	// runs the pending update; returns the controls it sent and the delay of the next one
+	const tick = () => {
+		calls = [];
+		assert.equal(scheduled.length, 1, "one update loop");
+		const loop = scheduled.pop();
+		loop.fn();
+		return [plain(calls), scheduled[0].delay];
+	};
+	assert.deepEqual(scheduled.map(s => s.delay), [0.1]);
+	assert.deepEqual(tick(), [[], 0.1], "far from every fountain: no control updates, checks every 0.1 s");
+	assert.deepEqual(tick(), [[], 0.1]);
+	units[10].pos = [1000, 900, 400]; // 943 from fountain a: inside range + 450, outside attack range
+	assert.deepEqual(tick(), [[["cp", a, 6, [1, 0, 0]], ["cp", a, 7, [1000, 900, 400]]], 0], "ring shown, target on the unit");
+	units[10].pos = [1000, 850, 400];
+	assert.deepEqual(tick(), [[["cp", a, 7, [1000, 850, 400]]], 0], "inside a ring the target follows the unit every frame");
+	assert.deepEqual(tick(), [[], 0], "a unit standing still sends nothing");
+	units[10].pos = [1000, 500, 400];
+	assert.deepEqual(tick(), [[["cp", a, 7, [1000, 500, 400]], ["cp", a, 13, [1, 1, 2]]], 0], "targeted");
+	portrait = 11;
+	units[11].pos = [1000, 300, 400];
+	assert.deepEqual(tick(), [[["cp", a, 7, [1000, 300, 400]]], 0], "a newly selected unit takes the target");
+	alt = true;
+	assert.deepEqual(tick(), [[["cp", a, 7, [1000, 0, 117]], ["cp", b, 6, [1, 0, 0]], ["cp", b, 13, [1, 1, 2]]], 0.1],
+		"Alt shows every ring with the target on its fountain");
+	alt = false;
+	units[11].pos = [0, -3000, 400];
+	assert.deepEqual(tick(), [[["cp", a, 6, [0, 0, 0]], ["cp", a, 13, [0, 0, 2]], ["cp", b, 6, [0, 0, 0]], ["cp", b, 13, [0, 0, 2]]], 0.1],
+		"leaving hides the rings; the target already rests on the fountain");
+	portrait = -1;
+	assert.deepEqual(tick(), [[], 0.1], "no portrait unit: nothing to update");
+	console.log("PASS fountain range: 0.1 s checks, controls only on change, per-frame target only inside a ring, Alt, no forced off-screen simulation");
+}
+
+// Top bar: the Tip buttons follow Alt from a 0.1 s check, not a per-frame loop. The collection tracks no keys: its
+// key classes only lit quantity hints in purchase dialogs, which the free collection never opens.
+{
+	const topBarSource = fs.readFileSync(path.join(scripts, "top_bar/top_bar.js"), "utf8");
+	const [altSource] = topBarSource.match(/(let alt_pressed.*\n)?function CheckAltPress\(\) \{[\s\S]*?\n\}\n/);
+	let alt = false;
+	let scheduled = [];
+	const classes = [];
+	const context = vm.createContext({
+		$: { Schedule: (delay, fn) => scheduled.push({ delay, fn }) },
+		GameUI: { IsAltDown: () => alt },
+		HUD: { CONTEXT: { SetHasClass: (name, value) => classes.push([name, value]) } },
+	});
+	vm.runInContext(altSource + "CheckAltPress();", context);
+	const tick = () => {
+		assert.deepEqual(scheduled.map(s => s.delay), [0.1], "one check every 0.1 s");
+		scheduled.pop().fn();
+	};
+	assert.deepEqual(classes, [], "Alt up: no class change");
+	alt = true;
+	tick();
+	tick();
+	assert.deepEqual(classes, [["BAltPressed", true]], "set once when Alt goes down");
+	alt = false;
+	tick();
+	assert.deepEqual(classes, [["BAltPressed", true], ["BAltPressed", false]], "cleared once when Alt goes up");
+	const collectionSource = fs.readFileSync(path.join(scripts, "collection/collection.js"), "utf8");
+	assert.doesNotMatch(collectionSource, /GameUI\.Is(Shift|Alt|Control)Down/, "the collection tracks no modifier keys");
+	console.log("PASS top bar Alt: 0.1 s check, class only on change; the collection tracks no keys");
+}
+
 // Tip toast: player strips, bot name fallback, highlight for the tipped player, coin pop, at most three at once.
 {
 	const toastsSource = fs.readFileSync(path.join(scripts, "toasts/toasts.js"), "utf8");

@@ -311,14 +311,6 @@ function ForwardToCosmetics(name, owner) {
 	return stub;
 }
 
-function TrackSuppButtonsPressed() {
-	$.Schedule(0, TrackSuppButtonsPressed);
-
-	dotaHud.SetHasClass("ShiftPressed", GameUI.IsShiftDown());
-	dotaHud.SetHasClass("AltPressed", GameUI.IsAltDown());
-	dotaHud.SetHasClass("CtrlPressed", GameUI.IsControlDown());
-}
-
 function TimeLeftParse(ms) {
 	const s = Math.floor(ms / 1000);
 	if (s <= 0) return [0, "sec"];
@@ -331,7 +323,6 @@ function TimeLeftParse(ms) {
 
 (() => {
 	$.Msg("Collection Init");
-	TrackSuppButtonsPressed();
 
 	dotaHud.SetHasClass("CustomBPEnds", true);
 

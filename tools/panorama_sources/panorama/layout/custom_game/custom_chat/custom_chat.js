@@ -321,7 +321,9 @@ function ClearChatBuffer() {
 		});
 	$.Schedule(5, ClearChatBuffer);
 }
+let redirect_scheduled = false;
 function RedirectMessages() {
+	redirect_scheduled = false;
 	default_chat_area.Children().forEach((line, idx, children) => {
 		if (line.paneltype == "Panel" || (children.length > 10 && idx != 15)) {
 			line.DeleteAsync(0);
@@ -333,7 +335,12 @@ function RedirectMessages() {
 		line.SetParent(redirect_chat_area);
 		ExpireMessageInTime(line);
 	});
+}
+// a line added to the native chat invalidates its layout, and the events of the line's panels bubble up to it
+function ScheduleRedirect() {
+	if (redirect_scheduled || default_chat_area.GetChildCount() == 0) return;
 
+	redirect_scheduled = true;
 	$.Schedule(0, RedirectMessages);
 }
 function InitCustomChatOverrideArea() {
@@ -353,6 +360,7 @@ function InitCustomChatOverrideArea() {
 	custom_chat_area.custom_area = true;
 	redirect_chat_area = custom_chat_area;
 
+	$.RegisterEventHandler("PanelLayoutInvalidated", default_chat_area, ScheduleRedirect);
 	RedirectMessages();
 	ClearChatBuffer();
 }

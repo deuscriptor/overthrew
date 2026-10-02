@@ -274,9 +274,15 @@ function UpdateSpectatorTeamsScore() {
 	}
 }
 
+// shows the Tip buttons while Alt is held; Dota's own AltPressed class is not on a parent of the custom HUD
+let alt_pressed = false;
 function CheckAltPress() {
-	HUD.CONTEXT.SetHasClass("BAltPressed", GameUI.IsAltDown());
-	$.Schedule(0, CheckAltPress);
+	const alt_down = GameUI.IsAltDown();
+	if (alt_down != alt_pressed) {
+		alt_pressed = alt_down;
+		HUD.CONTEXT.SetHasClass("BAltPressed", alt_down);
+	}
+	$.Schedule(0.1, CheckAltPress);
 }
 
 (function () {
