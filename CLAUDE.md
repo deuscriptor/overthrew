@@ -82,6 +82,7 @@ unless every flag is present and is 0/1/true/false.
 | Epic-Only orbs (`epic_orbs`) | off | Core | Every orb upgrade is epic; each reroll costs 1 | `core_declarations.lua` (`IsEpicOnlyMap`, `IsFlatRerollMap`) |
 | Backpack Items (`backpack_items`) | off | Core | Backpack items stay active (see spec) | `game/backpack_items.lua`, `filters/order.lua` |
 | Kill Goal (`kill_goal`, number) | 50 | Core | Match time = 1200s × goal / 30 | `host_options.lua` → `GameLoop` |
+| Fountain Sloth (`fountain_sloth`) | on | Balance | Ability cooldowns recover at half speed on the own fountain; 5s grace after each spawn | `game/fountain_sloth.lua`, `modifier_fountain_sloth_lua.lua` |
 | Divine Rapier (`divine_rapier`) | on | Items | Off = item disabled/disassembled | `game/host_items.lua` |
 | Dagon (`dagon`) | on | Items | Off = item disabled/disassembled | `game/host_items.lua` |
 | All Vision (`all_vision`) | on | Other | No fog; units on their own fountain are hidden from enemies | `host_options.lua`, `modifier_fountain_rejuvenation_lua.lua` |
@@ -108,7 +109,7 @@ Update these five places together:
 
 1. **`host_options.lua`:** add the name to `MATCH_FLAGS`. Add it to `DEFAULT_ON_FLAGS` only if it should start on.
 2. **Panorama:** in `tools/panorama_sources/panorama/layout/custom_game/custom_loading_screen/custom_loading_screen.js`,
-   add it to a category (`core`, `items` or `other`) in the `categories` array. Array order is on-screen order. Then run
+   add it to a category (`core`, `balance`, `items` or `other`) in the `categories` array. Array order is on-screen order. Then run
    `panorama_resources.js build`.
 3. **Localization:** add `host_rules_<name>` (label) and `host_rules_<name>_tip` (tooltip) to all three `addon_*.txt`
    files. Category headings are `host_rules_category_<id>`.
@@ -230,6 +231,14 @@ developer has granted standing permission.
 ### Gotchas
 
 - Item cooldowns are shared per item type on a hero, so call `EndCooldown` first.
+- Script can't change a running cooldown's speed. The engine never calls `MODIFIER_PROPERTY_COOLDOWN_PERCENTAGE_ONGOING`
+  on a Lua modifier, and `StartCooldown` restarts the HUD sweep at full. `SetFrozenCooldown` pauses cooldowns and charge
+  restores and is counted: two freezes need two thaws. There is no `IsFrozenCooldown`, and the server's
+  `GetCooldownTime()` returns the remaining time (see "Fountain Sloth" in `tools/README.md`).
+- `Kill` does nothing to a unit on its own fountain (fountain protection); use `ForceKill`.
+- A respawned hero stays invulnerable and out of game until it acts (`modifier_fountain_invulnerability`), so fountain
+  protection and rejuvenation skip it. An aura reaches it only with `DOTA_UNIT_TARGET_FLAG_INVULNERABLE +
+  DOTA_UNIT_TARGET_FLAG_OUT_OF_WORLD` and a modifier with `MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE`.
 - Enemy test units near a fountain die. With All Vision off, targets need vision (`AddFOWViewer`).
 - For simulated multiplayer, add bots with real player IDs/teams:
   `GameRules:AddBotPlayerWithEntityScript(hero, name, team, "", false)` (see `backpack_items_multiplayer_smoke.lua`).

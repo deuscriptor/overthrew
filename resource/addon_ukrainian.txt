@@ -1123,6 +1123,8 @@
 	"DOTA_Tooltip_modifier_fountain_movespeed_effect_lua_Description"		"Збільшує швидкість руху на %dMODIFIER_PROPERTY_MOVESPEED_BONUS_PERCENTAGE%%%. Ефект згасає впродовж 4 с."
 	"DOTA_Tooltip_modifier_fountain_protection_effect_lua"		"Захист фонтану"
 	"DOTA_Tooltip_modifier_fountain_protection_effect_lua_Description"		"Не може атакувати й завдавати шкоди. Вороги не можуть обрати його ціллю, і він не отримує шкоди. Діє, доки він на фонтані."
+	"DOTA_Tooltip_modifier_fountain_sloth_effect_lua"		"Фонтанні лінощі"
+	"DOTA_Tooltip_modifier_fountain_sloth_effect_lua_Description"		"Зарядка здібностей триває вдвічі довше. Діє, доки він на фонтані."
 	"DOTA_Tooltip_ability_item_gold_coin"    "200 золота для команди"
 	"DOTA_Tooltip_ability_item_common_orb"    "Звичайна сфера покращення"
 		"DOTA_Tooltip_ability_item_common_orb_description"    "Дає кожному члену вашої команди звичайне покращення"
@@ -2935,6 +2937,8 @@
 		"host_rules_divine_rapier" "Divine Rapier"
 		"host_rules_dagon" "Dagon"
 		"host_rules_category_core" "Основні"
+		"host_rules_category_balance" "Баланс"
+		"host_rules_fountain_sloth" "Фонтанні лінощі"
 		"host_rules_turbo" "Турбо"
 		"host_rules_backpack_items" "Предмети з рюкзака"
 		"backpack_items_error_inactive" "Цей предмет у рюкзаку неактивний (працює лише одна копія; Linken's Sphere та Aeon Disk не працюють ніколи)"
@@ -2972,5 +2976,6 @@
 		"host_rules_invincible_wards_tip" "Встановлені варди не можна атакувати чи пошкодити"
 		"host_rules_divine_rapier_tip" "Дозволити Divine Rapier"
 		"host_rules_dagon_tip" "Дозволити Dagon"
+		"host_rules_fountain_sloth_tip" "На власному фонтані зарядка здібностей героїв триває вдвічі довше. Починає діяти через 5 секунд після кожного відродження чи викупу"
 	}
 }

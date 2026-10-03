@@ -181,7 +181,8 @@ const releaseLoading = loading.slice(loading.indexOf("let loading_screen_release
 	new Panel("", "Image", arrowRight);
 	const initHints = () => {
 		bulletsRoot.children = [];
-		for (let i = 0; i < 3; i++) {
+		// one bullet per hint, as the loading screen's InitHints makes
+		for (let i = 0; i < vm.runInContext("hints.length", context); i++) {
 			const bullet = new Panel("Bullet_" + i, "Panel", bulletsRoot, ["LS_Bullet"]);
 			new Panel("", "Image", bullet, ["Bullet_BG"]);
 			new Panel("", "Image", bullet, ["Bullet_Active"]);
@@ -200,11 +201,11 @@ const releaseLoading = loading.slice(loading.indexOf("let loading_screen_release
 	assert.equal(root.children.length, 1, "wait for rules before constructing controls");
 	const logo = new Panel("Logo", "Image", root, ["LS_Tips_Logo"]);
 	const discord = new Panel("Discord", "Button", root, ["LS_DiscordButton"]);
-	data = {host_id: -1, locked: 0, ready: 0, single_draft: 1, epic_orbs: 0, turbo: 1, longer_wards: 1};
+	data = {host_id: -1, locked: 0, ready: 0, single_draft: 1, epic_orbs: 0, turbo: 1, fountain_sloth: 1, longer_wards: 1};
 	vm.runInContext("InitMatchRules();", context);
 	assert.equal(root.children.length, 3, "settings stay hidden until every player has loaded");
 	assert.equal(logo.visible, true, "loading tips stay until then");
-	data = {host_id: 0, locked: 0, ready: 1, single_draft: 1, epic_orbs: 0, turbo: 1, longer_wards: 1};
+	data = {host_id: 0, locked: 0, ready: 1, single_draft: 1, epic_orbs: 0, turbo: 1, fountain_sloth: 1, longer_wards: 1};
 	vm.runInContext("InitMatchRules(); InitMatchRules();", context);
 	assert.equal(root.children.length, 4, "initialize only once");
 	// Pager: arrows and bullets grouped into one row, styled like the settings.
@@ -220,7 +221,7 @@ const releaseLoading = loading.slice(loading.indexOf("let loading_screen_release
 	assert.equal(arrowRight.enabled, true);
 	assert.equal(arrowRight.children[0].style.washColor, "#d4bb86");
 	assert.equal(arrowRight.children[0].hittest, false, "hover and clicks reach the arrow, not its icon");
-	assert.deepEqual(bullets().map(b => b.style.width), ["22px", "8px", "8px"], "current page is a gold pill");
+	assert.deepEqual(bullets().map(b => b.style.width), ["22px", "8px", "8px", "8px"], "current page is a gold pill");
 	assert.equal(bullets()[0].style.backgroundColor, "#d4bb86");
 	assert.equal(arrowRight.style.border, "1px solid #dfc58b", "arrow glows until noticed");
 	assert.match(arrowRight.style.boxShadow, /^#c59a48cc/);
@@ -237,12 +238,13 @@ const releaseLoading = loading.slice(loading.indexOf("let loading_screen_release
 	assert.equal(discord.visible, false);
 	assert.equal(root.FindChildTraverse("Rule_flat_rerolls"), null);
 	assert.deepEqual(root.FindChildTraverse("MatchRules_core").children.filter(p => p.paneltype === "ToggleButton").map(p => p.id), ["Rule_single_draft", "Rule_turbo", "Rule_epic_orbs", "Rule_backpack_items"]);
-	assert.equal(vm.runInContext("hints.length", context), 3, "one settings page per category");
+	assert.equal(vm.runInContext("hints.length", context), 4, "one settings page per category");
+	assert.deepEqual(root.FindChildTraverse("MatchRules_balance").children.filter(p => p.paneltype === "ToggleButton").map(p => p.id), ["Rule_fountain_sloth"]);
 	assert.equal(root.FindChildTraverse("MatchRules_core").visible, true);
 	assert.equal(root.FindChildTraverse("MatchRules_other").visible, false);
 	assert.deepEqual(root.FindChildTraverse("MatchRules_other").children.filter(p => p.paneltype === "ToggleButton").map(p => p.id), ["Rule_all_vision", "Rule_infinite_rerolls", "Rule_longer_wards", "Rule_invincible_wards"]);
-	assert.deepEqual(root.FindChildTraverse("MatchRulesTabs").children.map(p => p.id), ["MatchRulesTab_core", "MatchRulesTab_items", "MatchRulesTab_other"], "tab order: Core, Items, Other");
-	const tabs = ["core", "items", "other"].map(id => root.FindChildTraverse("MatchRulesTab_" + id));
+	assert.deepEqual(root.FindChildTraverse("MatchRulesTabs").children.map(p => p.id), ["MatchRulesTab_core", "MatchRulesTab_balance", "MatchRulesTab_items", "MatchRulesTab_other"], "tab order: Core, Balance, Items, Other");
+	const tabs = ["core", "balance", "items", "other"].map(id => root.FindChildTraverse("MatchRulesTab_" + id));
 	assert.equal(tabs[1].caption.style.color, "#dfc58b", "unvisited tab glows");
 	tabs[1].events.onactivate();
 	assert.deepEqual(pagesRequested, [1], "tabs open their settings page");
@@ -258,13 +260,16 @@ const releaseLoading = loading.slice(loading.indexOf("let loading_screen_release
 	assert.equal(tabs[0].caption.style.color, "#7f95a6", "visited tab no longer glows");
 	assert.equal(tabs[2].caption.style.color, "#dfc58b");
 	assert.equal(root.FindChildTraverse("MatchRules_core").visible, false);
-	assert.equal(root.FindChildTraverse("MatchRules_items").visible, true);
+	assert.equal(root.FindChildTraverse("MatchRules_balance").visible, true);
 	assert.equal(arrowLeft.enabled, true, "both arrows available on a middle page");
 	assert.equal(arrowLeft.style.border, "1px solid #dfc58b", "untouched previous arrow glows once available");
-	assert.deepEqual(bullets().map(b => b.style.width), ["8px", "22px", "8px"]);
+	assert.deepEqual(bullets().map(b => b.style.width), ["8px", "22px", "8px", "8px"]);
 	assert.equal(bullets()[0].style.backgroundColor, "#7f95a6", "visited page bullet stops glowing");
 	assert.equal(bullets()[2].style.backgroundColor, "#dfc58b");
 	vm.runInContext("matchRulesPageChanged(2)", context);
+	assert.equal(root.FindChildTraverse("MatchRules_items").visible, true);
+	assert.equal(arrowRight.enabled, true);
+	vm.runInContext("matchRulesPageChanged(3)", context);
 	assert.equal(root.FindChildTraverse("MatchRules_other").visible, true);
 	assert.equal(arrowRight.enabled, false, "no next page on the last page");
 	assert.equal(vm.runInContext("hints[0][0]", context), "settings");
@@ -273,7 +278,7 @@ const releaseLoading = loading.slice(loading.indexOf("let loading_screen_release
 	assert.equal(waiting.visible, false);
 	assert.equal(start.enabled, true);
 	start.events.onactivate();
-	assert.deepEqual(JSON.parse(JSON.stringify(requests[0])), {name:"HostOptions:apply_rules", args:{single_draft:1,epic_orbs:0,turbo:1,backpack_items:0,kill_goal:50,infinite_rerolls:0,all_vision:0,invincible_wards:0,longer_wards:1,divine_rapier:0,dagon:0}});
+	assert.deepEqual(JSON.parse(JSON.stringify(requests[0])), {name:"HostOptions:apply_rules", args:{single_draft:1,epic_orbs:0,turbo:1,backpack_items:0,fountain_sloth:1,kill_goal:50,infinite_rerolls:0,all_vision:0,invincible_wards:0,longer_wards:1,divine_rapier:0,dagon:0}});
 	const goal = root.FindChildTraverse("KillGoalInput");
 	assert.equal(goal.text, "50");
 	goal.text = "";

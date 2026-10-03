@@ -4,6 +4,7 @@ local modifier_names = {
 	"modifier_fountain_movespeed_lua",
 	"modifier_fountain_protection_lua",
 	"modifier_fountain_rejuvenation_lua",
+	"modifier_fountain_sloth_lua",
 	"modifier_kill_leader",
 	"modifier_pregame_stunned",
 	"modifier_primary_attribute_reader",

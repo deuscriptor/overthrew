@@ -197,6 +197,16 @@ assert.equal(fountainProtection.error, undefined);
 assert.equal(fountainProtection.status, 0);
 assert.equal((fountainProtection.stderr || '').trim(), '');
 assert.match(fountainProtection.stdout, /PASS fountain protection:/);
+const fountainSloth = spawnSync(process.execPath, [
+  path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
+  'tools/test_fountain_sloth.lua',
+], { cwd: root, encoding: 'utf8' });
+if (fountainSloth.stdout) process.stdout.write(fountainSloth.stdout);
+if (fountainSloth.stderr) process.stderr.write(fountainSloth.stderr);
+assert.equal(fountainSloth.error, undefined);
+assert.equal(fountainSloth.status, 0);
+assert.equal((fountainSloth.stderr || '').trim(), '');
+assert.match(fountainSloth.stdout, /PASS fountain sloth:/);
 const logNoise = spawnSync(process.execPath, [
   path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
   'tools/test_log_noise.lua',
