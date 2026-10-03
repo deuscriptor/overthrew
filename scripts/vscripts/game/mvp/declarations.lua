@@ -1,12 +1,3 @@
-MVP_REWARDS = {
-	ot3_necropolis_ffa = {
-		{items = {bp_reroll = 8}}, -- MVP
-		{items = {bp_reroll = 4}}, -- runner up 1
-		{items = {bp_reroll = 4}}, -- runner up 2
-	},
-}
-
-
 ---@class MVP_TYPE
 ---@type table<string, number>
 MVP_TYPE = {

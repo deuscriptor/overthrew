@@ -1,5 +1,4 @@
 "use strict";
-let PLAYER_STATS = {};
 
 function OnUpdateHeroSelection() {
 	for (let team_id of Game.GetAllTeamIDs()) {
@@ -72,19 +71,6 @@ function UpdatePlayer(team_panel, player_id, team_id) {
 	const player_name_label = player_panel.FindChildInLayoutFile("PlayerName");
 	player_name_label.text = player_info.player_name;
 	HighlightByParty(player_id, player_name_label);
-
-	const stats = PLAYER_STATS[player_id];
-	const has_stats = stats != null;
-
-	player_panel.SetHasClass("has_stats", has_stats);
-
-	// hide own streaks to other heroes - but you
-	// worth noting that streaks are stored in nettable, so if someone would REALLY want to know - they could
-	// we could switch to event-based storage to prevent that but it's a bit annoying in many ways
-	const hide_streak = stats && stats.streak_hidden && player_id != Game.GetLocalPlayerID();
-
-	player_panel.SetDialogVariableInt("streak_current", stats && !hide_streak ? stats.streak_current : 0);
-	player_panel.SetDialogVariableInt("streak_max", stats && !hide_streak ? stats.streak_max : 0);
 }
 
 function UpdateTimer() {
@@ -239,11 +225,6 @@ function CreateTeams() {
 
 	const pre_map_container = FindDotaHudElement("PreMinimapContainer");
 	pre_map_container.visible = false;
-
-	SubscribeToNetTableKey("game_state", "player_stats", function (value) {
-		PLAYER_STATS = value;
-		OnUpdateHeroSelection();
-	});
 
 	GameEvents.Subscribe("dota_player_hero_selection_dirty", OnUpdateHeroSelection);
 	GameEvents.Subscribe("dota_player_update_hero_selection", OnUpdateHeroSelection);

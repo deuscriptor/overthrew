@@ -1,0 +1,32 @@
+<root>
+	<styles>
+		<include src="s2r://panorama/styles/dotastyles.vcss_c" />
+		<include src="s2r://panorama/layout/custom_game/toasts/toasts.vcss_c" />
+	</styles>
+	<scripts>
+		<include src="s2r://panorama/layout/custom_game/scripts/utils.vjs_c" />
+		<include src="s2r://panorama/layout/custom_game/toasts/toasts.vjs_c" />
+	</scripts>
+	<snippets>
+		<snippet name="player_tip">
+			<Panel class="Toast">
+				<Panel class="PlayerContainer TipSource">
+					<Image class="HeroImage" heroimagestyle="landscape" />
+					<DOTAUserName class="UserName" />
+				</Panel>
+				<Panel class="TipValueContainer">
+					<Label class="TipText" text="#DOTA_TipNotification" />
+					<Panel class="TipCurrencyContainer">
+						<Image class="CurrencyIcon" src="s2r://panorama/images/custom_game/collection/currency_icon_small_png.vtex" />
+						<Label class="CurrencyValue" text="{d:value}" />
+					</Panel>
+				</Panel>
+				<Panel class="PlayerContainer TipTarget">
+					<Image class="HeroImage" heroimagestyle="landscape" />
+					<DOTAUserName class="UserName" />
+				</Panel>
+			</Panel>
+		</snippet>
+	</snippets>
+	<Panel class="ToastsContainer" hittest="false" />
+</root>

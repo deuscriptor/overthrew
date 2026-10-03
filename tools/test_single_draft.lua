@@ -1,6 +1,5 @@
 -- Run after test_orbs.lua, reusing the engine-free production module harness.
 dofile("scripts/vscripts/game/single_draft.lua")
-dofile("scripts/vscripts/libraries/smart_random.lua")
 local report = io.write
 local attributes = SingleDraft.attributes
 local enabled, metadata, players, availability = {}, {}, {}, {}
@@ -80,8 +79,7 @@ end
 equal(callback(), 0.25)
 state = 3
 for id = 0, 7 do
-    if id % 2 == 0 then GameLoop:PickRandomHero(id)
-    else SmartRandom:PickRandomHero({ PlayerID = id }) end
+    GameLoop:PickRandomHero(id)
     equal(players[id].selected, SingleDraft.offers[id][4].name)
     equal(players[id].randomed, true)
     SingleDraft:PickRandomHero(id) -- cannot change a locked pick
@@ -96,4 +94,4 @@ SingleDraft:PickRandomHero(0)
 equal(players[0].selected, nil)
 equal(callback(), nil)
 end
-report("PASS Single Draft: four attributes, 32 distinct offers, native availability, no bans, reconnects, spectators, both random routes, both orb rules\n")
+report("PASS Single Draft: four attributes, 32 distinct offers, native availability, no bans, reconnects, spectators, random pick, both orb rules\n")

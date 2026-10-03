@@ -4,12 +4,6 @@ local ORB_PARTICLE_NAME = {
 	[UPGRADE_RARITY_EPIC] = "particles/orb_epic.vpcf",
 }
 
-local ORB_PARTICLE_NAME_CHRISTMAS = {
-	[UPGRADE_RARITY_COMMON] = "particles/orb_common_christmas.vpcf",
-	[UPGRADE_RARITY_RARE] = "particles/orb_rare_christmas.vpcf",
-	[UPGRADE_RARITY_EPIC] = "particles/orb_christmas.vpcf",
-}
-
 function GameMode:SpawnOrbDrop(spawn_point, orb_type, should_launch, on_destroyed_callback)
 	local source_orb_type = orb_type
 	orb_type = ResolveOrbRarity(orb_type)
@@ -22,11 +16,7 @@ function GameMode:SpawnOrbDrop(spawn_point, orb_type, should_launch, on_destroye
 	})
 	capture_point.on_destroyed_callback = on_destroyed_callback
 
-	local particle_name = ORB_PARTICLE_NAME[orb_type]
-
-	if SeasonalEvents:IsChristmas() then particle_name = ORB_PARTICLE_NAME_CHRISTMAS[orb_type] end
-
-	capture_point.orb_fx = ParticleManager:CreateParticle(particle_name, PATTACH_ABSORIGIN_FOLLOW, capture_point)
+	capture_point.orb_fx = ParticleManager:CreateParticle(ORB_PARTICLE_NAME[orb_type], PATTACH_ABSORIGIN_FOLLOW, capture_point)
 	local origin = GetGroundPosition(capture_point:GetOrigin(), capture_point)
 	ParticleManager:SetParticleControl(capture_point.orb_fx, 0, origin)
 	ParticleManager:SetParticleControl(capture_point.orb_fx, 3, origin)

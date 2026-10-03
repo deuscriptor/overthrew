@@ -2,6 +2,7 @@
 // v4 scripts contain plaintext; v3 scripts prefix it with CRC32 and an image table.
 // Format reference: ValveResourceFormat/Resource/ResourceTypes/Panorama.cs.
 // Original RED2 metadata and every non-DATA byte are retained in the backups.
+// Styles (.css) and layouts (.xml) are compiled by Valve's resourcecompiler instead.
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
@@ -10,7 +11,7 @@ const { spawnSync } = require("node:child_process");
 const root = path.resolve(__dirname, "..");
 const sources = path.join(__dirname, "panorama_sources");
 const backups = path.join(__dirname, "panorama_backups");
-// Styles are compiled by Valve's resourcecompiler, which reads sources from the addon's content folder.
+// Styles and layouts are compiled by Valve's resourcecompiler, which reads sources from the addon's content folder.
 const content = path.resolve(root, "../../../content/dota_addons", path.basename(root));
 const resourceCompiler = path.resolve(root, "../../bin/win64/resourcecompiler.exe");
 // The shop item asks for this texture; only its older Flash PNG was supplied.
@@ -104,13 +105,35 @@ function styleText(bytes) {
 
 const normalizeStyle = text => text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, "");
 
-function compileStyle(name, source) {
-	const input = path.join(content, name.replace(/\.vcss_c$/, ".css"));
+// Compiled layouts keep the markup in a compressed LaCo block, but DATA starts with the CRC32 of the source XML.
+// Sources are compiled with LF line endings, so the check doesn't depend on how git checked them out.
+const layoutText = source => Buffer.from(fs.readFileSync(source, "utf8").replace(/\r\n/g, "\n"), "utf8");
+function layoutSourceCrc(bytes) {
+	const table = 8 + bytes.readUInt32LE(8);
+	for (let i = 0; i < bytes.readUInt32LE(12); i++) {
+		const entry = table + i * 12;
+		if (bytes.toString("ascii", entry, entry + 4) === "DATA") return bytes.readUInt32LE(entry + 4 + bytes.readUInt32LE(entry + 4));
+	}
+	throw new Error("Missing DATA block");
+}
+
+function compile(name, text) {
+	const input = path.join(content, name.replace(/\.vcss_c$/, ".css").replace(/\.vxml_c$/, ".xml"));
 	fs.mkdirSync(path.dirname(input), { recursive: true });
-	fs.copyFileSync(source, input);
+	fs.writeFileSync(input, text);
 	const result = spawnSync(resourceCompiler, ["-nop4", "-f", "-i", input], { encoding: "utf8" });
 	if (result.error || !/OK: 1 compiled, 0 failed/.test(result.stdout || ""))
 		throw new Error(`resourcecompiler failed for ${name}:\n${result.stdout || result.error}`);
+}
+
+// Layouts have no plaintext to recover: Source 2 Viewer (Source2Viewer-CLI on the PATH) reconstructs their XML.
+function decompileLayout(file) {
+	const output = path.join(require("node:os").tmpdir(), `panorama_layout_${process.pid}.xml`);
+	const result = spawnSync("Source2Viewer-CLI", ["-i", file, "-d", "-o", output], { encoding: "utf8", cwd: path.dirname(output) });
+	if (result.error || !fs.existsSync(output)) throw new Error(`Source2Viewer-CLI failed for ${file}:\n${result.stdout || result.error}`);
+	const xml = fs.readFileSync(output, "utf8").replace(/^<!--.*-->\r?\n/, "").replace(/\r\n/g, "\n");
+	fs.rmSync(output);
+	return xml;
 }
 
 function files(dir) {
@@ -123,19 +146,23 @@ function files(dir) {
 function main() {
 	const [command, ...names] = process.argv.slice(2);
 	if (command === "extract") {
+		const extensions = { ".vjs_c": ".js", ".vcss_c": ".css", ".vxml_c": ".xml" };
 		for (const name of names) {
-			if (!name.startsWith("panorama/") || !name.endsWith(".vjs_c") || name.includes(".."))
-				throw new Error(`Invalid script path: ${name}`);
+			const extension = path.extname(name);
+			if (!name.startsWith("panorama/") || !extensions[extension] || name.includes(".."))
+				throw new Error(`Invalid resource path: ${name}`);
 			const original = fs.readFileSync(path.join(root, name));
+			const source = path.join(sources, name.slice(0, -extension.length) + extensions[extension]);
+			if (fs.existsSync(source)) throw new Error(`Refusing to overwrite editable source ${source}`);
+			const text = extension === ".vjs_c" ? parse(original).source
+				: extension === ".vcss_c" ? styleText(original) : decompileLayout(path.join(root, name));
 			const backup = path.join(backups, name);
 			if (!fs.existsSync(backup)) {
 				fs.mkdirSync(path.dirname(backup), { recursive: true });
 				fs.writeFileSync(backup, original);
 			}
-			const source = path.join(sources, name.replace(/\.vjs_c$/, ".js"));
-			if (fs.existsSync(source)) throw new Error(`Refusing to overwrite editable source ${source}`);
 			fs.mkdirSync(path.dirname(source), { recursive: true });
-			fs.writeFileSync(source, parse(original).source, "utf8");
+			fs.writeFileSync(source, text, "utf8");
 		}
 	} else if (command === "build" || command === "verify") {
 		let count = 0;
@@ -150,10 +177,19 @@ function main() {
 		for (const source of files(sources).filter(name => name.endsWith(".css"))) {
 			const name = path.relative(sources, source).replace(/\.css$/, ".vcss_c");
 			if (!fs.existsSync(path.join(backups, name))) throw new Error(`Missing original style backup: ${name}`);
-			if (command === "build") compileStyle(name, source);
+			if (command === "build") compile(name, fs.readFileSync(source));
 			if (normalizeStyle(styleText(fs.readFileSync(path.join(root, name)))) !== normalizeStyle(fs.readFileSync(source, "utf8")))
 				throw new Error(`Compiled style differs from source: ${name}`);
 			styles++;
+		}
+		let layouts = 0;
+		for (const source of files(sources).filter(name => name.endsWith(".xml"))) {
+			const name = path.relative(sources, source).replace(/\.xml$/, ".vxml_c");
+			if (!fs.existsSync(path.join(backups, name))) throw new Error(`Missing original layout backup: ${name}`);
+			if (command === "build") compile(name, layoutText(source));
+			if (layoutSourceCrc(fs.readFileSync(path.join(root, name))) !== crc32(layoutText(source)))
+				throw new Error(`Compiled layout differs from source: ${name}`);
+			layouts++;
 		}
 		for (const [target, original] of Object.entries(imageAliases)) {
 			const bytes = fs.readFileSync(path.join(root, original));
@@ -165,11 +201,12 @@ function main() {
 		}
 		console.log(`${command}: ${count} Panorama scripts; syntax, block bounds, CRC32 and DATA verified`);
 		console.log(`${command}: ${styles} Panorama styles compiled from source and verified`);
+		console.log(`${command}: ${layouts} Panorama layouts compiled from source and verified`);
 		console.log(`${command}: ${Object.keys(imageAliases).length} shop image alias verified`);
 		// Re-encoded textures are rebuilt separately (panorama_textures.js build); here they are only checked.
 		if (command === "verify") require("./panorama_textures").verify();
-	} else throw new Error("Usage: node panorama_resources.js extract <panorama/...vjs_c> | build | verify");
+	} else throw new Error("Usage: node panorama_resources.js extract <panorama/...(vjs_c|vcss_c|vxml_c)> | build | verify");
 }
 
 if (require.main === module) main();
-module.exports = { parse, rebuild, crc32, styleText, root, sources, backups };
+module.exports = { parse, rebuild, crc32, styleText, layoutSourceCrc, root, sources, backups };

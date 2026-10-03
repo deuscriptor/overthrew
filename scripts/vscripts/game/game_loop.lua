@@ -37,8 +37,6 @@ function GameLoop:Init()
 
 	GameLoop._leader_overthrow_candidate = false
 
-	GameLoop:InitWinrates()
-
 	GameLoop:InitFountains()
 	GameLoop:InitTowers()
 	GameLoop:InitOverboss()
@@ -339,13 +337,6 @@ function GameLoop:InitHero(hero)
 	Upgrades:LoadUpgradesData(hero:GetUnitName())
 	Upgrades:SendUpgradesData(player_id)
 
-	local winrateOrbs = GameLoop.winrateOrbs[hero:GetUnitName()]
-	if winrateOrbs and winrateOrbs > 0 then
-		for i = 1, winrateOrbs do
-			Upgrades:QueueSelection(hero, UPGRADE_RARITY_COMMON)
-		end
-	end
-
 	UpgradeRerolls:PreparePlayer(player_id)
 
 	if not GetDummyInventory(player_id) then
@@ -449,18 +440,6 @@ function GameLoop:UpdateScoreGoal()
 	})
 end
 
-function GameLoop:IncreaseScoreByVote(player_id)
-	local kills_by_vote = TEAMS_LAYOUTS[GetMapName()].kills_by_vote
-	local time_by_vote = TEAMS_LAYOUTS[GetMapName()].time_by_vote
-
-	if not self:HasFixedKillGoal() then self.target_kill_goal = self.target_kill_goal + kills_by_vote end
-	self.current_layout.game_base_duration = self.current_layout.game_base_duration + time_by_vote
-	EarlyConsumables:RegisterScoreVoteForPlayer(player_id, EXTRA_SCORE_VOTE_TYPE.DEFAULT)
-
-	GameLoop:UpdateScoreGoal()
-end
-
-
 function GameLoop:DecreaseScoreByPlayerDisconnect(player_id)
 	if self:HasFixedKillGoal() then return end
 	if GameLoop.game_over then return end
@@ -487,14 +466,6 @@ function GameLoop:IncreaseScoreByPlayerDisconnect(player_id, iCount)
 --	self.current_layout.game_base_duration = self.current_layout.game_base_duration - GAME_DURATION_INCREASE_PER_VOTE
 
 	GameRules:SendCustomMessage( "#game_duration_increased_abandon_note", player_id, iCount)
-end
-
-
-function GameLoop:IncreaseTimeAndGoal(amount)
-	if not self:HasFixedKillGoal() then self.target_kill_goal = self.target_kill_goal + amount end
-	self.current_layout.game_base_duration = self.current_layout.game_base_duration + (amount * 10)
-
-	GameLoop:UpdateScoreGoal()
 end
 
 
@@ -535,7 +506,7 @@ function GameLoop:TransferLeadership(new_kill_leader_team)
 	if not new_kill_leader_team then return end
 
 	-- if we have leader overthrow candidate, and kill leader has changed (checked above), then leader was overthrown
-	if GameLoop._leader_overthrow_candidate and GameLoop:IsOrbSpreeAllowed() then
+	if GameLoop._leader_overthrow_candidate then
 		print("[Game Loop] triggered leader overthrow")
 		local overthrow_reward_min = GameLoop.current_layout.overthrow_reward_min or 3
 		local overthrow_reward_max = GameLoop.current_layout.overthrow_reward_max or 6
@@ -612,7 +583,6 @@ end
 
 function GameLoop:GetCommonUpgradesRate(team, place)
 	local base_progress = GameLoop.current_layout.common_upgrade_progress[place]
-	local teamwork_enhancers = 0
 	local modifier_enhancers = 0
 
 	local modifier_names = {
@@ -621,8 +591,6 @@ function GameLoop:GetCommonUpgradesRate(team, place)
 
 	for _, hero in pairs(GameLoop.heroes_by_team[team] or {}) do
 		if IsValidEntity(hero) then
-			teamwork_enhancers = teamwork_enhancers + WebInventory:GetItemCount(hero:GetPlayerID(), "bp_teamwork_enhancer")
-
 			if hero:IsAlive() and not hero:PassivesDisabled() then
 				for _, modifier_name in ipairs(modifier_names) do
 					local modifier = hero:FindModifierByName(modifier_name)
@@ -634,7 +602,7 @@ function GameLoop:GetCommonUpgradesRate(team, place)
 		end
     end
 
-	return base_progress * (1 + teamwork_enhancers * 0.01) * (1 + modifier_enhancers * 0.01)
+	return base_progress * (1 + modifier_enhancers * 0.01)
 end
 
 
@@ -716,24 +684,6 @@ function GameLoop:SetGameWinner(team)
 end
 
 
-function GameLoop:InitWinrates(winrates)
-	GameLoop.winrates = {}
-	GameLoop.winrateOrbs = {}
-
-	for k in pairs(LoadKeyValues("scripts/npc/herolist.txt")) do
-		if winrates then
-			GameLoop.winrates[k] = winrates[k] or 1
-		elseif DEV_RANDOM_WINRATES then
-			GameLoop.winrates[k] = RandomFloat(0.1, 0.9)
-		end
-		if GameLoop.winrates[k] ~= nil then
-			GameLoop.winrateOrbs[k] = math.floor((0.5 - GameLoop.winrates[k]) / 0.5)
-		end
-	end
-	CustomNetTables:SetTableValue("winrates", "orbs", GameLoop.winrateOrbs)
-end
-
-
 function GameLoop:PickRandomHero(player_id)
 	if IsSingleDraftMap() then return SingleDraft:PickRandomHero(player_id) end
 	if GameRules:State_Get() > DOTA_GAMERULES_STATE_HERO_SELECTION then return end
@@ -744,8 +694,4 @@ function GameLoop:PickRandomHero(player_id)
 	if PlayerResource:HasRandomed(player_id) or player:GetAssignedHero() then return end
 	player:MakeRandomHeroSelection()
 	PlayerResource:SetHasRandomed(player_id)
-end
-
-function GameLoop:IsOrbSpreeAllowed()
-	return not SeasonalEvents:IsAnyEpicEventRunning()
 end

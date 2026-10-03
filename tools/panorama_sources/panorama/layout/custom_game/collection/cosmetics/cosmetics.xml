@@ -1,0 +1,61 @@
+<root>
+	<styles>
+		<include src="s2r://panorama/styles/dotastyles.vcss_c" />
+		<include src="s2r://panorama/layout/custom_game/collection/cosmetics/cosmetics_precache.vcss_c" />
+		<include src="s2r://panorama/layout/custom_game/collection/cosmetics/cosmetics_rarities.vcss_c" />
+		<include src="s2r://panorama/layout/custom_game/collection/cosmetics/cosmetics.vcss_c" />
+	</styles>
+	<scripts>
+		<include src="s2r://panorama/layout/custom_game/scripts/utils.vjs_c" />
+		<include src="s2r://panorama/layout/custom_game/collection/const.vjs_c" />
+		<include src="s2r://panorama/layout/custom_game/collection/cosmetics/cosmetics_const.vjs_c" />
+		<include src="s2r://panorama/layout/custom_game/collection/cosmetics/cosmetics.vjs_c" />
+	</scripts>
+	<snippets>
+		<snippet name="Cosmetic_Tab">
+			<Button class="Cosmetic_Tab">
+				<Panel class="CT_ActiveOverlay" />
+				<Panel class="CT_Root">
+					<Panel id="CT_Icon">
+						<Panel />
+					</Panel>
+					<Label text="{s:tab_name}" html="true" />
+				</Panel>
+			</Button>
+		</snippet>
+		<snippet name="Cosmetic_Content">
+			<Panel class="Cosmetic_Content" />
+		</snippet>
+		<snippet name="Cosmetic_Item">
+			<Panel class="Cosmetic_Item">
+				<Panel class="CI_Background">
+					<Image id="CI_Image">
+						<Button id="CI_Details" />
+						<Label class="CI_Count" text="{d:item_count}" />
+						<Label class="CI_Name" text="{s:item_name}" html="true" />
+						<Panel class="CI_EquippedItemFlag" />
+					</Image>
+				</Panel>
+				<Button id="CI_ActionButton">
+					<Panel class="CI_ActionButtonOverlay Hover" />
+					<Panel class="CI_ActionButtonOverlay Active" />
+					<Label text="Action" />
+				</Button>
+			</Panel>
+		</snippet>
+	</snippets>
+	<Panel class="Custom_Cosmetics" hittest="false">
+		<Panel id="CC_Tabs" />
+		<Panel class="CC_MainPanel">
+			<Panel class="CC_HeaderRoot">
+				<Label id="CC_SortingText" text="#sort_by" />
+				<DropDown id="CC_SortingOptions" acceptinput="false">
+					<Label id="sort_default" text="#cc_sort_default" onactivate="SortItems(&apos;default&apos;)" />
+					<Label id="sort_rarity_up" text="#cc_sort_rarity_up" onactivate="SortItems(&apos;rarity_up&apos;)" />
+					<Label id="sort_rarity_down" text="#cc_sort_rarity_down" onactivate="SortItems(&apos;rarity_down&apos;)" />
+				</DropDown>
+			</Panel>
+			<Panel id="CC_ContentRoot" />
+		</Panel>
+	</Panel>
+</root>

@@ -3,10 +3,6 @@ ITEM_DEFINITIONS["kill_effect_avowance"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.IMMORTAL,
 
-	unlocked_with = {
-		subscription_tier = 2,
-	},
-
 	particle_variants = {
 		-- hero kills should play full particle effect
 		["hero"] = {
@@ -27,10 +23,6 @@ ITEM_DEFINITIONS["kill_effect_blast_zone"] = {
 	slot = INVENTORY_SLOTS.KILL_EFFECT,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.MYTHICAL,
-
-	unlocked_with = {
-		treasure = "treasure_1",
-	},
 
 	particle_variants = {
 		-- hero kills should play full particle effect
@@ -65,10 +57,6 @@ ITEM_DEFINITIONS["kill_effect_bloodburst"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.ARCANA,
 
-	unlocked_with = {
-		treasure = "treasure_2"
-	},
-
 	particle_variants = {
 		-- hero kills should play full particle effect
 		["hero"] = {
@@ -101,10 +89,6 @@ ITEM_DEFINITIONS["kill_effect_blue_whirl"] = {
 	slot = INVENTORY_SLOTS.KILL_EFFECT,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.RARE,
-
-	unlocked_with = {
-		currency = 1500,
-	},
 
 	particle_variants = {
 		-- hero kills should play full particle effect
@@ -139,10 +123,6 @@ ITEM_DEFINITIONS["kill_effect_collapse"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.UNCOMMON,
 
-	unlocked_with = {
-		treasure = "treasure_2"
-	},
-
 	particle_variants = {
 		-- hero kills should play full particle effect
 		["hero"] = {
@@ -176,10 +156,6 @@ ITEM_DEFINITIONS["kill_effect_diretide_bats"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.RARE,
 
-	unlocked_with = {
-		currency = 2500,
-	},
-
 	particle_variants = {
 		-- hero kills should play full particle effect
 		["hero"] = {
@@ -201,10 +177,6 @@ ITEM_DEFINITIONS["kill_effect_dissolution"] = {
 	slot = INVENTORY_SLOTS.KILL_EFFECT,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.UNCOMMON,
-
-	unlocked_with = {
-		treasure = "treasure_1"
-	},
 
 	particle_variants = {
 		-- hero kills should play full particle effect
@@ -228,10 +200,6 @@ ITEM_DEFINITIONS["kill_effect_glade_grave"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.COMMON,
 
-	unlocked_with = {
-		treasure = "treasure_1",
-	},
-
 	particle_variants = {
 		-- hero kills should play full particle effect
 		["hero"] = {
@@ -253,10 +221,6 @@ ITEM_DEFINITIONS["kill_effect_golden_touch"] = {
 	slot = INVENTORY_SLOTS.KILL_EFFECT,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.IMMORTAL,
-
-	unlocked_with = {
-		currency = 10000,
-	},
 
 	particle_variants = {
 		-- hero kills should play full particle effect
@@ -292,10 +256,6 @@ ITEM_DEFINITIONS["kill_effect_incineration"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.RARE,
 
-	unlocked_with = {
-		treasure = "treasure_3",
-	},
-
 	particle_variants = {
 		-- hero kills should play full particle effect
 		["hero"] = {
@@ -329,10 +289,6 @@ ITEM_DEFINITIONS["kill_effect_meltdown"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.MYTHICAL,
 
-	unlocked_with = {
-		treasure = "treasure_2"
-	},
-
 	particle_variants = {
 		-- hero kills should play full particle effect
 		["hero"] = {
@@ -355,10 +311,6 @@ ITEM_DEFINITIONS["kill_effect_raze"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.MYTHICAL,
 
-	unlocked_with = {
-		treasure = "treasure_3"
-	},
-
 	particle_variants = {
 		-- hero kills should play full particle effect
 		["hero"] = {
@@ -379,10 +331,6 @@ ITEM_DEFINITIONS["kill_effect_snowstorm"] = {
 	slot = INVENTORY_SLOTS.KILL_EFFECT,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.UNCOMMON,
-
-	unlocked_with = {
-		currency = 1000,
-	},
 
 	particle_variants = {
 		-- hero kills should play full particle effect
@@ -405,10 +353,6 @@ ITEM_DEFINITIONS["kill_effect_sparkles"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.UNCOMMON,
 
-	unlocked_with = {
-		subscription_tier = 1,
-	},
-
 	particle_variants = {
 		-- hero kills should play full particle effect
 		["hero"] = {
@@ -429,10 +373,6 @@ ITEM_DEFINITIONS["kill_effect_supernova"] = {
 	slot = INVENTORY_SLOTS.KILL_EFFECT,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.LEGENDARY,
-
-	unlocked_with = {
-		treasure = "treasure_3"
-	},
 
 	particle_variants = {
 		-- hero kills should play full particle effect

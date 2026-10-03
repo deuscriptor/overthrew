@@ -12,7 +12,6 @@ let _DEFINITIONS_REQUESTED = false;
  * @enum {string}
  */
 const INVENTORY_SLOT = {
-	TREASURES: "98",
 	AURA: "2",
 	PET: "5",
 	KILL_EFFECT: "4",
@@ -20,9 +19,6 @@ const INVENTORY_SLOT = {
 	HIGH_FIVE: "7",
 	SPRAY: "1",
 	HERO_EFFECT: "3",
-	MISC: "99",
-	//  unused, for future work
-	// VOICE_LINE: "100",
 };
 const _INVENTORY_SLOT_NAMES = Object.fromEntries(Object.entries(INVENTORY_SLOT).map((a) => a.reverse()));
 
@@ -51,8 +47,6 @@ const ITEM_RARITY_NAMES = Object.fromEntries(Object.entries(ITEM_RARITY).map((a)
  */
 const ITEM_TYPE = {
 	EQUIPMENT: 1,
-	CONSUMABLE: 2,
-	PASSIVE: 3,
 };
 
 function UpdateInventory(event) {
@@ -95,7 +89,7 @@ GameUI.Inventory.GetItemCount = function (item_name) {
 };
 
 /**
- * Returns path for item image from battle pass.
+ * Returns path for item image.
  *
  * @param {String} item_name
  * @returns {String} Path format "file://{...}.png"
@@ -116,7 +110,7 @@ GameUI.Inventory.GetEquippedItemInSlot = function (slot) {
 };
 
 /**
- * Returns item definition (`slot`, `type`, `rarity`, `unlocked_with`).
+ * Returns item definition (`slot`, `type`, `rarity`).
  * @param {String} item_name
  * @returns {Object}
  */
@@ -167,49 +161,6 @@ GameUI.Inventory.GetItemRarity = function (item_name) {
  */
 GameUI.Inventory.GetItemRarityName = function (item_name) {
 	if (DEFINITIONS && DEFINITIONS[item_name]) return GameUI.Inventory.GetRarityName(DEFINITIONS[item_name].rarity);
-};
-
-/**
- * Attempts to use item (invoke `on_use`)
- *
- * WARNING: This method doesn't inform of any failures in usage and is provided for convenience.
- * @param {String} item_name
- */
-GameUI.Inventory.UseItem = function (item_name) {
-	GameEvents.SendToServerEnsured("WebInventory:use", {
-		item_name: item_name,
-	});
-};
-
-/**
- * Attempts to consume an item (reducing item count in player inventory).
- *
- * WARNING: this method makes permanent changes to player backend inventory
- * It also doesn't inform of any failures. Most of the time, using same API in lua is a better choice
- * @param {String} item_name
- * @param {Number} count
- */
-GameUI.Inventory.ConsumeItem = function (item_name, count) {
-
-	GameEvents.SendToServerEnsured("WebInventory:consume", {
-		item_name: item_name,
-		consumed_count: count,
-	});
-};
-
-/**
- * Buys specified `count` of `item_name`/
- *
- * WARNING: this method makes permanent changes to player currency balance and inventory.
- * Performs HTTP request to backend from lua as soon as lua receives event.
- * @param {String} item_name
- * @param {Number} count
- */
-GameUI.Inventory.BuyItem = function (item_name, count) {
-	GameEvents.SendToServerEnsured("WebInventory:purchase", {
-		item_name: item_name,
-		count: count,
-	});
 };
 
 /**

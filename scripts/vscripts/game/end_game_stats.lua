@@ -42,9 +42,6 @@ function EndGameStats:Init()
 				xpm = 0,
 				capture_orbs_time = 0,
 				tips_received = 0,
-
-				current_rating = 1500,
-				rating_change = 0
 			}
 		end
 	end
@@ -83,52 +80,6 @@ function EndGameStats:OnEntityKilled(event)
 end
 
 
-function EndGameStats:GetOtherTeamsAverageRating(team)
-	local total = 0
-	local count = 0
-
-	for player_id, hero in pairs(GameLoop.hero_by_player_id or {}) do
-		if PlayerResource:GetTeam(player_id) ~= team then
-			local rating = WebPlayer:GetRating(player_id)
-			if rating < 500 then rating = 500 end
-			total = total + rating
-			count = count + 1
-		end
-	end
-
-	if count > 0 then return total / count end
-
-	return 1500
-end
-
-
-function EndGameStats:GetRatingChange(player_id, override_place)
-	if not SimulatedEndGame:IsSubmissionAllowed() then return 0 end
-
-	if SeasonalEvents:IsAnyEpicEventRunning() then return 0 end
-
-	local team_id = PlayerResource:GetTeam(player_id)
-	local place = override_place or SimulatedEndGame:GetPlace(team_id)
-
-	print("calculating rating change for", player_id, team_id, place)
-
-	local base_change = GameLoop.current_layout.rating_changes[place] or 0
-	local other_teams_average_rating = EndGameStats:GetOtherTeamsAverageRating(team_id)
-	local current_rating = WebPlayer:GetRating(player_id)
-	if current_rating < 500 then current_rating = 500 end
-
-	local score_delta = math.floor((other_teams_average_rating - current_rating) * RATING_MULTIPLIER + 0.5)
-
-	local rating_change = base_change + math.clamp(score_delta, -RATING_CHANGE_CAP, RATING_CHANGE_CAP)
-
-	if EarlyConsumables:HavePlayerUsedDoubleMMRToken(player_id) then
-		rating_change = rating_change * 2
-	end
-
-	return rating_change
-end
-
-
 function EndGameStats:FinalizeStats()
 	EndGameStats.couriers = FindUnitsInRadius(
 		DOTA_TEAM_GOODGUYS,
@@ -150,7 +101,6 @@ function EndGameStats:FinalizeStats()
 			EndGameStats:Update_XPM(player_id)
 			EndGameStats:Update_GPM(player_id)
 			EndGameStats:UpdateDamageTaken(player_id)
-			EndGameStats:UpdateMMRChange(player_id)
 			EndGameStats:UpdateCaptureOrbTime(player_id)
 		end
 	end
@@ -261,11 +211,6 @@ function EndGameStats:UpdateDamageTaken(player_id)
 	end
 end
 
-
-function EndGameStats:UpdateMMRChange(player_id)
-	EndGameStats.stats[player_id].current_rating = WebPlayer:GetRating(player_id)
-	EndGameStats.stats[player_id].rating_change = EndGameStats:GetRatingChange(player_id)
-end
 
 function EndGameStats:UpdateCaptureOrbTime(player_id)
 	EndGameStats.stats[player_id].capture_orbs_time = MVPController.orb_capture_score[player_id] or 0

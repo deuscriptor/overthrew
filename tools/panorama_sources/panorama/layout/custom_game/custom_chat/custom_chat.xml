@@ -1,0 +1,12 @@
+<root>
+	<styles>
+		<include src="s2r://panorama/styles/dotastyles.vcss_c" />
+		<include src="s2r://panorama/layout/custom_game/custom_chat/custom_chat.vcss_c" />
+	</styles>
+	<scripts>
+		<include src="s2r://panorama/layout/custom_game/scripts/utils.vjs_c" />
+		<include src="s2r://panorama/layout/custom_game/custom_chat/custom_chat_const.vjs_c" />
+		<include src="s2r://panorama/layout/custom_game/custom_chat/custom_chat.vjs_c" />
+	</scripts>
+	<Panel class="DummyHud" hittest="false" style="flow-children: down;" />
+</root>

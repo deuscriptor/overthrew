@@ -1,0 +1,29 @@
+<root>
+	<styles>
+		<include src="s2r://panorama/styles/dotastyles.vcss_c" />
+		<include src="s2r://panorama/layout/custom_game/top_menu/top_menu.vcss_c" />
+	</styles>
+	<scripts>
+		<include src="s2r://panorama/layout/custom_game/scripts/utils.vjs_c" />
+		<include src="s2r://panorama/layout/custom_game/top_menu/top_menu.vjs_c" />
+	</scripts>
+	<Panel class="CustomTopMenu_Root" hittest="false">
+		<Panel id="CTM_Lines">
+			<Panel class="CTM_Line1">
+				<Button id="CTM_ReturnToDashboard" class="CTM_DefultButton" onactivate="DOTAHUDShowDashboard();" onmouseover="DOTAShowTextTooltip(#DOTA_HUD_BackToDashboard)" onmouseout="DOTAHideTextTooltip()">
+					<Panel />
+				</Button>
+				<Button id="CTM_Settings" class="CTM_DefultButton" onactivate="DOTAShowSettingsRebornPopup();" onmouseover="DOTAShowTextTooltip(#DOTA_HUD_Settings)" onmouseout="DOTAHideTextTooltip()">
+					<Panel />
+				</Button>
+				<Button id="CTM_Scoreboard" class="CTM_DefultButton" onactivate="DOTAHUDToggleScoreboard();" onmouseover="DOTAShowTextTooltip(#DOTA_HUD_Scoreboard)" onmouseout="DOTAHideTextTooltip()">
+					<Panel />
+				</Button>
+				<Button id="CTM_Collection" class="CTM_DefultButton" onactivate="GameUI.Custom_ToggleCollection();" onmouseover="DOTAShowTextTooltip(#open_collection)" onmouseout="DOTAHideTextTooltip()">
+					<Panel />
+					<DOTAParticleScenePanel class="Collection_FX" particleName="particles/ui/collection_border.vpcf" particleonly="true" lookAt="0 -1 0" cameraOrigin="0 0 -50" fov="110" hittest="false" />
+				</Button>
+			</Panel>
+		</Panel>
+	</Panel>
+</root>

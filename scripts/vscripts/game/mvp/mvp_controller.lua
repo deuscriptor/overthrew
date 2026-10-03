@@ -91,7 +91,6 @@ function MVPController:FinalizeStats(winner_team)
 		MVPController._results[MVP_TYPE.WINNER] = {
 			player_id = mvp_player_id,
 			categories = MVPController:GetPlayerMVPCategories(mvp_player_id),
-			rewards = MVPController:GetMVPReward(MVP_TYPE.WINNER),
 		}
 	end
 
@@ -100,7 +99,6 @@ function MVPController:FinalizeStats(winner_team)
 		MVPController._results[MVP_TYPE.RUNNER_UP_1] = {
 			player_id = first_runner_up,
 			categories = MVPController:GetPlayerMVPCategories(first_runner_up),
-			rewards = MVPController:GetMVPReward(MVP_TYPE.RUNNER_UP_1),
 		}
 	end
 
@@ -109,7 +107,6 @@ function MVPController:FinalizeStats(winner_team)
 		MVPController._results[MVP_TYPE.RUNNER_UP_2] = {
 			player_id = second_runner_up,
 			categories = MVPController:GetPlayerMVPCategories(second_runner_up),
-			rewards = MVPController:GetMVPReward(MVP_TYPE.RUNNER_UP_2),
 		}
 	end
 
@@ -323,42 +320,6 @@ end
 
 function MVPController:GetUnitsSummonedCount(player_id)
 	return MVPController.units_summoned_score[player_id] or 0
-end
-
-
---- Returns type of MVP for desired player, specifically for backend
---- For backend purposes we do not care which runner up is player - both fall under same type
----@param player_id number
-function MVPController:GetAftermatchMVPType(player_id)
-	local status = MVPController._statuses[player_id]
-
-	if status == MVP_TYPE.WINNER then return MVP_TYPE.WINNER end
-	if status == MVP_TYPE.RUNNER_UP_1 or status == MVP_TYPE.RUNNER_UP_2 then return MVP_TYPE.RUNNER_UP_1 end
-
-	return MVP_TYPE.NONE
-end
-
-
-function MVPController:GetMVPType(player_id)
-	return MVPController._statuses[player_id] or MVP_TYPE.NONE
-end
-
-
---- Returns rewards for desired mvp type, if any
---- WARNING: takes into account conditions of MVP eligibility - game duration and player counts, and will return empty table if game is ineligible
----@param mvp_type MVP_TYPE
-function MVPController:GetMVPReward(mvp_type)
-	if not mvp_type or mvp_type == MVP_TYPE.NONE then return {} end
-
-	local map_name = GetMapName()
-
-	-- game has to be at least 10 minutes long and have all players in to qualify
-	if GameRules:GetGameTime() < 10 * 60 or not GameLoop.is_full_lobby or HostOptions:GetOption(HOST_OPTION.TOURNAMENT) or not SimulatedEndGame:IsSubmissionAllowed() then
-		DebugMessage("[MVPController] declined MVP rewards - ineligible match")
-		return {}
-	end
-
-	return (MVP_REWARDS[map_name] or {})[mvp_type] or {}
 end
 
 

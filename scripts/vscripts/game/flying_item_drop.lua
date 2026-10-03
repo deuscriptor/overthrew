@@ -17,8 +17,6 @@ function FlyingTreasureDrop:Init()
 	self.active_path_particles = {}
 
 	ListenToGameEvent("dota_npc_goal_reached", Dynamic_Wrap(FlyingTreasureDrop, "OnNpcGoalReached"), self)
-
-	EventDriver:Listen("WebSettings:settings_changed", FlyingTreasureDrop.OnPlayerSettingsChanged, FlyingTreasureDrop)
 end
 
 
@@ -222,8 +220,7 @@ function FlyingTreasureDrop:CreatePathParticles(spawn_id, target_index, point)
 			ParticleManager:SetParticleControl(p_id, 1, IsValidEntity(attachment_entity) and attachment_entity:GetAbsOrigin() or Vector(0, 0, 0))
 			ParticleManager:SetParticleControl(p_id, 0, point)
 
-			local transparency = WebSettings:GetSettingValue(player_id, "disable_epic_path", false) and 0 or 1
-			ParticleManager:SetParticleControl(p_id, 6, Vector(transparency, 0, 0))
+			ParticleManager:SetParticleControl(p_id, 6, Vector(1, 0, 0))
 
 			particles[player_id] = p_id
 		end
@@ -246,24 +243,4 @@ function FlyingTreasureDrop:DestroyPathParticles(spawn_id, target_index)
 	self.active_path_particles[spawn_id][target_index] = nil
 
 	if table.count(self.active_path_particles) <= 0 then self.active_path_particles[spawn_id] = nil end
-end
-
-
-function FlyingTreasureDrop:OnPlayerSettingsChanged(event)
-	-- toggle active path particles
-	if event.setting_name ~= "disable_epic_path" then return end
-
-	local player_id = event.player_id
-
-	local transparency = event.setting_value and 0 or 1
-
-	for _, targets in pairs(self.active_path_particles or {}) do
-		for _, particles in pairs(targets or {}) do
-			local player_particle = particles[player_id]
-
-			if player_particle then
-				ParticleManager:SetParticleControl(player_particle, 6, Vector(transparency, 0, 0))
-			end
-		end
-	end
 end

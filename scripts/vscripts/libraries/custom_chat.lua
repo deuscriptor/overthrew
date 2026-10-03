@@ -13,8 +13,7 @@
 		- Additional parameters: This table can also contain other key-value pairs which will be localized on client-side.
 	@param abilities table Optional. Abilities related to the message. Array for render abilities' icons after at the end of the message
 	@param extra_data table Specific extra data. Can contain any info, but should be implemted separately on client-side.
-		- remainin_time talbe (k=v) for alt-ping buffs time remaning
-		- mastery string for mastery icon
+		- remaining_time table (k=v) for alt-ping buffs time remaining
 
 	@param team_number number for team message
 
@@ -40,7 +39,6 @@
 				key = "%s4",
 				value = 12,
 			},
-			mastery = "tenacity"
 		},
 		loc_var_1 = "loc_token_1",
 		loc_var_2 = "loc_token_2",

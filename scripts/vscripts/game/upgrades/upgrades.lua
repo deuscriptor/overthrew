@@ -29,8 +29,6 @@ function Upgrades:Init()
 
 	Upgrades.disabled_upgrades_per_player = {}
 
-	Upgrades.lucky_trinket_proc  = {}
-
 	EventStream:Listen("Upgrades:dev:load_upgrades", function(event) Upgrades:LoadUpgradesData(event.hero_name) end)
 	EventStream:Listen("Upgrades:dev:request_upgrades", function(event) Upgrades:SendUpgradesData(event.PlayerID) end)
 	EventStream:Listen("Upgrades:dev:add_upgrade", function(event) Upgrades:AddToolsUpgrade(event) end)
@@ -51,24 +49,6 @@ function Upgrades:Init()
 
 	EventDriver:Listen("Events:npc_spawned", Upgrades.OnNpcSpawned, Upgrades)
 	EventDriver:Listen("Events:modifier_added", Upgrades.OnModifierAdded, Upgrades)
-end
-
-
-function Upgrades:LoadFavoriteBuilds(player_id, builds_data)
-	Upgrades.favourite_builds[player_id] = {}
-	for _, data in ipairs(builds_data or {}) do
-		Upgrades.favourite_builds[player_id][data.build_id] = {
-			hero_name = "npc_dota_hero_" .. data.hero_name,
-			build_id = data.build_id,
-			build_name = data.build_name,
-			build_data = Upgrades:_DeserializeFavorites(data.build_data)
-		}
-	end
-
-	if IsInToolsMode() then
-		print("loaded builds for player", player_id)
-		DeepPrintTable(Upgrades.favourite_builds[player_id])
-	end
 end
 
 
@@ -159,11 +139,9 @@ function Upgrades:AddToolsGenericUpgrade(event)
 end
 
 
-function Upgrades:QueueSelection(hero, rarity, source_rarity)
+function Upgrades:QueueSelection(hero, rarity)
 	if not IsValidEntity(hero) then return end
 
-	-- Conversion changes the reward, not the original bonus-grant trigger.
-	source_rarity = source_rarity or rarity
 	rarity = ResolveOrbRarity(rarity)
 
 	local player_id = hero:GetPlayerOwnerID()
@@ -173,7 +151,6 @@ function Upgrades:QueueSelection(hero, rarity, source_rarity)
 
 	table.insert(Upgrades.queued_selection[player_id], {
 		rarity = rarity,
-		is_lucky_trinket_proc = Upgrades.lucky_trinket_proc[player_id]
 	})
 
 	if not Upgrades.pending_selection[player_id] then
@@ -187,24 +164,12 @@ function Upgrades:QueueSelection(hero, rarity, source_rarity)
 		end
 	end
 
-	-- lucky trinket can't proc on itself
-	if Upgrades.lucky_trinket_proc[player_id] then return end
-
-	local rarity_name = RARITY_ENUM_TO_TEXT[source_rarity]
-	local lucky_trinket_count = WebInventory:GetItemCount(player_id, "bp_lucky_trinket_" .. rarity_name)
-
-	if lucky_trinket_count and lucky_trinket_count > 0 and RollPercentage(lucky_trinket_count) then
-		print("[Upgrades] Lucky Trinket proc!")
-		Upgrades.lucky_trinket_proc[player_id] = true
-		Upgrades:QueueSelection(hero, rarity, source_rarity)
-		Upgrades.lucky_trinket_proc[player_id] = nil
-	end
 end
 
 
-function Upgrades:QueueSelectionForTeam(team, rarity, source_rarity)
+function Upgrades:QueueSelectionForTeam(team, rarity)
 	for player_id, hero in pairs(GameLoop.heroes_by_team[team] or {}) do
-		Upgrades:QueueSelection(hero, rarity, source_rarity)
+		Upgrades:QueueSelection(hero, rarity)
 	end
 end
 
@@ -229,12 +194,12 @@ function Upgrades:Reroll(event)
 	local reroll_allowed = UpgradeRerolls:ConsumeRerolls(player_id, price)
 
 	if reroll_allowed then
-		Upgrades:ShowSelection(hero, pending.upgrade_rarity, player_id, true, pending.is_lucky_trinket_proc)
+		Upgrades:ShowSelection(hero, pending.upgrade_rarity, player_id, true)
 	end
 end
 
 
-function Upgrades:ShowSelection(hero, rarity, player_id, is_reroll, is_lucky_trinket_proc)
+function Upgrades:ShowSelection(hero, rarity, player_id, is_reroll)
 	if GameLoop.game_over then return end
 
 	local pending_selection = Upgrades.pending_selection[player_id]
@@ -275,7 +240,6 @@ function Upgrades:ShowSelection(hero, rarity, player_id, is_reroll, is_lucky_tri
 		choices = choices,
 		previous_choices = new_previous_choices,
 		selection_id = selection_id,
-		is_lucky_trinket_proc = is_lucky_trinket_proc,
 	}
 
 	local player = PlayerResource:GetPlayer(player_id)
@@ -291,7 +255,6 @@ function Upgrades:ShowSelection(hero, rarity, player_id, is_reroll, is_lucky_tri
 				choices = choices,
 				reroll = is_reroll,
 				selection_id = selection_id,
-				is_lucky_trinket_proc = is_lucky_trinket_proc,
 			},
 			upgrades_count = Upgrades:GetPendingUpgradesCount(player_id),
 			favorites_upgrades = Upgrades.favorites_upgrades[player_id] or {}
@@ -399,7 +362,6 @@ function Upgrades:SendPendingSelection(event)
 			reroll_price = Upgrades:GetRerollPrice(pending_selection.upgrade_rarity),
 			choices = pending_selection.choices,
 			selection_id = pending_selection.selection_id,
-			is_lucky_trinket_proc = pending_selection.is_lucky_trinket_proc,
 		},
 		upgrades_count = Upgrades:GetPendingUpgradesCount(player_id),
 		favorites_upgrades = Upgrades.favorites_upgrades[player_id] or {}
@@ -427,9 +389,6 @@ function Upgrades:UpgradeSelected(event)
 	local subscription_tier = WebPlayer:GetSubscriptionTier(player_id)
 	local rarity = pending_selection.upgrade_rarity
 
-	-- if tournament mode, upgrades selection is forced into t2 state
-	if HostOptions:GetOption(HOST_OPTION.TOURNAMENT) then subscription_tier = 2 end
-
 	local index, upgrade_data = table.find_element(pending_selection.choices, function(t, k, v)
 		return v.upgrade_name == event.upgrade_name and v.ability_name == event.ability_name
 	end)
@@ -448,7 +407,6 @@ function Upgrades:UpgradeSelected(event)
 					choices = pending_selection.choices,
 					reroll = false,
 					selection_id = pending_selection.selection_id,
-					is_lucky_trinket_proc = pending_selection.is_lucky_trinket_proc,
 				},
 				upgrades_count = Upgrades:GetPendingUpgradesCount(player_id),
 				favorites_upgrades = Upgrades.favorites_upgrades[player_id] or {}
@@ -483,7 +441,7 @@ function Upgrades:UpgradeSelected(event)
 
 	if #Upgrades.queued_selection[player_id] > 0 then
 		local selection_data = Upgrades.queued_selection[player_id][1]
-		Upgrades:ShowSelection(hero, selection_data.rarity, player_id, false, selection_data.is_lucky_trinket_proc or false)
+		Upgrades:ShowSelection(hero, selection_data.rarity, player_id, false)
 	end
 end
 
@@ -1118,6 +1076,7 @@ function Upgrades:ApplySavedBuildEvent(event)
 	Upgrades:SendPendingFavorites(event)
 end
 
+-- Favorite builds last for the match.
 function Upgrades:SaveBuildEvent(event)
 	local player_id = event.PlayerID
 	local build_id = event.build_id
@@ -1132,41 +1091,13 @@ function Upgrades:SaveBuildEvent(event)
 		return
 	end
 
-	local applying_same_build = false
-
-	if Upgrades.favourite_builds[player_id] and Upgrades.favourite_builds[player_id][build_id] then
-		local build = Upgrades.favourite_builds[player_id][build_id] or {}
-		applying_same_build = table.deep_compare(build.build_data or {}, Upgrades.favorites_upgrades[player_id] or {})
-		-- print("same build check: ", applying_same_build)
-	end
-
-	-- send serialized and simplified stuff to backend, and store proper version locally
-	local build_data = {
-		steam_id = tostring(PlayerResource:GetSteamID(player_id)),
+	Upgrades.favourite_builds[player_id] = Upgrades.favourite_builds[player_id] or {}
+	Upgrades.favourite_builds[player_id][build_id] = {
 		build_id = build_id,
 		build_name = event.build_name,
-		build_data = Upgrades:_SerializeFavorites(Upgrades.favorites_upgrades[player_id] or {}),
-		hero_name = hero_name:gsub("npc_dota_hero_", "")
+		build_data = Upgrades.favorites_upgrades[player_id] or {},
+		hero_name = hero_name,
 	}
-
-	if not applying_same_build then
-		WebApi:Send(
-			"api/lua/match/set_favorite_build_data",
-			build_data,
-			function(response)
-				print("[Upgrades] successfully saved build", build_id, "for player", player_id)
-			end,
-			function(err)
-				print("[Upgrades] failed to save build", build_id, "for player", player_id, err)
-			end
-		)
-	end
-
-	build_data.hero_name = hero_name
-	build_data.build_data = Upgrades.favorites_upgrades[player_id] or {}
-
-	Upgrades.favourite_builds[player_id] = Upgrades.favourite_builds[player_id] or {}
-	Upgrades.favourite_builds[player_id][build_id] = build_data
 
 	Upgrades:SendPendingFavorites(event)
 end
@@ -1179,20 +1110,6 @@ function Upgrades:ClearBuildEvent(event)
 	Upgrades.favourite_builds[player_id] = Upgrades.favourite_builds[player_id] or {}
 	Upgrades.favourite_builds[player_id][build_id] = nil
 
-	WebApi:Send(
-		"api/lua/match/clear_build",
-		{
-			steam_id = tostring(PlayerResource:GetSteamID(player_id)),
-			build_id = build_id
-		},
-		function(response)
-			print("[Upgrades] successfully saved build", build_id, "for player", player_id)
-		end,
-		function(err)
-			print("[Upgrades] failed to save build", build_id, "for player", player_id, err)
-		end
-	)
-
 	Upgrades:SendPendingFavorites(event)
 end
 
@@ -1201,54 +1118,8 @@ function Upgrades:RenameBuildEvent(event)
 	local build_id = event.build_id
 	if not IsValidPlayerID(player_id) or not build_id or not event.build_name then return end
 
-	Upgrades.favourite_builds[player_id] = Upgrades.favourite_builds[player_id] or {}
-	Upgrades.favourite_builds[player_id][build_id].build_name = event.build_name
-
-	WebApi:Send(
-		"api/lua/match/set_favorite_build_name",
-		{
-			steam_id = tostring(PlayerResource:GetSteamID(player_id)),
-			build_id = build_id,
-			build_name = event.build_name,
-		},
-		function(response)
-			print("[Upgrades] successfully renamed build", build_id, "for player", player_id, "to", event.build_name)
-		end,
-		function(err)
-			print("[Upgrades] failed to rename build", build_id, "for player", player_id, "to", event.build_name, err)
-		end
-	)
-end
-
--- favorites on lua are saved as <special_name> : true, which is great for lookups, but redundant for backend storage
--- these convert to and from arrays, so it will be <ability_name> : [special_1, special_2]
-function Upgrades:_SerializeFavorites(favorites_data)
-	local serialized = {}
-	for ability_name, ability_favorites in pairs(favorites_data or {}) do
-		serialized[ability_name] = {}
-
-		for special_name, _ in pairs(ability_favorites or {}) do
-			if ability_name == "generic" then special_name = special_name:gsub("generic_", "") end
-			table.insert(serialized[ability_name], special_name)
-		end
-	end
-
-	return serialized
-end
-
-
-function Upgrades:_DeserializeFavorites(remote_favorites_data)
-	local deserialized = {}
-	for ability_name, ability_favorites in pairs(remote_favorites_data or {}) do
-		deserialized[ability_name] = {}
-
-		for _, special_name in pairs(ability_favorites or {}) do
-			if ability_name == "generic" then special_name = "generic_" .. special_name end
-			deserialized[ability_name][special_name] = true
-		end
-	end
-
-	return deserialized
+	local build = (Upgrades.favourite_builds[player_id] or {})[build_id]
+	if build then build.build_name = event.build_name end
 end
 
 

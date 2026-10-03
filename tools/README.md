@@ -9,17 +9,17 @@ for both modes: 2:01, 4:31, 7:01, 9:31 and 15:01. The experimental Turbo
 config and accelerated grant schedule have been removed. Native neutral
 crafting timings and recraft costs remain unchanged.
 Aghanim's Shard becomes available at 1:00 in Turbo, versus 2:00 otherwise.
-Gifting orbs is removed: the minimap gift-orb buttons are gone, and Legendary
-Lagresse and Breathtaking Benefaction are Misc items (see the free collection
-below), so no rare/epic orb can be gifted to every team.
-The top-left menu keeps Dashboard, Dota Settings, Scoreboard and Collection; the
-In-Game Settings, Inbox, Leaderboard, Feedback and Promo Events buttons (and the
-new-mail banner) are hidden. Randomed heroes receive Faerie Fire and
-Enchanted Mango; Infused Raindrop is no longer included.
+Gifting orbs is removed: the minimap gift-orb buttons and the gift-orb items
+(Legendary Lagresse, Breathtaking Benefaction) are gone, so no rare/epic orb can
+be gifted to every team.
+The top-left menu has Dashboard, Dota Settings, Scoreboard and Collection; the
+In-Game Settings, Inbox, Leaderboard, Feedback and Promo Events buttons and the
+new-mail banner were removed with the backend (see "Backend removal"). Randomed
+heroes receive Faerie Fire and Enchanted Mango; Infused Raindrop is no longer included.
 **Kill Goal** is a numeric input at the bottom of Core, prefilled with 50. The
 host can enter a positive whole number. Apply locks this as the match's fixed
-kill cap and updates the scoreboard; disconnects and goal-increase events no
-longer alter it on configurable FFA. Existing match-time adjustments still apply.
+kill cap and updates the scoreboard; disconnects no longer alter it on
+configurable FFA. Existing match-time adjustments still apply.
 Single Draft and Turbo are on by default; Epic-Only is off. Settings replace
 the guides/videos as the only first page on configurable FFA; page indicators
 and navigation remain for future settings pages. The menu shows category
@@ -67,7 +67,7 @@ Single Draft disables bans and offers each player four heroes, one per attribute
 without shared offers. Epic mode converts all existing orb rewards, including
 shop purchases, while retaining prices and source-specific triggers. The shop
 uses its original item names/icons; rewards follow the selected rule. The source
-rarity is kept separately for triggers and placement and never downgrades a reward.
+rarity is kept separately for orb placement and never downgrades a reward.
 Rerolls start at 30 and cost their original 1/2/4 with normal orbs, or always 1 with
 Epic Orbs.
 
@@ -78,10 +78,10 @@ map packages, overviews, shops, upgrade overrides, Duo/Quintet/Octet and epic-on
 orbs, and the variant build tools. `run_tests.js` fails if a map package, overview, shop
 or upgrade override exists for a map that is not registered. The Hero Demo tooling
 (`game/demo`, the `ot3_demo` Panorama panel) still loads in Tools mode on the FFA map,
-where the smoke scripts use it. Lua and the editable Panorama sources no longer branch on
-the map name. Compiled Panorama resources without editable sources still name the removed
-maps in places that never match (`ot3_demo` checks in the demo panel, selected upgrades and
-the "+1 kill goal" menu; styles, the hidden leaderboard and preview images).
+where the smoke scripts use it. Lua and the editable Panorama scripts no longer branch on
+the map name. The removed maps are still named in places that never match: `ot3_demo` checks
+in the demo panel and selected upgrades, style rules for the other maps (loading screen, end
+screen, team selection) and their preview images in `precache.css`.
 
 Localization: the addon ships English (`resource/addon_english.txt`, the default
 and fallback for every other client language), Russian
@@ -126,8 +126,8 @@ the locked rules in a tools-mode FFA session without changing them.
 Single Draft gives each player one Strength, Agility, Intelligence and Universal hero,
 drawn from the addon's enabled heroes. No hero appears in more than one player's offers,
 and offers persist across reconnects. The native picker enforces per-player
-availability; both custom random paths choose only from that player's four heroes. The
-smart-random button is hidden and the supporter pick-delay overlay is bypassed.
+availability; the custom Random button chooses only from that player's four heroes. Smart
+random (a backend feature) is removed, and the supporter pick-delay overlay is bypassed.
 
 Run these in a disposable Tools-mode session on `ot3_necropolis_ffa`:
 
@@ -172,8 +172,7 @@ Teams, gold, inventory slots/items and remaining rerolls stay with each player.
 The actual hero entity, facet and learned abilities change owners. Orb upgrades
 are reset, including generic modifiers and their rune/stat effects. Consumed
 orbs are returned as upgrade choices of their original rarities to the player
-who used them; unspent choices remain queued. Refunds do not rerun lucky-trinket
-rolls or grant new starting rewards. Non-orb account bonuses stay with the player.
+who used them; unspent choices remain queued. Refunds do not grant new starting rewards.
 
 A swapped hero keeps its pre-game stun. The stun is re-created under the hero's new team
 with the time it had left. The old stun still counted as coming from the previous team,
@@ -232,44 +231,71 @@ Kill Goal scales the starting match limit as DEFAULT_MATCH_LENGTH * (Kill Goal /
 DEFAULT_MATCH_LENGTH is 1200 seconds: 30 kills gives 20 minutes, 60 gives 40 minutes.
 The same limit is used by the server and published to the HUD.
 
-Because the host fixes the Kill Goal, the early-game "+1 kill goal" menu
-(`early_consumables_menu`: the vote, GG Token and Double MMR Token) is never shown on
-this map, and the server ignores a vote there. Before this change, a vote left the goal
-unchanged but still extended the time limit.
-`test_early_consumables.lua` covers the menu with and without a host-fixed kill goal.
-Using a GG Token (e.g. from the collection) is refused before it is consumed, with
-"The host set the Kill Goal, so it can't be changed"
-(`WebInventory:ItemConsumeEvent`, covered in `test_free_collection.lua`).
-`kill_goal_lock_smoke.lua` checks the vote, the menu state and the token in a tools match.
+The host fixes the Kill Goal, and nothing else changes it during the match. The original
+early-game "+1 kill goal" vote and the GG and Double MMR Tokens were removed with the
+backend (see "Backend removal").
 
 ## Free local collection
 
-Premium benefits (tier 2) and all bundled vanity items are available in
-this addon without purchases or currency. Vanity items can be equipped directly;
-consumable collection items have a reusable local supply. The shop displays
-"Premium & Vanity - Free" and omits currency, subscription and gift-code purchase
-controls. Host-configured orb reroll allowances are unchanged.
+Every player has the top premium tier (tier 2, "Golden Supporter") and owns every bundled
+cosmetic, locally and for free. `WebPlayer` reports a fixed local subscription
+(`{tier = 2, type = "local"}`) and `WebInventory` treats every item in `ITEM_DEFINITIONS` as
+owned; nothing is bought, granted, synced or saved. Tier 2 gives every player:
 
-Misc items are not part of the free collection, because they are gameplay
-boosts: Lucky Trinkets, Early Bird Charm, Power Crystal, Conqueror's Presence,
-Teamwork Enhancer, rerolls, GG and Double MMR tokens, the trial subscription and
-the gift orbs. Nobody owns them, even with a backend balance, so their bonuses are
-0 and they cannot be used. Chat wheel entries share the Misc slot and stay free.
-The Collection shows cosmetics only: the Chat Wheel page is hidden (its layout
-still loads, and the in-game chat wheel works), and the Cosmetics page hides the
-Treasures and Misc tabs, opening on Auras.
+- the third (supporter-only) choice in every orb selection and the Generic Upgrades toggle;
+- eight favourite-upgrade builds (instead of two) and the favourite auto-select with its delay;
+- the supporter courier speed bonus;
+- no hero pick delay, and the supporters' protection threshold in kick votes.
 
-Unlocks and equipment selections are local to the running match. Account
-subscription data and balances are not rewritten. Equipment sync, payments,
-inventory writes and match reward submissions to the original backend are blocked.
-`test_free_collection.lua` checks local entitlements, item use and backend-write
-isolation; `free_collection_smoke.lua` checks native access and equipping.
+The 139 cosmetics are auras, pets, kill effects, cosmetic skills, high fives, sprays and hero
+effects, with no unlock conditions. The Collection has one tab, Cosmetics, opening on Auras;
+its header shows the player's tier and "Premium & Vanity - Free". Items equip and unequip
+directly. Equipment, favourite builds and the orb selection's settings (Generic Upgrades,
+auto-select and its delay; `WebSettings`) last for the running match. Host-configured orb
+reroll allowances are unchanged.
 
-The server does not poll the backend for match events. The original asked every
-240 seconds (10 in Tools) for payment results and for feedback replies sent during
-the match. Payments never start in this addon, and mail is still read from the
-before-match player data. `test_log_noise.lua` checks that the before-match request
-is the only one sent when the match starts, and that nothing is scheduled after it.
+`test_free_collection.lua` checks the local tier, that every cosmetic is owned and free,
+item validation, per-match settings and that no HTTP request is made.
+`free_collection_smoke.lua` checks access and equipping in a Tools match. `run_tests.js`
+checks that the client's item list (`scripts/collection_generated.js`) names exactly the
+server's items.
+
+## Backend removal
+
+The original addon talked to the Overthrow backend (`api.overthrow3.dota2unofficial.com`,
+authenticated with the dedicated server key) for player data, purchases, rating and most
+account features. This fork runs in Local Host lobbies, where none of it works: in a real lobby
+(`console.9019653788.log`, 2026-09-28) the server reported `ActivateServerFromLobby - IsLan:
+YES, IsDedicatedServer: NO`, sent the before-match request and never got an answer, and a
+Tools match ended with "Failed to load match data from remote server" on the end screen.
+Issue #39 removed the backend client and everything that only worked through it:
+
+- **Account and shop:** the HTTP client (`WebApi`), the before- and after-match requests,
+  rating and its end-screen column, season resets, player stats, locale reporting, error
+  reports, mail, leaderboards, payments and currency top-ups, subscriptions, gift codes,
+  feedback, promo events, the Battle Pass and seasonal events (Christmas orb effects).
+- **Gameplay boosts:** Misc items and treasures: Lucky Trinkets, Early Bird Charm, Power
+  Crystal, Conqueror's Presence, Teamwork Enhancer, reroll packs, GG and Double MMR Tokens, the
+  trial subscription and the gift orbs; the early-game "+1 kill goal" vote; win-rate orbs.
+- **Screens and HUD:** smart random, hero challenges and win streaks, the loadout promo, MVP
+  rewards, the In-Game Settings window, tournament mode and the loading screen's event banners.
+- **Chat wheel:** the in-game wheel, its sounds, colours and emoji, and its Collection page.
+
+What stays, all local to the match: the free collection and tier 2 (above), equipment,
+favourite builds and the orb selection's settings, player tips, the end screen (MVP,
+statistics, tips received) and kick votes. Code that ran only for removed features went with
+them: 31 Lua scripts, 88 Panorama resources, 277 images, 13 particles (Christmas orbs and
+unreferenced supporter-gift effects), the chat wheel's soundevents, the treasure wheel scene
+(`maps/collection/spin_glow.vpk`), 710 localization tokens, their manifest entries, top-menu
+buttons and minimap panels.
+
+The Panorama layouts that had to change (manifest, top menu, collection, cosmetics, scoreboard,
+end screen, loading screen, minimap, chat, toasts, upgrades panel, pick-screen player row) now
+have editable XML sources (see [panorama_README.md](panorama_README.md)). `run_tests.js` fails if
+a Lua script creates an HTTP request, reads the dedicated server key or names the backend
+host, if the client and server item lists differ, or if a Panorama resource, source, Lua script
+or localization file references a `custom_game` image, layout, script or style that does not
+exist.
 
 ## Backpack Items
 
@@ -547,7 +573,8 @@ client loaded every ability for a function nothing called (issue #32).
   120 s comes from `npc_abilities_override.txt`), and `nil` for an unknown name. Each call builds a new table:
   Single Draft's 127 heroes take about 10 ms, once, at Apply & Start. Backpack Items checks every backpack item each
   tick, so it looks each item name up once and keeps the answer.
-- Win rates take hero names from `scripts/npc/herolist.txt`, like Single Draft.
+- Win rates took hero names from `scripts/npc/herolist.txt`, like Single Draft. Win-rate orbs and smart random were
+  later removed with the backend (see "Backend removal"), so only Single Draft, Turbo and Backpack Items remain.
 - The client's ability table and `GetKeyValueNoOverride` are removed.
 
 Measured in Workshop Tools, one client, during custom game setup right after the map loads (temporary probe with
@@ -603,9 +630,9 @@ left comes from scripts on timers of 0.1 s and longer, about 65 calls per second
   so the custom stylesheet cannot use it.
 - **Collection** (`collection/collection.js`): it set `ShiftPressed`, `AltPressed` and `CtrlPressed` on `DotaHud`
   every frame. Their only use was to light the ×5, ×10 and ×50 quantity hints in the currency purchase dialog and
-  the payments window, which never open with the free collection, so the loop is removed. Purchases read the keys
-  themselves when clicked. Dota's own key styles do not depend on it: Dota sets `AltPressed` on its panels itself,
-  and `ShiftPressed` and `CtrlPressed` on its quick buy.
+  the payments window, which never open with the free collection, so the loop is removed (both were later removed
+  with the backend). Dota's own key styles do not depend on it: Dota sets `AltPressed` on its panels itself, and
+  `ShiftPressed` and `CtrlPressed` on its quick buy.
 
 `panorama_test.js` runs these scripts with mocked panels and particles: the fountain checks (interval, controls only
 on change, per-frame target inside a ring only, a newly selected unit, Alt, no forced simulation), the chat redirect
@@ -649,9 +676,9 @@ What the code does:
 - **Hidden until needed:** `ParkImages` (`scripts/utils.js`) overrides the stylesheet images of a layout and its
   children with an inline `none` and empties the given `Image` panels; the returned function restores them. The
   collection parks its art and builds its tabs (all cosmetics item images) on first open; code outside it reaches
-  the cosmetics tab through stubs that load it first. The end screen parks its art until the game ends; the
-  leaderboard and promo events until first opened; the season-reset notice until shown. A few small `Image` icons
-  in the end screen (about 0.2 MB in total) stay loaded.
+  the cosmetics tab through stubs that load it first. The end screen parks its art until the game ends. (The
+  leaderboard, promo events and season-reset notice, which parked theirs too, were removed with the backend.) A few
+  small `Image` icons in the end screen (about 0.2 MB in total) stay loaded.
 - **Encoding:** the Panorama compiler stores a PNG with an alpha channel uncompressed (RGBA8888, 4 bytes per pixel)
   and one without as DXT5 (1 byte per pixel), whatever the alpha values. Textures whose alpha is at least 245
   everywhere (at most 4% see-through, on edge pixels) drop it. Everything else really uses alpha, including the
@@ -662,8 +689,8 @@ What the code does:
   items: cards and tooltips, 124 px). A texture drawn at its own size, or in a box that could not be resolved,
   keeps its size; so do textures this fork never shows.
 
-`tools/panorama_textures.json` lists the 92 re-encoded textures with their size, whether alpha is dropped and
-where they are shown. `node tools/panorama_textures.js build` regenerates them from the originals in commit
+`tools/panorama_textures.json` lists the 81 re-encoded textures with their size, whether alpha is dropped and
+where they are shown (92 before 11 went with the backend features). `node tools/panorama_textures.js build` regenerates them from the originals in commit
 `bc5b937` (decoded from PNG, raw BGRA8888 or DXT including scaled YCoCg, downscaled by area in linear light with
 alpha weighting, recompiled by Valve's resourcecompiler). `node tools/panorama_resources.js verify` checks that
 the committed textures match the list and that no uncompressed texture keeps an unused alpha channel.

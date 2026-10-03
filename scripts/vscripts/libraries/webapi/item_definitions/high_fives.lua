@@ -3,10 +3,6 @@ ITEM_DEFINITIONS["high_five_bronze"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.UNCOMMON,
 
-	unlocked_with = {
-		subscription_tier = 1,
-	},
-
 	-- these are controlled by high_five_custom ability
 	particle_variants = {
 		-- wave particle
@@ -28,10 +24,6 @@ ITEM_DEFINITIONS["high_five_dark"] = {
 	slot = INVENTORY_SLOTS.HIGH_FIVE,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.IMMORTAL,
-
-	unlocked_with = {
-		subscription_tier = 2,
-	},
 
 	-- these are controlled by high_five_custom ability
 	particle_variants = {
@@ -55,10 +47,6 @@ ITEM_DEFINITIONS["high_five_diretide"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.UNCOMMON,
 
-	unlocked_with = {
-		treasure = "treasure_1"
-	},
-
 	-- these are controlled by high_five_custom ability
 	particle_variants = {
 		-- wave particle
@@ -80,10 +68,6 @@ ITEM_DEFINITIONS["high_five_fire"] = {
 	slot = INVENTORY_SLOTS.HIGH_FIVE,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.RARE,
-
-	unlocked_with = {
-		treasure = "treasure_3",
-	},
 
 	-- these are controlled by high_five_custom ability
 	particle_variants = {
@@ -107,10 +91,6 @@ ITEM_DEFINITIONS["high_five_ice"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.UNCOMMON,
 
-	unlocked_with = {
-		treasure = "treasure_1",
-	},
-
 	-- these are controlled by high_five_custom ability
 	particle_variants = {
 		-- wave particle
@@ -132,10 +112,6 @@ ITEM_DEFINITIONS["high_five_midas"] = {
 	slot = INVENTORY_SLOTS.HIGH_FIVE,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.IMMORTAL,
-
-	unlocked_with = {
-		currency = 9999,
-	},
 
 	-- these are controlled by high_five_custom ability
 	particle_variants = {
@@ -159,10 +135,6 @@ ITEM_DEFINITIONS["high_five_newbloom"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.COMMON,
 
-	unlocked_with = {
-		currency = 250,
-	},
-
 	-- these are controlled by high_five_custom ability
 	particle_variants = {
 		-- wave particle
@@ -184,10 +156,6 @@ ITEM_DEFINITIONS["high_five_paw"] = {
 	slot = INVENTORY_SLOTS.HIGH_FIVE,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.RARE,
-
-	unlocked_with = {
-		treasure = "treasure_2"
-	},
 
 	-- these are controlled by high_five_custom ability
 	particle_variants = {
@@ -211,10 +179,6 @@ ITEM_DEFINITIONS["high_five_winter"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.UNCOMMON,
 
-	unlocked_with = {
-		treasure = "treasure_2",
-	},
-
 	-- these are controlled by high_five_custom ability
 	particle_variants = {
 		-- wave particle
@@ -236,10 +200,6 @@ ITEM_DEFINITIONS["high_five_rgb"] = {
 	slot = INVENTORY_SLOTS.HIGH_FIVE,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.ARCANA,
-
-	unlocked_with = {
-		currency = 6969,
-	},
 
 	-- these are controlled by high_five_custom ability
 	particle_variants = {

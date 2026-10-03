@@ -1,7 +1,6 @@
 class = function(t) return t or {} end
 EventDriver = {Listen = function() end}
 CustomNetTables = {SetTableValue = function() end}
-HOST_OPTION = {TOURNAMENT = "tournament_mode"}
 HostOptions = {locked = true, options = {}}
 function HostOptions:GetOption(name) return self.options[name] or false end
 GameRules = {

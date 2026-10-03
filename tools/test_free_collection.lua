@@ -1,89 +1,64 @@
-LOCAL_FREE_COLLECTION = true
-IsInToolsMode = function() return true end
+-- Run from the addon root: lua tools/test_free_collection.lua
+-- The collection is local: premium tier 2 and every cosmetic for everyone, settings per match, no backend.
 EventStream = {Listen = function() end}
-EventDriver = {Listen = function() end, Dispatch = function() end}
-PlayerResource = {GetPlayer = function() return {} end, IsValidPlayerID = function(_, id) return id == 0 end}
+PlayerResource = {GetPlayer = function() return {} end, IsValidPlayerID = function(_, id) return id == 0 or id == 1 end}
+IsValidPlayerID = function(id) return id == 0 or id == 1 end
 IsValidEntity = function(v) return v ~= nil end
 local sent = {}
 CustomGameEventManager = {Send_ServerToPlayer = function(_, _, event, data) sent[event] = data end}
 CreateHTTPRequest = function() error("Unexpected backend request") end
+local errors = {}
+DisplayError = function(player_id, message) table.insert(errors, {player_id, message}) end
+toboolean = function(value) return value == true or value == 1 or value == "1" or value == "true" end
 local originalRequire = require
 require = function() end
-ITEM_TYPES = {EQUIPMENT=1, CONSUMABLE=2, PASSIVE=3}
-INVENTORY_SLOTS = {TREASURES="98", MISC="99"}
-ITEM_DEFINITIONS = {
-    hat={slot="2", type=1, rarity=1, unlocked_with={currency=500}},
-    treat={slot="98", type=2, rarity=1},
-}
-BattlePass = {ApplyItemFilters = function() end}
-dofile("scripts/vscripts/libraries/webapi/webapi.lua")
+dofile("scripts/vscripts/libraries/webapi/declarations.lua")
 dofile("scripts/vscripts/libraries/webapi/player.lua")
+dofile("scripts/vscripts/libraries/webapi/settings.lua")
+
+-- Every definition shipped with the addon is a free cosmetic: equipment in one of the slots, with no price,
+-- treasure or subscription requirement left.
+for _, file in ipairs({"kill_effects", "auras", "pets", "hero_effects", "sprays", "cosmetic_skills", "high_fives"}) do
+    dofile("scripts/vscripts/libraries/webapi/item_definitions/" .. file .. ".lua")
+end
+local slots, count = {}, 0
+for _, slot in pairs(INVENTORY_SLOTS) do slots[slot] = true end
+for name, definition in pairs(ITEM_DEFINITIONS) do
+    assert(definition.type == ITEM_TYPES.EQUIPMENT and slots[definition.slot] and definition.rarity, name .. " is a cosmetic")
+    assert(definition.unlocked_with == nil and definition.on_use == nil and definition.on_consume == nil, name .. " has no unlock or use")
+    count = count + 1
+end
+assert(count >= 100, "the collection is loaded")
 dofile("scripts/vscripts/libraries/webapi/inventory/inventory.lua")
-WebPlayer.players_data[0] = {currency=7, subscription={tier=0}}
+
 assert(WebPlayer:GetSubscriptionTier(0) == 2 and WebPlayer:GetSubscriptionTier(1) == 2)
 WebPlayer:UpdateClient(0)
 assert(sent["WebPlayer:update"].player_data.subscription.tier == 2)
-assert(WebPlayer.players_data[0].subscription.tier == 0, "Backend entitlement must not be overwritten")
-assert(WebInventory:HasItem(0, "hat") and not WebInventory:HasItem(0, "unknown"))
-assert(WebInventory:GetItemCost("hat") == 0)
-WebInventory:PurchaseItem(0, "hat", 500, 1)
-assert(sent["WebInventory:update"].items.hat.count == 1)
-local used = false
-WebInventory:ConsumeItem(0, "treat", 1, function() used = true end)
-assert(used and WebInventory:GetItemCount(0,"treat") == 999)
--- The GG token is refused (before it is consumed) while the host has fixed the kill goal.
-ITEM_DEFINITIONS.bp_gg_token = {type=1, rarity=1, on_consume=function(player_id) used = player_id end}
-GetMapName = function() return "ot3_necropolis_ffa" end
-local fixed, errors = true, {}
-GameLoop = {HasFixedKillGoal = function() return fixed end}
-DisplayError = function(player_id, message) table.insert(errors, {player_id, message}) end
-ErrorTracking = {Try = function(fn, ...) return fn(...) end}
-used = false
-WebInventory:ItemConsumeEvent({PlayerID=0, item_name="bp_gg_token"})
-assert(not used and errors[1][1] == 0 and errors[1][2] == "#dota_hud_error_gg_token_fixed_kill_goal")
-fixed = false
-WebInventory:ItemConsumeEvent({PlayerID=0, item_name="bp_gg_token"})
-assert(used == 0 and #errors == 1, "the GG token works while the kill goal is not fixed")
--- Misc items (battle pass boosts, rerolls, tokens, gift orbs) are not part of the free collection:
--- nobody owns them, even with backend counts, so their gameplay bonuses read 0 and cannot be consumed.
-local production_definitions, misc_consumed = ITEM_DEFINITIONS, false
-ITEM_DEFINITIONS = {}
-ITEM_RARITIES = setmetatable({}, {__index = function(_, rarity) return rarity end})
-Resolve = function() return function() end end
-dofile("scripts/vscripts/libraries/webapi/item_definitions/misc.lua")
-ITEM_DEFINITIONS.chat_wheel_test = {slot="99", type=3, rarity=1, chat_wheel_details={}}
-WebInventory:SetPlayerItems(0, {{name="bp_lucky_trinket_epic", count=50}, {name="bp_power_crystal", count=20}})
-local originalConsumeItem = WebInventory.ConsumeItem
-WebInventory.ConsumeItem = function() misc_consumed = true end
-local misc_count = 0
-for name, definition in pairs(ITEM_DEFINITIONS) do
-    if definition.slot == INVENTORY_SLOTS.MISC and not definition.chat_wheel_details then
-        misc_count = misc_count + 1
-        assert(not WebInventory:HasItem(0, name) and WebInventory:GetItemCount(0, name) == 0, name .. " must not be owned")
-        WebInventory:ItemConsumeEvent({PlayerID=0, item_name=name})
-    end
-end
-assert(misc_count >= 15, "every Misc definition is checked")
-assert(not misc_consumed and #errors == 1, "Misc items must be refused before consuming")
-for _, name in ipairs({"bp_legendary_lagresse", "bp_breathtaking_benefaction"}) do
-    local definition = ITEM_DEFINITIONS[name]
-    assert(definition.consume_disabled and not definition.on_consume, name .. " must stay disabled")
-end
-assert(WebInventory:HasItem(0, "chat_wheel_test") and WebInventory:GetItemCount(0, "chat_wheel_test") == 1, "chat wheel entries stay free")
+
+for name in pairs(ITEM_DEFINITIONS) do assert(WebInventory:HasItem(0, name)) end
+assert(not WebInventory:HasItem(0, "bp_reroll") and not WebInventory:HasItem(0, "unknown"))
 WebInventory:UpdateClient(0)
-assert(sent["WebInventory:update"].items.bp_reroll == nil and sent["WebInventory:update"].items.chat_wheel_test.count == 1)
-WebInventory.ConsumeItem, ITEM_DEFINITIONS = originalConsumeItem, production_definitions
-WebInventory:SetPlayerItems(0, {})
-assert(WebInventory:HasItem(0,"hat"), "Backend refresh must not remove local access")
-WebPlayer:UseCurrency(0, 500, function() end)
-WebPlayer:AddBackendCurrency(0, 500)
-assert(WebPlayer:GetCurrency(0) == 7)
-for _, path in ipairs({"inventory/purchase_item", "inventory/set_equipped_items", "payments/get_payment_url", "match/after", "match/add_currency", "match/spend_currency"}) do
-    WebApi:Send("api/lua/" .. path, {}, function() error("Must not report backend success") end)
+local client_count = 0
+for name, item in pairs(sent["WebInventory:update"].items) do
+    assert(ITEM_DEFINITIONS[name] and item.count == 1)
+    client_count = client_count + 1
 end
-Timers = {CreateTimer = function() error("Equipment must not schedule backend writes") end}
-INVENTORY_SLOTS.PET, INVENTORY_SLOTS.SPRAY, INVENTORY_SLOTS.COSMETIC_SKILL = "5", "1", "6"
-dofile("scripts/vscripts/libraries/webapi/inventory/equipment.lua")
-dofile("scripts/vscripts/libraries/webapi/payments.lua")
+assert(client_count == count, "the client gets every item")
+
+ITEM_DEFINITIONS.broken = {slot = INVENTORY_SLOTS.AURA, rarity = 1}
+assert(not pcall(WebInventory.ValidateDefinitions, WebInventory), "a definition without a type is refused")
+ITEM_DEFINITIONS.broken = nil
+
+-- Settings toggled in the upgrades panel last for the match and reach the client with the player data.
+WebSettings:SetSettingValueEvent({PlayerID = 0, setting_name = "generic_from_subscription", setting_value = 1})
+assert(WebSettings:GetSettingValue(0, "generic_from_subscription") == true, "0/1 become booleans")
+assert(sent["WebPlayer:update"].player_data.settings.generic_from_subscription == true)
+WebSettings:SetSettingValueEvent({PlayerID = 0, setting_name = "auto_select_favorites_delay", setting_value = 6})
+assert(WebSettings:GetSettingValue(0, "auto_select_favorites_delay") == 6)
+WebSettings:SetSettingValueEvent({PlayerID = 0, setting_name = "auto_select_favorites", setting_value = 0})
+assert(WebSettings:GetSettingValue(0, "auto_select_favorites") == false)
+WebSettings:SetSettingValueEvent({PlayerID = 0, setting_name = "hide_streaks", setting_value = 1})
+assert(WebSettings:GetSettingValue(0, "hide_streaks") == nil and errors[1][2] == "#dota_hud_error_invalid_setting", "unknown settings are refused")
+assert(WebSettings:GetSettingValue(1, "generic_from_subscription", false) == false, "settings are per player")
 require = originalRequire
-print("PASS free collection: local premium, all vanity items, no Misc boosts, zero cost, reusable consumables, unchanged account data and blocked backend writes")
+print("PASS free collection: local premium, every cosmetic owned and free, settings per match, no backend")

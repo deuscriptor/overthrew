@@ -235,17 +235,10 @@ function ChatCommands:entindex(arguments, event)
 end
 
 
-function ChatCommands:purchase_item(arguments, event)
-	if not GameMode:IsDeveloper(event.player_id) then return end
-
-	WebInventory:PurchaseItem(event.player_id, arguments[1], tonumber(arguments[2] or 0), tonumber(arguments[3] or 1))
-end
-
-
 function ChatCommands:equip(arguments, event)
 	if not GameMode:IsDeveloper(event.player_id) then return end
 
-	WebInventory:EquipEvent({
+	Equipment:EquipEvent({
 		PlayerID = event.player_id,
 		item_name = arguments[1]
 	})
@@ -255,52 +248,11 @@ end
 function ChatCommands:unequip(arguments, event)
 	if not GameMode:IsDeveloper(event.player_id) then return end
 
-	WebInventory:UnequipEvent({
+	Equipment:UnequipEvent({
 		PlayerID = event.player_id,
 		item_name = arguments[1]
 
 	})
-end
-
-
-function ChatCommands:use_item(arguments, event)
-	if not GameMode:IsDeveloper(event.player_id) then return end
-
-	WebInventory:ItemConsumeEvent({
-		PlayerID = event.player_id,
-		item_name = arguments[1],
-		used_count = tonumber(arguments[2] or 1)
-	})
-end
-
-
-function ChatCommands:redeem_gift_code(arguments, event)
-	if not GameMode:IsDeveloper(event.player_id) then return end
-
-	GiftCodes:RedeemGiftCode({
-		PlayerID = event.player_id,
-		gift_code = arguments[1]
-	})
-end
-
-
-function ChatCommands:roll_test(arguments, event)
-	if not GameMode:IsDeveloper(event.player_id) then return end
-
-	local rolled = {}
-
-	for i = 0, 1000 do
-		local outcome = WebTreasure:RollTreasureItem(event.player_id, WebInventory.treasure_pools[arguments[1] or "sprays_treasure_1"])
-
-		if not rolled[outcome] then
-			rolled[outcome] = 1
-		else
-			rolled[outcome] = rolled[outcome] + 1
-		end
-	end
-
-	print("1k rolls result: ")
-	DeepPrintTable(rolled)
 end
 
 
@@ -322,20 +274,6 @@ function ChatCommands:bots_upgrade(arguments, event)
 			Upgrades:AddAbilityUpgrade(hero, upgrades[1].ability_name, upgrades[1].upgrade_name, UPGRADE_RARITY_COMMON)
 		end
 	end
-end
-
-
-function ChatCommands:gpl(arguments, event)
-	if not GameMode:IsDeveloper(event.player_id) then return end
-
-	print("Punishment level:", WebPlayer:GetPunishmentLevel(event.player_id))
-end
-
-
-function ChatCommands:spl(arguments, event)
-	if not GameMode:IsDeveloper(event.player_id) then return end
-
-	WebPlayer:SetPunishmentLevel(event.player_id, tonumber(arguments[1] or 0), arguments[2] or "chat command", true)
 end
 
 
@@ -368,8 +306,6 @@ function ChatCommands:punish(arguments, event)
 	end
 
 	GameRules:SendCustomMessage("#chat_command_player_punished", target_player_id, 1)
-
-	WebPlayer:SetPunishmentLevel(target_player_id, tonumber(arguments[2] or 1000), arguments[3] or "chat command", true)
 end
 
 
@@ -387,8 +323,6 @@ function ChatCommands:unpunish(arguments, event)
 	end
 
 	GameRules:SendCustomMessage("#chat_command_player_punishment_lifted", target_player_id, 1)
-
-	WebPlayer:SetPunishmentLevel(target_player_id, 0, "chat command", true)
 end
 
 
@@ -430,26 +364,6 @@ function ChatCommands:spawn_epic(arguments, event)
 end
 
 
-function ChatCommands:map_stats(arguments, event)
-	if not GameMode:IsDeveloper(event.player_id) then return end
-
-	WebPlayerStats:GetMapStatsEvent({
-		PlayerID = event.player_id,
-		map_name = arguments[1]
-	})
-end
-
-
-function ChatCommands:match_data(arguments, event)
-	if not GameMode:IsDeveloper(event.player_id) then return end
-
-	WebPlayerStats:GetMatchDataEvent({
-		PlayerID = event.player_id,
-		match_id = tonumber(arguments[1])
-	})
-end
-
-
 function ChatCommands:neutrals(arguments, event)
 	if not GameMode:IsDeveloper(event.player_id) then return end
 
@@ -470,23 +384,6 @@ function ChatCommands:abilities(arguments, event)
 	end
 	DebugMessage(string.rep("-", 68) .. "|")
 end
-
-function ChatCommands:fill_cw(arguments, event)
-	if not GameMode:IsDeveloper(event.player_id) then return end
-
-
-	for item_name, item_definition in pairs(ITEM_DEFINITIONS or {}) do
-		if item_definition.chat_wheel_details then
-			WebInventory:AddItem(event.player_id, {
-				name = item_name,
-				count = 1,
-			})
-		end
-	end
-
-	WebInventory:UpdateClient(event.player_id)
-end
-
 
 function ChatCommands:print_builds(arguments, event)
 	if not GameMode:IsDeveloper(event.player_id) then return end

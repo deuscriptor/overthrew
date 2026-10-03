@@ -12,15 +12,11 @@ function Equipment:Init()
 	EventDriver:Listen("Events:npc_spawned", Equipment.OnNpcSpawned, Equipment)
 	EventDriver:Listen("Events:hero_picked", Equipment.OnHeroPicked, Equipment)
 
-	Equipment.__assigned_equipped_items = {}
-	Equipment._scheduled_updates = {}
 	Equipment.equipped_items = {}
 
 	EventStream:Listen("WebInventory:get_equipped_items", Equipment.SendEquippedItems, Equipment)
 	EventStream:Listen("WebInventory:equip", Equipment.EquipEvent, Equipment)
 	EventStream:Listen("WebInventory:unequip", Equipment.UnequipEvent, Equipment)
-
-	Equipment:StartBackendUpdateTimer()
 end
 
 
@@ -29,29 +25,6 @@ function Equipment:SpecialSlotEquipped(player_id, hero, item_name, item_definiti
 	if not callback then return end
 
 	return ErrorTracking.Try(callback, Equipment, player_id, hero, item_name, item_definition)
-end
-
-
-function Equipment:AssignEquippedItems(player_id, equipped_items)
-	Equipment.__assigned_equipped_items[player_id] = equipped_items
-end
-
-
-function Equipment:ApplyEquippedItems(player_id)
-	if not Equipment.__assigned_equipped_items[player_id] then
-		return
-	end
-	-- print("[Equipment] setting equipped items", player_id)
-	for slot, item in pairs(Equipment.__assigned_equipped_items[player_id] or {}) do
-		if type(item) == "string" then
-			Equipment:Equip(player_id, item)
-		else
-			for _, m_item in pairs(item) do
-				Equipment:Equip(player_id, m_item)
-			end
-		end
-	end
-	Equipment:UpdateClient(player_id)
 end
 
 
@@ -344,9 +317,7 @@ function Equipment:EquipEvent(event)
 	if not player_id or not PlayerResource:IsValidPlayerID(player_id) then return end
 	if not event.item_name then return end
 
-	if Equipment:Equip(player_id, event.item_name) then
-		Equipment:ScheduleBackendUpdate(player_id)
-	end
+	Equipment:Equip(player_id, event.item_name)
 end
 
 
@@ -355,9 +326,7 @@ function Equipment:UnequipEvent(event)
 	if not player_id or not PlayerResource:IsValidPlayerID(player_id) then return end
 	if not event.item_name then return end
 
-	if Equipment:Unequip(player_id, event.item_name) then
-		Equipment:ScheduleBackendUpdate(player_id)
-	end
+	Equipment:Unequip(player_id, event.item_name)
 end
 
 
@@ -425,51 +394,12 @@ function Equipment:OnHeroPicked(event)
 			return 1
 		end
 		CosmeticAbilities:PrepareForHero(event.player_id, event.hero)
-		Equipment:ApplyEquippedItems(event.player_id)
 	end)
 end
 
 
 function Equipment:GetSlotEquipmentPolicy(slot)
 	return SLOT_EQUIPMENT_POLICY[slot] or EQUIPMENT_POLICY.AUTO
-end
-
-
-function Equipment:ScheduleBackendUpdate(player_id)
-	Equipment._scheduled_updates[player_id] = true
-end
-
-
-function Equipment:StartBackendUpdateTimer()
-	if LOCAL_FREE_COLLECTION then return end
-	-- send request to backend on interval to update equipped items
-	-- but only if there's any scheduled changed
-	-- this request batches all players with any changes detected
-	Equipment._backend_request_timer = Timers.CreateTimer(EQUIPMENT_UPDATE_DELAY, function()
-		if next(Equipment._scheduled_updates) == nil then return EQUIPMENT_UPDATE_DELAY end
-
-		local equipped_items = {}
-
-		for player_id, _ in pairs(Equipment._scheduled_updates or {}) do
-			local steam_id = tostring(PlayerResource:GetSteamID(player_id))
-			equipped_items[steam_id] = Equipment:GetEquippedItems(player_id)
-		end
-		WebApi:Send(
-			"api/lua/inventory/set_equipped_items",
-			{
-				players_equipped_items = equipped_items,
-			},
-			function()
-				Equipment._scheduled_updates = {}
-				print("[Equipment] successfully updated equipment on backend")
-			end,
-			function()
-				print("[Equipment] failed to update equipped items on backend")
-			end
-		)
-
-		return EQUIPMENT_UPDATE_DELAY
-	end)
 end
 
 
@@ -535,11 +465,6 @@ function Equipment:OnCosmeticSkillEquipped(player_id, hero, item_name, item_defi
 	CustomGameEventManager:Send_ServerToPlayer(player, "CosmeticAbilities:update_ability", {
 		ability = item_name
 	})
-end
-
-
-function Equipment:OnTestUse(item_name, definition)
-	print("[Equipment] test item used", item_name)
 end
 
 

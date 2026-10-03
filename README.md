@@ -9,6 +9,10 @@ are safe zones there: on your own fountain you cannot attack, deal damage or cap
 cannot target or damage you. The protection ends as soon as you leave. Protected heroes turn dark, like
 Dota's own fountain invulnerability.
 
+Everything runs in your own Local Host lobby. The original game's online services don't work there, so they
+are not included: rating, leaderboards, mail, the shop and currency, subscriptions, the Battle Pass, hero
+challenges and the chat wheel. Every player gets the premium perks and the full cosmetics collection for free.
+
 ## Not an original work
 
 Overthrew is built on Overthrow 3.0. The original game's code, maps, art, sounds

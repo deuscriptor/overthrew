@@ -7,10 +7,8 @@ local real_print = print
 local epic_orbs = false
 local observations = {}
 local entities = {}
-local inventory = {}
 local heroes = {}
 local paused = false
-local seasonal_event = false
 local passed = 0
 
 local function noop() end
@@ -56,18 +54,8 @@ end }
 CustomGameEventManager = { Send_ServerToPlayer = function(_, player, name, data)
     observations.client_event = data
 end }
-HOST_OPTION = { TOURNAMENT = 1 }
 HostOptions = { GetOption = function(_, name) return name == "epic_orbs" and epic_orbs end }
 GameRules = { IsGamePaused = function() return paused end }
-SeasonalEvents = {
-    IsChristmas = function() return false end,
-    IsAnyEpicEventRunning = function() return seasonal_event end,
-}
-WebInventory = { GetItemCount = function(_, id, name)
-    observations.inventory_queries = observations.inventory_queries or {}
-    table.insert(observations.inventory_queries, name)
-    return inventory[name] or 0
-end }
 GenericUpgrades = { generic_upgrades_data = {} }
 PlayerResource = {
     GetPlayer = function(_, id) return heroes[id] end,
@@ -111,7 +99,6 @@ dofile("scripts/vscripts/game/capture_points/capture_points.lua")
 dofile("scripts/vscripts/game/capture_points/capture_point_area.lua")
 dofile("scripts/vscripts/filters/item.lua")
 dofile("scripts/vscripts/filters/order.lua")
-dofile("scripts/vscripts/libraries/webapi/battle_pass/battle_pass.lua")
 
 -- The selection UI/upgrade rolling is downstream of the behavior under test.
 Upgrades.ShowSelection = function(self, hero, rarity, id)
@@ -122,9 +109,9 @@ end
 
 local function reset(epic)
     epic_orbs = epic
-    observations, inventory, entities, heroes = {}, {}, {}, {}
-    paused, seasonal_event = false, false
-    Upgrades.queued_selection, Upgrades.pending_selection, Upgrades.lucky_trinket_proc = {}, {}, {}
+    observations, entities, heroes = {}, {}, {}
+    paused = false
+    Upgrades.queued_selection, Upgrades.pending_selection = {}, {}
     EndGameStats.orbs_collected = {}
     GameLoop.current_layout = TEAMS_LAYOUTS.ot3_necropolis_ffa
     GameLoop.current_kill_order = { [2] = 1 }
@@ -181,39 +168,17 @@ test("hero upgrade overrides load from the FFA map folder", function()
     equal(loaded[2], "scripts/upgrades/overrides/ot3_necropolis_ffa/npc_dota_hero_axe.txt")
 end)
 
-test("win rate orbs take hero names from the hero list", function()
-    reset(false)
-    local loaded = {}
-    LoadKeyValues = function(path)
-        table.insert(loaded, path)
-        return { npc_dota_hero_axe = "1", npc_dota_hero_lina = "1" }
-    end
-    GameLoop:InitWinrates({ npc_dota_hero_axe = 0 })
-    equal(#loaded, 1, "files loaded")
-    equal(loaded[1], "scripts/npc/herolist.txt")
-    equal(GameLoop.winrateOrbs.npc_dota_hero_axe, 1)
-    equal(GameLoop.winrateOrbs.npc_dota_hero_lina, -1, "a hero without a win rate")
-    equal(observations.net["winrates/orbs"], GameLoop.winrateOrbs)
-end)
-
-test("epic rewards retain original trinket triggers and prevent recursive duplication", function()
+test("epic rewards queue a single epic selection", function()
     for _, rarity in ipairs({ 1, 2, 4 }) do
         reset(true)
-        local source_trinket = "bp_lucky_trinket_" .. RARITY_ENUM_TO_TEXT[rarity]
-        inventory[source_trinket] = 7
         Upgrades:QueueSelection(heroes[0], rarity)
-        assert_queue(4, 2)
+        assert_queue(4, 1)
         equal(observations.shown_rarity, 4)
-        equal(observations.roll_chance, 7)
-        equal(#observations.inventory_queries, 1, "one trinket check")
-        equal(observations.inventory_queries[1], source_trinket)
-        equal(Upgrades.queued_selection[0][2].is_lucky_trinket_proc, true)
     end
 end)
 
-test("physical epic capture preserves source trigger and publishes epic stats/event", function()
+test("physical epic capture keeps the source orb type and publishes epic stats/event", function()
     reset(true)
-    inventory.bp_lucky_trinket_common = 1
     local orb = GameMode:SpawnOrbDrop(Vector(12, 34, 0), 1, true)
     equal(orb.modifier_data.orb_type, 4)
     equal(orb.modifier_data.source_orb_type, 1)
@@ -227,11 +192,10 @@ test("physical epic capture preserves source trigger and publishes epic stats/ev
     }, { __index = capture_point_area })
     modifier:AddRewardForTeam(2)
     modifier:AddRewardForTeam(2)
-    assert_queue(4, 2)
+    assert_queue(4, 1)
     equal(EndGameStats.orbs_collected[2][ORB_CAPTURE_TYPE.DROP], 4)
     equal(observations.event_name, "GameLoop:orb_captured")
     equal(observations.event_data.rarity, 4)
-    equal(observations.inventory_queries[1], "bp_lucky_trinket_common")
     equal(observations.stopped, true)
     assert_queue(4, 0, 1)
 end)
@@ -283,7 +247,6 @@ test("shop rewards keep source prices and announce/account for epic rewards", fu
         equal(heroes[0].spent, source[2])
         equal(observations.announcer, "custom.epic_orb")
         equal(observations.chat, "orb_purchased_chat_message_epic")
-        equal(observations.inventory_queries[1], "bp_lucky_trinket_" .. source[1])
         equal(EndGameStats.orbs_collected[2][ORB_CAPTURE_TYPE.SHOP], 4)
         equal(observations.mvp, 20)
         equal(item.removed, true)
@@ -304,11 +267,6 @@ test("FFA shop orbs pass purchase orders and quickbuy under both orb rules", fun
         equal(Filters:ItemAddedToInventoryFilter({ item_entindex_const = 1, inventory_parent_entindex_const = 2 }), true, "quickbuy eligibility")
         assert_queue(epic and 4 or 1, 1)
     end
-end)
-
-test("gift orbs to every team are removed", function()
-    equal(BattlePass.OnLegendaryLagresseConsumed, nil, "rare gift handler")
-    equal(BattlePass.OnBreathtakingBenefactionUsed, nil, "epic gift handler")
 end)
 
 test("Epic Only spends all 30 rerolls at one each and rejects the 31st", function()

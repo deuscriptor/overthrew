@@ -217,7 +217,6 @@ function capture_point_area:OnIntervalThink()
 				end
 			else
 				rate = 1 + (((self.num_heroes or 1) - 1) * 0.5)
-				rate = self:ApplyExternalRateModifiers(rate)
 
 				self.progress = self.progress + dt(rate)
 
@@ -328,14 +327,8 @@ function capture_point_area:AddRewardForTeam(team_number)
 
 	parent.added_reward = true
 
-	Upgrades:QueueSelectionForTeam(team_number, self.orb_type, self.source_orb_type)
+	Upgrades:QueueSelectionForTeam(team_number, self.orb_type)
 	EndGameStats:AddCapturedOrb(team_number, ORB_CAPTURE_TYPE.DROP, self.orb_type)
-
-	if SeasonalEvents:IsAnyEpicEventRunning() then
-		for _team, _ in pairs(GameLoop.heroes_by_team) do
-			Upgrades:QueueSelectionForTeam(_team, UPGRADE_RARITY_EPIC)
-		end
-	end
 
 	EventDriver:Dispatch("GameLoop:orb_captured", {
 		team = team_number,
@@ -427,25 +420,4 @@ function capture_point_area:UpdateVerticalMotion( me, dt )
 		self:GetParent():InterruptMotionControllers(true)
 		self:StartSearch()
 	end
-end
-
-
-function capture_point_area:ApplyExternalRateModifiers(rate)
-	if not self.current_team or self.current_team == -1 or self.current_team == DOTA_TEAM_NEUTRALS then
-		return rate
-	end
-
-	local team_modifiers = {}
-	-- only physically present heroes affect rate with Conqueror's Presence
-	for _, hero in pairs(self.heroes_in_radius[self.current_team] or {}) do
-		if IsValidEntity(hero) then
-			table.insert(team_modifiers, WebInventory:GetItemCount(hero:GetPlayerOwnerID(), "bp_conqueror_presence") / 100)
-		end
-	end
-
-	if #team_modifiers <= 0 then return rate end
-
-	local rate_modifier = 1 + math.max(unpack(team_modifiers))
-
-	return rate * rate_modifier
 end

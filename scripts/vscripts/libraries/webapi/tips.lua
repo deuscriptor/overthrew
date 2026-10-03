@@ -11,7 +11,7 @@ end
 
 
 --- Tips targeted player on behalf of requestor.
---- Local only, like Dota Plus tipping without the currency: nothing is credited or sent to WebApi,
+--- Local only, like Dota Plus tipping without the currency: nothing is credited,
 --- the tip is announced to everyone (toast + chat) and counted for the end screen.
 ---@param event table
 function Tips:Tip(event)

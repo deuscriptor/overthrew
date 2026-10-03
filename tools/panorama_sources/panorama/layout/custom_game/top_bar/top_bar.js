@@ -158,17 +158,7 @@ function UpdateGameTime() {
 
 	const time_to_end = current_time_limit - game_time;
 
-	if (GameUI.Player.GetSettingValue("ui_show_game_time")) {
-		HUD.CONTEXT.SetDialogVariable(
-			"game_time",
-			FormatSeconds(PLAYER_MOUSE_OVER_GAME_TIME ? time_to_end : game_time),
-		);
-	} else {
-		HUD.CONTEXT.SetDialogVariable(
-			"game_time",
-			FormatSeconds(PLAYER_MOUSE_OVER_GAME_TIME ? game_time : time_to_end),
-		);
-	}
+	HUD.CONTEXT.SetDialogVariable("game_time", FormatSeconds(PLAYER_MOUSE_OVER_GAME_TIME ? game_time : time_to_end));
 
 	if (time_to_end <= 0) return;
 	if (time_to_end <= alert_game_near_to_end) {

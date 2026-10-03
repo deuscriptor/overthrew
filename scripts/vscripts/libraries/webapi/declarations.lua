@@ -1,24 +1,8 @@
--- default player rating in case for some reason backend haven't supplied any
-DEFAULT_RATING = 1500
-
--- This addon provides its collection locally; no paid account entitlement is changed.
-LOCAL_FREE_COLLECTION = true
-
--- send errors (if any) to backend server every 120 seconds
-ERROR_TRACKING_REQUEST_DELAY = 120
-
--- send settings update if 120 seconds have passed since last modification from any player
-SETTINGS_REQUEST_DELAY = IsInToolsMode() and 5 or 60
-
--- send equipment update changes (if any) to backend server every 1 minute (5 seconds in tools)
-EQUIPMENT_UPDATE_DELAY = IsInToolsMode() and 5 or 60
-
 -- custom attachment to indicate that particle is using status effect
 -- which can only be created as a part of modifier
 PATTACH_SPECIAL_STATUS_FX = "STATUS_FX"
 
--- equipment slots enum to send to backend
--- UNDER ANY CIRCUMSTANCES, DO NOT CHANGE IDS OF SLOTS IN USE
+-- equipment slots enum, shared with Panorama (INVENTORY_SLOT in scripts/inventory.js)
 INVENTORY_SLOTS = {
 	SPRAY = "1",
 	AURA = "2",
@@ -27,20 +11,11 @@ INVENTORY_SLOTS = {
 	PET = "5",
 	COSMETIC_SKILL = "6",
 	HIGH_FIVE = "7",
-
-	TREASURES = "98",
-	MISC = "99",
-	-- unused, for future work
-	VOICE_LINE = "100"
 }
 
 -- item types, describes possible actions done to item
 ITEM_TYPES = {
 	EQUIPMENT = 1,
-	CONSUMABLE = 2,
-	-- passive items don't cannot be used directly in any way
-	-- instead, their presense (usually) enables other systems/mechanics
-	PASSIVE = 3,
 }
 
 -- WARNING: integer values used must ascend, since some places are using rarity as a threshold
@@ -59,36 +34,6 @@ ITEM_RARITIES = {
 }
 
 
--- random weights for treasure roll
--- higher weight = higher chance to drop
-TREASURE_CHANCE_FROM_RARITY = {
-	[ITEM_RARITIES.COMMON] = 50,
-	[ITEM_RARITIES.UNCOMMON] = 30,
-	[ITEM_RARITIES.RARE] = 10,
-	[ITEM_RARITIES.MYTHICAL] = 5,
-	[ITEM_RARITIES.LEGENDARY] = 3,
-	[ITEM_RARITIES.IMMORTAL] = 1,
-	[ITEM_RARITIES.ARCANA] = 1,
-	[ITEM_RARITIES.UNIQUE] = 1,
-}
-
--- items with rarities below this will drop without duplicates from treasures
--- meaning, that you won't ever get common or uncommon items twice from same treasure
-TREASURE_DUPLICATE_THRESHOLD = ITEM_RARITIES.COMMON
-
--- currency given when you roll duplicate item from treasure (that won't be granted)
--- NOTE: common and uncommon are mentioned for convenience, however check THRESHOLD above
-TREASURE_CURRENCY_FOR_DUPLICATE = {
-	[ITEM_RARITIES.COMMON] = 50,
-	[ITEM_RARITIES.UNCOMMON] = 100,
-	[ITEM_RARITIES.RARE] = 200,
-	[ITEM_RARITIES.MYTHICAL] = 400,
-	[ITEM_RARITIES.LEGENDARY] = 1000,
-	[ITEM_RARITIES.IMMORTAL] = 1000,
-	[ITEM_RARITIES.ARCANA] = 2000,
-	[ITEM_RARITIES.UNIQUE] = 2000,
-}
-
 -- equipment policies for item slots
 EQUIPMENT_POLICY = {
 	-- previously equipped item is unequipped automatically
@@ -106,7 +51,6 @@ EQUIPMENT_POLICY = {
 
 -- unspecified slots default to AUTO
 SLOT_EQUIPMENT_POLICY = {
-	[INVENTORY_SLOTS.VOICE_LINE] = EQUIPMENT_POLICY.MANUAL,
 	-- all of these are using default flow, with particles being created externally (either triggered from events or from abilities)
 	[INVENTORY_SLOTS.SPRAY] = EQUIPMENT_POLICY.AUTO_SKIP_EFFECT_ON_EQUIP,
 	[INVENTORY_SLOTS.KILL_EFFECT] = EQUIPMENT_POLICY.AUTO_SKIP_EFFECT_ON_EQUIP,
@@ -123,14 +67,3 @@ TIPS_PER_GAME_MAX = 3
 TIPS_CURRENCY_PER_TIP = 50
 -- cooldown of tip per player (on the one who tips)
 TIPS_COOLDOWN = 30
-
-
-PRODUCTS_CURRENCY_PRICES = {
-	subscription_tier_1 = 8000,
-	subscription_tier_2 = 30000,
-}
-
-SUBSCRIPTION_DURATION_MIN = 1
-SUBSCRIPTION_DURATION_MAX = 30
-SUBSCRIPTION_STEP = 0.9
-SUBSCRIPTION_MAX_MULTIPLIER = 1.5

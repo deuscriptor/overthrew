@@ -109,7 +109,7 @@ function HeroSwaps:RecordOrbSelection(hero, selection)
 	if not self:IsOpen() or not self.spent_orbs then return end
 	local id = hero:GetPlayerOwnerID()
 	self.spent_orbs[id] = self.spent_orbs[id] or {}
-	table.insert(self.spent_orbs[id], {rarity = selection.upgrade_rarity, is_lucky_trinket_proc = selection.is_lucky_trinket_proc})
+	table.insert(self.spent_orbs[id], {rarity = selection.upgrade_rarity})
 end
 
 function HeroSwaps:CaptureBaseUpgrades(hero)
@@ -235,10 +235,7 @@ function HeroSwaps:RefreshPlayer(id, hero)
 	Upgrades:SendUpgradesData(id)
 	Upgrades:SendPendingFavorites({PlayerID = id})
 	CustomGameEventManager:Send_ServerToPlayer(PlayerResource:GetPlayer(id), "HeroSwaps:reset_upgrades", {})
-	if queue[1] then Upgrades:ShowSelection(hero, queue[1].rarity, id, false, queue[1].is_lucky_trinket_proc) end
-	HeroChallenges.active_challenges[id] = nil
-	HeroChallenges:OnHeroInitFinished({player_id = id, hero = hero})
-	HeroChallenges:SetClientChallenges(id)
+	if queue[1] then Upgrades:ShowSelection(hero, queue[1].rarity, id, false) end
 end
 
 function HeroSwaps:Execute(request)

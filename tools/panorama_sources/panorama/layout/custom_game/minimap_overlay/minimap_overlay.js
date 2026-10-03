@@ -1,15 +1,4 @@
-const MAP_ITEMS = {
-	bp_conqueror_presence: "{count}%",
-	bp_lucky_trinket_common: "{count}%",
-	bp_lucky_trinket_rare: "{count}%",
-	bp_lucky_trinket_epic: "{count}%",
-	bp_teamwork_enhancer: "{count}%",
-	bp_early_bird_charm: "x{count}",
-	bp_power_crystal: "{count}%",
-};
 const CONTEXT = $.GetContextPanel();
-const MAP_ITEMS_LIST = $("#Map_BPC_List");
-const MAP_BUFFS = MAP_ITEMS_LIST.GetParent();
 const MAP_OVERLAY = $("#MapOverlay");
 
 let timeout = 0;
@@ -26,54 +15,6 @@ function UpdateMinimapOverlay() {
 
 	const roshan_button = FindDotaHudElement("RoshanTimer");
 	if (roshan_button) roshan_button.visible = false;
-}
-
-function CreateMapBPItems() {
-
-	if (CONTEXT.BHasClass("BItemsHiddenManually")) return;
-
-	MAP_ITEMS_LIST.RemoveAndDeleteChildren();
-
-	Object.entries(MAP_ITEMS).forEach(([item, count_format]) => {
-		const count = GameUI.Inventory.GetItemCount(item);
-		if (count <= 0) return;
-		MAP_BUFFS.AddClass("BHasItems");
-
-		const panel = $.CreatePanel("Panel", MAP_ITEMS_LIST, "");
-		panel.BLoadLayoutSnippet("Map_BP_Item");
-
-		panel.SwitchClass("rarity", GameUI.Inventory.GetItemRarityName(item));
-		panel.SetDialogVariable("item_count_and_name", `${count_format.replace("{count}", count)} ${$.Localize(item)}`);
-
-		const image = panel.FindChildTraverse("Map_BP_I_Image");
-		image.SetImage(GameUI.Inventory.GetItemImagePath(item));
-
-		image.SetPanelEvent("onmouseover", () => {
-			$.DispatchEvent(
-				"UIShowCustomLayoutParametersTooltip",
-				image,
-				"CustomItem_Tooltip",
-				"file://{resources}/layout/custom_game/collection/item_tooltip/item_tooltip.xml",
-				BuildTooltipParams({
-					items: { [item]: count },
-				}),
-			);
-		});
-		image.SetPanelEvent("onmouseout", () => {
-			$.DispatchEvent("UIHideCustomLayoutTooltip", image, "CustomItem_Tooltip");
-		});
-		image.SetPanelEvent("onactivate", () => {
-			GameUI.Collection.OpenSpecificTab("battle_pass");
-		});
-	});
-}
-
-function IsGameStarted() {
-	return Game.GameStateIsAfter(DOTA_GameState.DOTA_GAMERULES_STATE_PRE_GAME);
-}
-
-function HideMapBPItems() {
-	CONTEXT.AddClass("BItemsHiddenManually");
 }
 
 function OpenCollection() {
@@ -121,29 +62,7 @@ function ResetMapStyleByDefault() {
 	});
 }
 
-function OpenSubscriptionsTabsForSupport() {
-	GameUI.Collection.OpenSpecificTab("subscription");
-	GameUI.Subscriptions.OpenAllSubscriptionBonuses();
-}
-
-function UpdatePlayerSubState(player_data) {
-	if (player_data && player_data.subscription && player_data.subscription.tier != undefined)
-		CONTEXT.AddClass(`PlayerSub_${player_data.subscription.tier}`);
-}
-
 (() => {
-	for (const id of ["BP_OrbConsumable_Rare", "BP_OrbConsumable_Epic"]) {
-		const button = CONTEXT.FindChildTraverse(id);
-		if (button) { button.visible = false; button.DeleteAsync(0); }
-	}
-	for (const className of ["BP_Orb_Rare", "BP_Orb_Epic"]) {
-		for (const panel of CONTEXT.FindChildrenWithClassTraverse(className)) {
-			panel.visible = false;
-			panel.DeleteAsync(0);
-		}
-	}
-	CONTEXT.AddClass("BItemsHiddenManually");
-	MAP_BUFFS.RemoveClass("BHasItems");
 	UpdateMinimapOverlay();
 
 	const remove_dota_hud_element = function (id) {
@@ -158,18 +77,6 @@ function UpdatePlayerSubState(player_data) {
 	$.RegisterEventHandler("PanelStyleChanged", FindDotaHudElement("minimap_block"), ResetMapStyleByDefault);
 	$.RegisterEventHandler("PanelStyleChanged", MAP_OVERLAY, ResetMapStyleByDefault);
 
-	if (IsGameStarted()) HideMapBPItems();
-
-	if (IsSpectating()) CONTEXT.AddClass("BSpectator");
-	else {
-		GameUI.Inventory.RegisterForInventoryChanges(CreateMapBPItems);
-
-		GameEvents.Subscribe("game_rules_state_change", () => {
-			if (IsGameStarted()) HideMapBPItems();
-		});
-
-	}
-
 	const ability_hud_skin = FindDotaHudElement("HUDSkinAbilityContainerBG");
 	ability_hud_skin.style.width = "100%";
 	ability_hud_skin.style.marginRight = "200px";
@@ -177,5 +84,4 @@ function UpdatePlayerSubState(player_data) {
 	FindDotaHudElement("RadarButton").visible = false;
 	FindDotaHudElement("glyph").visible = false;
 	FindDotaHudElement("TormentorTimerContainer").visible = false;
-	GameUI.Player.RegisterForPlayerDataChanges(UpdatePlayerSubState);
 })();

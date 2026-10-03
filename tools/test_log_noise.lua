@@ -1,5 +1,5 @@
 -- Run from the addon root: lua tools/test_log_noise.lua
--- Issue #35: code that runs during normal play writes nothing to the console, and match events are not polled.
+-- Issue #35: code that runs during normal play writes nothing to the console.
 -- Production Lua runs against engine mocks; print and DeepPrintTable record what would reach the console.
 local say = print
 local printed = {}
@@ -23,7 +23,7 @@ DoUniqueString = function(prefix) unique = unique + 1 return prefix .. unique en
 local entities = {}
 EntIndexToHScript = function(index) return entities[index] end
 local game_time = 0
-GameRules = {GetGameTime = function() return game_time end, Script_GetMatchID = function() return 1 end}
+GameRules = {GetGameTime = function() return game_time end}
 local timers = {}
 -- CreateTimer(delay, callback) or CreateTimer({endTime = ..., callback = ...})
 Timers = {CreateTimer = function(_, delay, callback) table.insert(timers, callback or delay.callback) return #timers end, RemoveTimer = function() end}
@@ -41,11 +41,9 @@ PlayerResource = {
 	GetPlayer = function() return player end,
 	GetSelectedHeroEntity = function() return hero end,
 	IsValidPlayerID = function(_, id) return id == 0 end,
-	GetSteamID = function() return 76561198000000000 end,
 }
 DOTA_UNIT_ORDER_MOVE_TO_POSITION, DOTA_UNIT_ORDER_CAST_POSITION, DOTA_UNIT_ORDER_CAST_TARGET = 1, 3, 4
 DOTA_UNIT_ORDER_PURCHASE_ITEM, DOTA_UNIT_ORDER_PICKUP_ITEM, DOTA_UNIT_ORDER_VECTOR_TARGET_POSITION = 16, 15, 30
-DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP, DOTA_GAMERULES_STATE_GAME_IN_PROGRESS = 2, 8
 
 -- Server events: dispatching one that nobody listens to is normal.
 dofile("scripts/vscripts/libraries/event_driver.lua")
@@ -139,28 +137,9 @@ PrecacheManager = {PrecacheResourceListAsync = function(_, _, callback) callback
 local particles = 0
 ParticleManager = {CreateParticle = function() particles = particles + 1 return particles end, ReleaseParticleIndex = function() end}
 dofile("scripts/vscripts/libraries/webapi/inventory/equipment.lua")
-Equipment:AssignEquippedItems(0, {[INVENTORY_SLOTS.AURA] = "test_aura"})
-Equipment:ApplyEquippedItems(0)
+Equipment:Equip(0, "test_aura")
 Equipment:PlayItemEffects(0, "test_kill_effect", hero, 1)
 assert(Equipment:GetEquippedItems(0)[INVENTORY_SLOTS.AURA] == "test_aura" and particles == 3, "cosmetics still equip and play")
 silent("equipping and playing cosmetics")
 
--- Match start: the before-match request goes out once, and nothing polls the backend afterwards.
-GetDedicatedServerKeyV2 = function() return "key" end
-GetDedicatedServerKeyV3 = GetDedicatedServerKeyV2
-CreateHTTPRequest = function(_, url) error("Unexpected backend request to " .. url) end
-DebugMessage = function() end
-dofile("scripts/vscripts/libraries/webapi/webapi.lua")
-local before_match = 0
-WebApi.RequestBeforeMatch = function() before_match = before_match + 1 end
-local scheduled = #timers
-for _, state in ipairs({DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP, DOTA_GAMERULES_STATE_GAME_IN_PROGRESS}) do
-	EventDriver:Dispatch("Events:state_changed", {state = state})
-end
-assert(before_match == 1 and #timers == scheduled, "only the before-match request is sent, and no poll is scheduled")
-dofile("scripts/vscripts/libraries/webapi/mail.lua")
-dofile("scripts/vscripts/libraries/webapi/payments.lua")
-assert(MatchEvents == nil, "mail and payments load without a match-event registry")
-silent("the match start")
-
-say("PASS log noise: silent event dispatch, client events, item changes, cast orders, upgrade loading, projectile speed, cosmetics; no match-event polling")
+say("PASS log noise: silent event dispatch, client events, item changes, cast orders, upgrade loading, projectile speed, cosmetics")

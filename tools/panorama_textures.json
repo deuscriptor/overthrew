@@ -1,7 +1,6 @@
 {
 	"originals": "bc5b937",
 	"textures": {
-		"panorama/images/custom_game/collection/chat_wheel/mouse_drag_png.vtex_c": { "size": [53,30], "shown": ".CW_BasicHint Label size 40px 22px" },
 		"panorama/images/custom_game/collection/close_button_png.vtex_c": { "size": [51,51], "shown": ".CloseCollection 38x38" },
 		"panorama/images/custom_game/collection/cosmetics/cosmetic_content_bg_png.vtex_c": { "size": [935,435], "opaque": true, "shown": "size kept" },
 		"panorama/images/custom_game/collection/cosmetics/item_equipped_png.vtex_c": { "size": [29,29], "shown": ".CI_EquippedItemFlag 20x20; .MinRariryFlag size 22px" },
@@ -23,17 +22,9 @@
 		"panorama/images/custom_game/collection/cosmetics/items/spray/slark_dc_1_spray_png.vtex_c": { "size": [165,165], "shown": "item cards 115x115 and tooltips 118x124" },
 		"panorama/images/custom_game/collection/cosmetics/items/spray/tresdin_dc_1_spray_png.vtex_c": { "size": [165,165], "shown": "item cards 115x115 and tooltips 118x124" },
 		"panorama/images/custom_game/collection/currency_icon_small_png.vtex_c": { "size": [33,33], "shown": "#CW_Open .CW_Open_Icon 19x19; #BC_Content .Content_currency size 19px; #CI_ActionButton.BUnlockBy_currency Label size 21px 21px" },
-		"panorama/images/custom_game/collection/currency_shop/currency_bundle_1_png.vtex_c": { "size": [153,153], "opaque": true, "shown": "#CB_Image" },
-		"panorama/images/custom_game/collection/currency_shop/currency_bundle_2_png.vtex_c": { "size": [153,153], "opaque": true, "shown": "#CB_Image" },
-		"panorama/images/custom_game/collection/currency_shop/currency_bundle_3_png.vtex_c": { "size": [153,153], "opaque": true, "shown": "#CB_Image" },
-		"panorama/images/custom_game/collection/currency_shop/currency_bundle_4_png.vtex_c": { "size": [153,153], "shown": "#CB_Image" },
-		"panorama/images/custom_game/collection/currency_shop/currency_bundle_5_png.vtex_c": { "size": [153,153], "shown": "#CB_Image" },
-		"panorama/images/custom_game/collection/currency_shop/currency_bundle_6_png.vtex_c": { "size": [153,153], "shown": "#CB_Image" },
-		"panorama/images/custom_game/collection/gift_codes/hint_bg_png.vtex_c": { "size": [539,127], "opaque": true, "shown": "size kept" },
 		"panorama/images/custom_game/demo/control_icons/arrow_solid_right_png_png.vtex_c": { "size": [19,31], "shown": ".HeroPickerArrow size 14px 20px" },
 		"panorama/images/custom_game/demo/refresh_icon_png_png.vtex_c": { "size": [53,39], "shown": "#RefreshButton .RefreshIcon 40x24 measured" },
 		"panorama/images/custom_game/end_game/badge_title_bg_png.vtex_c": { "size": [128,32], "opaque": true, "shown": ".BadgeName 88x24 measured" },
-		"panorama/images/custom_game/end_game/promo_tab/promo_button_png.vtex_c": { "size": [390,83], "shown": ".EG_Promo_Button 286x62" },
 		"panorama/images/custom_game/end_game/skull_png.vtex_c": { "size": [49,49], "shown": ".EG_BTI_ScoreContainer Label size 37px" },
 		"panorama/images/custom_game/import_dota/emptyitembg_png_png.vtex_c": { "size": [87,64], "opaque": true, "shown": "size kept" },
 		"panorama/images/custom_game/import_dota/information_psd_png.vtex_c": { "size": [29,29], "shown": ".FavoriteBuilds_Description_Details 22x22" },
@@ -45,7 +36,6 @@
 		"panorama/images/custom_game/kick_voting/feeding_png.vtex_c": { "size": [147,109], "shown": "#KV_R_Image" },
 		"panorama/images/custom_game/kick_voting/report_icon_png.vtex_c": { "size": [20,17], "shown": "#KV_VP_Button_Report Label size 15px 13px" },
 		"panorama/images/custom_game/kick_voting/toxicity_png.vtex_c": { "size": [147,109], "shown": "#KV_R_Image" },
-		"panorama/images/custom_game/leaderboard/leaderboards_trophy_png.vtex_c": { "size": [533,275], "shown": ".SeasonResetImage 400x200" },
 		"panorama/images/custom_game/loading_screen/background_png.vtex_c": { "size": [1920,1080], "opaque": true, "shown": "size kept" },
 		"panorama/images/custom_game/loading_screen/orb_png.vtex_c": { "size": [852,891], "shown": "#Orb 639x668" },
 		"panorama/images/custom_game/loading_screen/social_links_1_png.vtex_c": { "size": [208,496], "opaque": true, "shown": ".LS_SocialPage_1 156x372" },
@@ -91,7 +81,6 @@
 		"panorama/images/custom_game/upgrades/upgrade_bg_epic_lod0_png.vtex_c": { "size": [555,165], "opaque": true, "shown": ".UpgradesLinesContainer.MinRarity_4 416x67 measured" },
 		"panorama/images/custom_game/upgrades/upgrade_bg_rare_lod0_png.vtex_c": { "size": [555,165], "opaque": true, "shown": ".UpgradesLinesContainer.MinRarity_2 416x67 measured" },
 		"panorama/images/custom_game/upgrades/upgrades_tree_end_png.vtex_c": { "size": [40,29], "shown": ".LastUpgradeLine .Upgrade_Tree 30x22" },
-		"panorama/images/custom_game/upgrades/upgrades_tree_png.vtex_c": { "size": [40,29], "shown": ".Upgrade_Tree 30x22" },
-		"panorama/images/custom_game/weekends_event_banner_1_png.vtex_c": { "size": [600,279], "shown": ".LS_WeekendsEventBanner 450x209" }
+		"panorama/images/custom_game/upgrades/upgrades_tree_png.vtex_c": { "size": [40,29], "shown": ".Upgrade_Tree 30x22" }
 	}
 }

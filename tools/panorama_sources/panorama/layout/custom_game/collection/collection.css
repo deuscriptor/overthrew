@@ -1,0 +1,232 @@
+.Collection_Root {
+	width: 100%;
+	height: 100%;
+	opacity: 0;
+	transition-property: opacity, transform;
+	transition-duration: 0.15s;
+	transform: translateY(-30px);
+}
+
+.Collection_Wrap {
+	align: center center;
+	margin-top: -120px;
+}
+
+.Collection_Root.Show {
+	opacity: 1;
+	transform: translateY(0px);
+}
+
+.C_Wrap {
+	min-width: 1200px;
+	background-image: url("s2r://panorama/images/custom_game/collection/base_bg_png.vtex");
+	background-size: 100%;
+	flow-children: down;
+	margin: 199px 13px 0 0;
+	box-shadow: rgba(0, 0, 0, 0.9) 0px 0px 5px 2;
+}
+
+.C_Glow {
+	horizontal-align: center;
+	height: 200px;
+	width: 700px;
+}
+
+.C_Glow Label {
+	align: center bottom;
+	text-align: center;
+	text-transform: uppercase;
+	font-size: 28px;
+	font-weight: bold;
+	color: gradient(linear, 0% 100%, 0% 0%, from(#dc6a08), to(#ffed10));
+	text-shadow: 0px 0px 3px 3 rgba(0, 0, 0, 0.6);
+	letter-spacing: 1px;
+	margin-bottom: 4px;
+}
+
+@define top_bar_height: 74px;
+
+.C_TopBar {
+	height: top_bar_height;
+	width: 100%;
+}
+
+.C_PlayerInfoRoot {
+	height: 100%;
+	width: 450px;
+	margin: 7px 0px;
+	background-color: gradient( linear, 0% 0%, 100% 0%, from(rgba(21, 21, 21, 0.95)), color-stop(0.5, rgba(0, 0, 0, 0.7)), to(transparent) );
+	flow-children: right;
+}
+
+.C_PlayerInfoRoot Panel {
+	flow-children: down;
+	vertical-align: center;
+	margin-left: 6px;
+}
+
+#C_PlayerAvatar {
+	height: 100%;
+	width: height-percentage(100%);
+	margin-left: 20px;
+}
+
+.C_PlayerSubscriptionState {
+	background-image: url("s2r://panorama/images/custom_game/collection/sub_1_png.vtex");
+	background-size: 32px 100%;
+	padding: 5px 0 0 40px;
+	height: 28px;
+	background-repeat: no-repeat;
+	font-style: italic;
+}
+
+.SubTier_0:not(.SubTier_1) .C_PlayerSubscriptionState {
+	saturation: 0;
+	contrast: 1.1;
+	wash-color: #e1e1e1;
+}
+
+.SubTier_1 .C_PlayerSubscriptionState {
+	color: gradient(linear, 0% 100%, 0% 0%, from(#4680ad), to(#c4d2ad));
+	text-shadow: 0px 0px 2px 2 black;
+}
+
+.SubTier_2 .C_PlayerSubscriptionState {
+	background-image: url("s2r://panorama/images/custom_game/collection/sub_2_png.vtex");
+	color: gradient(linear, 0% 100%, 0% 0%, from(#df9724), to(#fee1b8));
+	text-shadow: 0px 0px 2px 2 black;
+}
+
+.C_MainPanelShadow {
+	flow-children: down;
+	background-image: url("s2r://panorama/images/custom_game/collection/base_bg_shadow_png.vtex");
+	background-size: 100%;
+	background-color: rgba(0, 0, 0, 0.3);
+	width: 100%;
+}
+
+.C_Content_Root {
+	margin: 0 15px 8px 15px;
+	background-image: url("s2r://panorama/images/custom_game/collection/base_bg_2_png.vtex");
+	background-size: 100%;
+	flow-children: down;
+	width: 100%;
+}
+
+#C_Tabs {
+	flow-children: right;
+	padding-right: 10px;
+	horizontal-align: center;
+}
+
+.Tab {
+	width: 218px;
+	height: 54px;
+	margin: 8px 0 0 10px;
+	background-image: url("s2r://panorama/images/custom_game/collection/button_base_png.vtex");
+	background-size: 100%;
+	transition-property: brightness, background-size;
+	transition-duration: 0.15s;
+}
+
+.Tab.BActive {
+	background-size: 0%;
+}
+
+.Tab:not(.BActive):hover {
+	brightness: 1.7;
+}
+
+.Tab:not(.BActive):active {
+	brightness: 0.7;
+}
+
+.Tab:not(.BActive):active .Overlay {
+	brightness: 0.7;
+	opacity: 0.1;
+}
+
+.Tab.BActive .Overlay {
+	opacity: 1;
+}
+
+.Overlay {
+	width: 100%;
+	height: 100%;
+	background-image: url("s2r://panorama/images/custom_game/collection/button_active_png.vtex");
+	background-size: 100%;
+	transition: opacity 0.15s ease-in-out 0s;
+	opacity: 0;
+}
+
+.TabInfo {
+	flow-children: right;
+	max-width: 100%;
+	align: center center;
+}
+
+.TabInfo Image {
+	width: 22px;
+	height: 22px;
+	img-shadow: 0px 0px 3px 2 black;
+}
+
+.TabInfo Label {
+	text-transform: uppercase;
+	font-weight: semi-bold;
+	font-size: 20px;
+	margin-left: 5px;
+	text-shadow: rgba(0, 0, 0, 0.7) 0px 1px 2px 3;
+}
+
+#Tab_cosmetics Label {
+	color: gradient(linear, 0% 100%, 0% 0%, from(#a692b9), to(#ceb6e3));
+}
+
+#C_Content {
+	width: 100%;
+	height: 450px;
+}
+
+#C_Content > Panel {
+	visibility: collapse;
+	margin: 8px 10px 10px 10px;
+}
+
+#C_Content > Panel.BActive {
+	visibility: visible;
+}
+
+#C_TopBar_ButtonsRoot {
+	flow-children: right;
+	align: right center;
+	padding-left: -10px;
+	margin-right: 30px;
+}
+
+.CloseCollection {
+	width: 38px;
+	height: 38px;
+	horizontal-align: right;
+	background-image: url("s2r://panorama/images/custom_game/collection/close_button_png.vtex");
+	background-size: 100%;
+	transition: brightness 0.1s ease-in-out 0s;
+	margin-top: 185px;
+}
+
+.CloseCollection:hover {
+	brightness: 1.6;
+}
+
+.CloseCollection:active {
+	brightness: 0.8;
+	sound: "General.ButtonClick";
+}
+
+VerticalScrollBar {
+	width: 5px;
+}
+
+#ScrollThumb {
+	background-color: #5f5e6a;
+}
