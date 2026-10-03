@@ -9,8 +9,9 @@ const read = name => fs.readFileSync(path.join(root, name), 'utf8');
 const registeredMaps = [...read('addoninfo.txt').match(/maps\s*=\s*\[([^\]]*)\]/)[1].matchAll(/"([^"]+)"/g)].map(match => match[1]);
 assert.deepEqual(registeredMaps, ['ot3_necropolis_ffa'], 'Only the configurable FFA map is registered');
 const list = (dir, suffix) => fs.readdirSync(path.join(root, dir)).filter(name => name.endsWith(suffix)).map(name => name.slice(0, name.length - suffix.length));
-const mapFiles = [...list('maps', '.vpk'), ...list('resource/overviews', '.txt'), ...list('scripts/shops', '_shops.txt'), ...list('scripts/upgrades/overrides', '')];
-assert.deepEqual([...new Set(mapFiles)], registeredMaps, 'Map packages, overviews, shops and upgrade overrides exist only for registered maps');
+const mapFiles = [...list('maps', '.vpk'), ...list('resource/overviews', '.txt'), ...list('panorama/images/custom_game/maps', '_png.vtex_c'),
+  ...list('scripts/shops', '_shops.txt'), ...list('scripts/upgrades/overrides', '')];
+assert.deepEqual([...new Set(mapFiles)], registeredMaps, 'Map packages, overviews, previews, shops and upgrade overrides exist only for registered maps');
 const overviewMaterial = read('resource/overviews/ot3_necropolis_ffa.txt').match(/material\s+(\S+)/)[1];
 assert.ok(fs.existsSync(path.join(root, overviewMaterial + '_c')), 'Minimap material exists');
 console.log('PASS only ot3_necropolis_ffa is registered and shipped, with its minimap material');
@@ -55,6 +56,11 @@ const clientItems = Object.keys(require('node:vm').runInNewContext(
   read('tools/panorama_sources/panorama/layout/custom_game/scripts/collection_generated.js') + '\nITEM_DATA'));
 assert.deepEqual(clientItems.sort(), luaItems.sort(), 'collection_generated.js lists the same items as the Lua definitions');
 console.log(`PASS the client and server collections define the same ${luaItems.length} items`);
+// Item cards load items/<slot>/<item>.png; the _png_<hash> textures belong to the spray materials.
+const itemImages = fs.readdirSync(path.join(root, 'panorama/images/custom_game/collection/cosmetics/items'), { recursive: true })
+  .map(file => path.basename(file).match(/^(.+)_png\.vtex_c$/)).filter(Boolean).map(match => match[1]);
+assert.deepEqual(itemImages.filter(name => !clientItems.includes(name)), [], 'Collection item images belong to collection items');
+console.log(`PASS all ${itemImages.length} collection item images belong to collection items`);
 // Every addon UI file the Panorama sources, compiled styles and scripts, Lua and localization point to exists.
 // Compiled-only layouts keep their markup compressed, so only layouts with an XML source are checked.
 {
@@ -86,6 +92,7 @@ console.log(`PASS the client and server collections define the same ${luaItems.l
   assert.deepEqual([...missing], [], 'Panorama, Lua and localization reference only files that exist');
   console.log('PASS Panorama, Lua and localization reference only addon UI files that exist');
 }
+require('./package_images').verify();
 
 const result = spawnSync(process.execPath, [
   path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),

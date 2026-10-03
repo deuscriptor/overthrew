@@ -1,7 +1,4 @@
 <root>
-	<styles>
-		<include src="s2r://panorama/layout/custom_game/precache.vcss_c" />
-	</styles>
 	<scripts>
 		<include src="s2r://panorama/layout/custom_game/scripts/config.vjs_c" />
 		<include src="s2r://panorama/layout/custom_game/scripts/vector.vjs_c" />
