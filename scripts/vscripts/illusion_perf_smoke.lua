@@ -14,7 +14,7 @@ if state == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
 	GameRules:SetPreGameTime(900)
 	PlayerDC.CheckEndGame = function() end
 	HostOptions:ClaimHost(0)
-	assert(HostOptions:ApplyRules({PlayerID=0, single_draft=0, epic_orbs=0, turbo=1, backpack_items=1,
+	assert(HostOptions:ApplyRules({PlayerID=0, single_draft=0, epic_orbs=0, turbo=1, backpack_items=1, fountain_sloth=1,
 		kill_goal=50, infinite_rerolls=1, all_vision=1, invincible_wards=1, longer_wards=1, divine_rapier=1, dagon=1}))
 	print("ILLPERF setup applied")
 	return

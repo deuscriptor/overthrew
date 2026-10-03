@@ -1123,6 +1123,8 @@ If you do not send us your steam URL or steamID we wont be adle to grant you ben
 	"DOTA_Tooltip_modifier_fountain_movespeed_effect_lua_Description"		"Increases movement speed by %dMODIFIER_PROPERTY_MOVESPEED_BONUS_PERCENTAGE%%%. Has a 4 second fade time."
 	"DOTA_Tooltip_modifier_fountain_protection_effect_lua"		"Fountain Protection"
 	"DOTA_Tooltip_modifier_fountain_protection_effect_lua_Description"		"Cannot attack or deal damage. Cannot be targeted by enemies and takes no damage. Lasts while on the fountain."
+	"DOTA_Tooltip_modifier_fountain_sloth_effect_lua"		"Fountain Sloth"
+	"DOTA_Tooltip_modifier_fountain_sloth_effect_lua_Description"		"Ability cooldowns take twice as long to recover. Lasts while on the fountain."
 	"DOTA_Tooltip_ability_item_gold_coin"    "200 Team Gold"
 	"DOTA_Tooltip_ability_item_common_orb"    "Common Upgrade Orb"
 		"DOTA_Tooltip_ability_item_common_orb_description"    "Grants each member of your team a Common Upgrade"
@@ -2935,6 +2937,8 @@ If you do not send us your steam URL or steamID we wont be adle to grant you ben
 		"host_rules_divine_rapier" "Divine Rapier"
 		"host_rules_dagon" "Dagon"
 		"host_rules_category_core" "Core"
+		"host_rules_category_balance" "Balance"
+		"host_rules_fountain_sloth" "Fountain Sloth"
 		"host_rules_turbo" "Turbo"
 		"host_rules_backpack_items" "Backpack Items"
 		"backpack_items_error_inactive" "This backpack item is inactive (only one copy works; Linken's Sphere and Aeon Disk never do)"
@@ -2972,5 +2976,6 @@ If you do not send us your steam URL or steamID we wont be adle to grant you ben
 		"host_rules_invincible_wards_tip" "Placed wards cannot be attacked or damaged"
 		"host_rules_divine_rapier_tip" "Allow Divine Rapier"
 		"host_rules_dagon_tip" "Allow Dagon"
+		"host_rules_fountain_sloth_tip" "Heroes on their own fountain take twice as long to recover ability cooldowns. It starts 5 seconds after each respawn or buyback"
 	}
 }

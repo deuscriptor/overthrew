@@ -194,12 +194,12 @@ These checks do not replace an online multiplayer test.
 
 ## Items and Other settings
 
-The setup menu has one category per page: Core, Items, Other. Clickable
-Core/Items/Other tabs switch pages, and unvisited tabs glow gold. Apply & Start is
-available on every page.
+The setup menu has one category per page: Core, Balance, Items, Other. Clickable
+Core/Balance/Items/Other tabs switch pages, and unvisited tabs glow gold. Apply & Start is
+available on every page. Balance holds Fountain Sloth (see "Fountain Sloth").
 
 Below the panel, the loading screen's own arrows and page bullets are regrouped into a
-single row, `‹ • • • ›` (`MatchRulesPager`), and restyled like the settings:
+single row, `‹ • • • • ›` (`MatchRulesPager`), and restyled like the settings:
 - The arrows are slate buttons with a gold chevron and a gold border on hover. Each
   glows until first hovered or pressed.
 - At the first or last page the arrow dims and is disabled rather than hidden, so the
@@ -460,6 +460,54 @@ precached in `precache.lua`: without it, the native modifier added from script s
 land, the effect stays one instance), the protection ending at once after leaving, a real Storm Bolt cast
 right after leaving, the look and tint at each step, and a real orb at the zone's edge: protected Sven
 doesn't capture it, and captures one step outside.
+
+## Fountain Sloth
+
+**Fountain Sloth**, the only option on the Balance page, defaults on. A hero on its own fountain (the fountain
+protection zone, radius 1,194 around the tower) recovers ability cooldowns at half speed: each second of cooldown
+takes two. It exists so that waiting out cooldowns in the safety of the base costs time.
+
+- It covers ability cooldowns and charge restores, including those already running when the hero arrives.
+- Item cooldowns are unaffected.
+- Leaving the zone restores the normal speed at once; there is no linger.
+- Each spawn of a hero (the first spawn, every respawn and buyback, a new Tempest Double or Meepo clone) starts a
+  5-second grace period of game time, so pauses don't count. The sloth applies only after it ends.
+- Illusions are never slowed.
+- A respawned hero that stays idle keeps Dota's fountain invulnerability (`modifier_fountain_invulnerability`),
+  which makes it invulnerable and out of game until it acts. Fountain protection and rejuvenation don't reach it
+  then, but the sloth does.
+- While slowed, the hero shows a **Fountain Sloth** debuff with the Time Dilation icon.
+
+`FountainSloth:ApplyRules` (`game/fountain_sloth.lua`) runs when the rules lock. With the option on, it adds
+`modifier_fountain_sloth_lua` to each fountain tower and records each hero's spawn from the raw `npc_spawned`
+event. That event fires during the spawn, so the grace period begins before the aura can see the hero. The aura has
+an aura duration of 0. It searches friendly heroes with `DOTA_UNIT_TARGET_FLAG_INVULNERABLE +
+DOTA_UNIT_TARGET_FLAG_OUT_OF_WORLD`, and rejects illusions and heroes still in their grace period
+(`GetAuraEntityReject`). With the option off there is no aura.
+
+The engine offers no direct way to slow a running cooldown from script:
+
+- `MODIFIER_PROPERTY_COOLDOWN_PERCENTAGE_ONGOING`, which Visage's Lurker uses, is never called on a Lua modifier:
+  a counting handler saw zero calls and no value changed the speed, while the native Lurker sped cooldowns up.
+- `StartCooldown` restarts the HUD's cooldown sweep at full, so extending the remaining time each tick would keep the
+  sweep full.
+- `SetFrozenCooldown` pauses a cooldown and keeps the number and the sweep where they are. It also pauses charge
+  restores: a 20 s restore took 28 s with 8 s frozen. Freezes are counted: two freezes need two thaws.
+
+So `modifier_fountain_sloth_effect_lua` freezes every recovering ability for every other 0.1 s think (three
+server ticks). A recovering ability is one on cooldown, or one below its maximum charges. The next think thaws
+exactly the abilities it froze, and so does the end of the effect (leaving, death). Freezes from other sources are
+kept. The HUD's number and sweep advance at half speed in 0.1 s steps. The effect costs one ability scan every
+0.2 s for each hero on its own fountain after the grace period.
+
+`test_fountain_sloth.lua` covers the aura, the grace period, the rules and the freeze cycle.
+`fountain_sloth_smoke.lua` checks it in a tools match. `fountain_sloth_off_smoke.lua` checks the option off in a
+fresh session. The smoke checks:
+
+- the cooldown speed on and off the fountain, and of items;
+- an invulnerable hero and an illusion on the fountain;
+- a death on the fountain, which thaws the cooldowns;
+- the grace period after a respawn and after a buyback.
 
 ## Illusions and performance
 

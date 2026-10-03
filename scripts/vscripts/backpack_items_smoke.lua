@@ -7,7 +7,7 @@ if state == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
 	GameRules:SetPreGameTime(900)
 	PlayerDC.CheckEndGame = function() end -- keep the single-player test alive
 	HostOptions:ClaimHost(0) -- no automatic host: claim it as a player would
-	assert(HostOptions:ApplyRules({PlayerID=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=1, kill_goal=50,
+	assert(HostOptions:ApplyRules({PlayerID=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=1, fountain_sloth=1, kill_goal=50,
 		infinite_rerolls=0, all_vision=0, invincible_wards=1, longer_wards=1, divine_rapier=1, dagon=1}))
 	print("BPTEST setup applied")
 	return

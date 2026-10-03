@@ -1,9 +1,9 @@
 HostOptions = HostOptions or {}
 
-local MATCH_FLAGS = {"single_draft", "epic_orbs", "turbo", "backpack_items", "infinite_rerolls", "all_vision", "invincible_wards", "longer_wards", "divine_rapier", "dagon"}
+local MATCH_FLAGS = {"single_draft", "epic_orbs", "turbo", "backpack_items", "fountain_sloth", "infinite_rerolls", "all_vision", "invincible_wards", "longer_wards", "divine_rapier", "dagon"}
 -- Flags absent here default off.
 local DEFAULT_ON_FLAGS = {
-	single_draft = true, turbo = true, infinite_rerolls = true, all_vision = true,
+	single_draft = true, turbo = true, fountain_sloth = true, infinite_rerolls = true, all_vision = true,
 	invincible_wards = true, longer_wards = true, divine_rapier = true, dagon = true,
 }
 
@@ -205,6 +205,7 @@ function HostOptions:ApplyRules(event)
 	GameRules:GetGameModeEntity():SetFogOfWarDisabled(self:GetOption("all_vision"))
 	HostItems:ApplyRules()
 	BackpackItems:ApplyRules()
+	FountainSloth:ApplyRules()
 	CustomNetTables:SetTableValue("game_options", "host_options", self.options)
 	self:PublishRules()
 	Timers:CreateTimer({useGameTime = false, endTime = LOADING_SCREEN_RELEASE_TIME, callback = function()

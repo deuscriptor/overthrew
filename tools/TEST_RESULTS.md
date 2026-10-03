@@ -920,3 +920,29 @@ SINGLE_DRAFT_RANDOM PASS hero=npc_dota_hero_templar_assassin
   Least Deaths badge) and collection (Cosmetics tab icon, aura cards) showed their art. The log named no removed
   file; its missing `overboss.lua`, `item_test_hero_effect` and `orb_common`/`orb_rare` shop icons and the Tools-mode
   recompile failures of the TI10 emblem particles predate this change.
+
+## 2026-10-03: Fountain Sloth (#48)
+
+- Offline: `run_tests.js` passes (48 checks), including the new `test_fountain_sloth.lua`. `test_host_rules.lua` and
+  `panorama_test.js` cover the new flag, its default and the Balance page among four. `panorama_resources.js verify`:
+  26 scripts, 7 styles, 13 layouts and 78 re-encoded textures. `luacheck scripts/vscripts`: 0 warnings / 0 errors in
+  320 files.
+- Dota Tools, one client with `-condebug`, `ot3_necropolis_ffa`:
+  - Engine probes. `MODIFIER_PROPERTY_COOLDOWN_PERCENTAGE_ONGOING` on a Lua modifier was called 0 times and left the
+    speed at 1.00 for -50, -100, -200, 50 and 100, also for a real Warcry cast. Visage's native Lurker at 8 stacks
+    gave 1.12. `StartCooldown` restarted Storm Bolt's sweep at full, while `SetFrozenCooldown` held Warcry at 14 with
+    its sweep half way. Two freezes and one thaw stayed frozen. A Shrapnel charge (20 s restore) came back after
+    28.0 s with 8 s frozen, and after 40.1 s on the fountain with the sloth.
+  - `fountain_sloth_smoke`, rerun after the review changes (scans on alternate thinks only, buyback checked as
+    paid, 4 s windows for the slowed rates): all checks ok. Ability cooldowns recovered 0.467, 0.475, 0.500 and 0.500
+    per second with the sloth, including an idle respawned hero, and 1.000 off the fountain. Item cooldowns recovered
+    0.967 per second, the same reading as without the sloth. The sloth ended 0.07 s after leaving and was absent from
+    an illusion. A death on the fountain thawed the cooldowns. The sloth started 4.97 s after a respawn and 4.97 s
+    after a paid buyback.
+  - `fountain_sloth_off_smoke`, fresh session: all checks ok. No fountain aura, 1.000 per second everywhere.
+  - HUD: six server/screen pairs (5.60/6, 5.00/5, 4.20/5, 3.40/4, 2.80/3, 2.10/2) over 7.03 s of game time, 0.498 per
+    second; the number and the sweep advanced together. Fountain Sloth showed as a red-bordered Time Dilation debuff
+    with its Russian tooltip. Its "0.1 сек." duration matches Fountain Protection's.
+  - Russian client loading screen: the four tabs ОСНОВНЫЕ, БАЛАНС, ПРЕДМЕТЫ and ПРОЧЕЕ fit, with four page bullets. The
+    Balance page shows «Фонтанная лень» switched on, with its tooltip.
+  - The log has no Lua or Panorama script errors.
