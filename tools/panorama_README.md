@@ -39,7 +39,10 @@ after style changes.
 
 `custom_ui_manifest.xml` lists the HUD layouts; a layout removed from it, and not included by
 another, never loads. `run_tests.js` fails if a Panorama resource, source, Lua script or
-localization file references a `custom_game` image, layout, script or style that does not exist.
+localization file references a `custom_game` image, layout, script or style that does not exist,
+and (`package_images.js`) if a shipped image is not used. That check follows the layouts the
+manifest and loading screen load. A compiled layout's markup is binary KV3 (versions 2, 4 and 5,
+LZ4) whose string table holds its includes and images; `layoutStrings` reads it without a source.
 
 `MAP_NAME` (in `scripts/utils.js`) is the map name, `ot3_necropolis_ffa`, and keys the
 map-specific UI constants. `IS_SINGLE_DRAFT_MAP` and `IS_EPIC_ONLY_MAP` follow the

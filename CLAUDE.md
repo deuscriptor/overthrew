@@ -10,8 +10,8 @@ It adds a host-configurable free-for-all mode on `ot3_necropolis_ffa`.
 
 - **Map:** `ot3_necropolis_ffa` is the only registered map and the `DefaultMap` in `addoninfo.txt` (8 players,
   min 1). The other Overthrow maps (Duo, Quintet, Octet, `ot3_demo`) and the earlier `ot3_ffa_*` variants were
-  removed; `run_tests.js` fails if a map package, overview, shop or upgrade override exists for an unregistered
-  map. The Hero Demo tooling (`game/demo`, the `ot3_demo` Panorama panel) still loads in Tools mode.
+  removed; `run_tests.js` fails if a map package, overview, preview image, shop or upgrade override exists for an
+  unregistered map. The Hero Demo tooling (`game/demo`, the `ot3_demo` Panorama panel) still loads in Tools mode.
 - **No map sources:** the map ships as a compiled VPK only; there is no Hammer source. Three water/fog textures
   its lighting entities reference but the VPK lacks ship as loose placeholders in `maps/ot3_necropolis_ffa/`
   (`tools/map_textures.js`, "Map textures" in `tools/README.md`).
@@ -46,6 +46,7 @@ Run everything from the addon root. Requires Node.js 24. In Git Bash, if `node` 
 npm ci --prefix tools/runtime --ignore-scripts --no-audit --no-fund   # once, or when runner deps are missing
 node tools/run_tests.js                  # full offline suite: Lua tests on Fengari, localization parity, map textures, Panorama tests
 node tools/panorama_test.js              # Panorama logic only (already included in run_tests.js)
+node tools/package_images.js             # every shipped image is used (already included in run_tests.js)
 node tools/panorama_resources.js extract panorama/<path>.vxml_c   # make a compiled resource (.vjs_c/.vcss_c/.vxml_c) editable
 node tools/panorama_resources.js build   # after editing tools/panorama_sources/: rebuild panorama/*_c
 node tools/panorama_resources.js verify  # compiled resources match their sources, textures their list (CI runs this)
@@ -129,6 +130,10 @@ Then add the option to the table above, to `tools/README.md` and to `README.md` 
   `content/dota_addons/overthrew/` folder, so building them needs Windows with Workshop Tools installed.
 - A HUD layout loads only if `custom_ui_manifest.xml` or another layout includes it. `run_tests.js` fails if Panorama,
   Lua or localization references a `custom_game` image, layout, script or style that doesn't exist.
+- Every shipped image must be used: `run_tests.js` fails on an image that no Lua, KeyValues, localization, loaded
+  Panorama file or compiled material, model or particle names (`package_images.js`), on a collection item image
+  without its item, and on a map preview of an unregistered map. Delete art together with the last code that shows it, and
+  don't add precache stylesheets (see "Package contents" in `tools/README.md`).
 - Image URLs in CSS sources must stay `s2r://…_png.vtex`. No PNG sources exist, and `file://{images}`
   compiles to empty paths.
 - The compiler does not validate property names, so check the client log (`-condebug`) after a style change.

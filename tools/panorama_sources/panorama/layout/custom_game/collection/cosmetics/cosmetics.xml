@@ -1,7 +1,6 @@
 <root>
 	<styles>
 		<include src="s2r://panorama/styles/dotastyles.vcss_c" />
-		<include src="s2r://panorama/layout/custom_game/collection/cosmetics/cosmetics_precache.vcss_c" />
 		<include src="s2r://panorama/layout/custom_game/collection/cosmetics/cosmetics_rarities.vcss_c" />
 		<include src="s2r://panorama/layout/custom_game/collection/cosmetics/cosmetics.vcss_c" />
 	</styles>

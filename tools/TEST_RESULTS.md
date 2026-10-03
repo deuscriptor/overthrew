@@ -899,3 +899,24 @@ HOST_RULES_PASS four native Single Draft offers
 HOST_RULES_PASS locked rules, orb rewards and Epic-linked reroll price
 SINGLE_DRAFT_RANDOM PASS hero=npc_dota_hero_templar_assassin
 ```
+
+## 2026-10-03: Package trim (#34)
+
+- Offline: `run_tests.js` passes (47 checks), including the new ones: every one of the 447 shipped images is used
+  (`package_images.js`; 109 Panorama files load), map previews exist only for registered maps, and the 138 collection
+  item images belong to items. Each failed when a removed file was restored: an old upgrade icon, a flash3 perk icon,
+  the old minimap texture and the ox team icon (unused image); the old kick vote layout with its images (images of an
+  unloaded layout); the Duo, Quintet and Octet previews (map check); the season 6 top-10 icon (item check).
+  `layoutStrings` decodes all 28 compiled layouts like a reference decoder, and every `s2r://` path of the 13 layout
+  sources is among their strings. `panorama_resources.js verify`: 26 scripts, 7 styles and 13 layouts, 78 re-encoded
+  textures. `luacheck scripts/vscripts`: 0 warnings / 0 errors in 316 files.
+- Dota Tools, one client with `-condebug`, `ot3_necropolis_ffa`, before the removal: at setup `resource_list` showed
+  from `midas_throne` only `kobold_overboss.vmdl`, `kobold_overboss/kobold_overboss_vmorf.vtex` and
+  `overthrow_throne_desert_cushions.vmdl`, and none of the 13,606 listed models, particles, materials and UI maps was
+  to be removed.
+- After the removal, a fresh client: setup, Apply & Start, a random hero, the game, then `GameLoop:SetGameWinner`.
+  The boss sat on its throne playing `overboss_throne_idle`, and moved between two victory-camera screenshots; the
+  top bar, minimap and orb icons showed. The end screen's full score, MVP view (rat team logo from `team_icons_hr`,
+  Least Deaths badge) and collection (Cosmetics tab icon, aura cards) showed their art. The log named no removed
+  file; its missing `overboss.lua`, `item_test_hero_effect` and `orb_common`/`orb_rare` shop icons and the Tools-mode
+  recompile failures of the TI10 emblem particles predate this change.

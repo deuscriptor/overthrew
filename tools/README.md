@@ -75,13 +75,13 @@ Only `ot3_necropolis_ffa` is registered. The other Overthrow maps (`ot3_gardens_
 `ot3_jungle_quintet`, `ot3_desert_octet`, `ot3_demo`) and the earlier separate-map
 variants (`ot3_ffa_epic`, `ot3_ffa_epic_draft`, `ot3_ffa_draft`) were removed with their
 map packages, overviews, shops, upgrade overrides, Duo/Quintet/Octet and epic-only shop
-orbs, and the variant build tools. `run_tests.js` fails if a map package, overview, shop
-or upgrade override exists for a map that is not registered. The Hero Demo tooling
+orbs, and the variant build tools. `run_tests.js` fails if a map package, overview, preview
+image, shop or upgrade override exists for a map that is not registered. The Hero Demo tooling
 (`game/demo`, the `ot3_demo` Panorama panel) still loads in Tools mode on the FFA map,
 where the smoke scripts use it. Lua and the editable Panorama scripts no longer branch on
 the map name. The removed maps are still named in places that never match: `ot3_demo` checks
-in the demo panel and selected upgrades, style rules for the other maps (loading screen, end
-screen, team selection) and their preview images in `precache.css`.
+in the demo panel and selected upgrades, and style rules for the other maps (loading screen, end
+screen, team selection). Their preview images went with issue #34 (see "Package contents").
 
 Localization: the addon ships English (`resource/addon_english.txt`, the default
 and fallback for every other client language), Russian
@@ -689,8 +689,8 @@ What the code does:
   items: cards and tooltips, 124 px). A texture drawn at its own size, or in a box that could not be resolved,
   keeps its size; so do textures this fork never shows.
 
-`tools/panorama_textures.json` lists the 81 re-encoded textures with their size, whether alpha is dropped and
-where they are shown (92 before 11 went with the backend features). `node tools/panorama_textures.js build` regenerates them from the originals in commit
+`tools/panorama_textures.json` lists the 78 re-encoded textures with their size, whether alpha is dropped and
+where they are shown (92 before 11 went with the backend features and 3 unused ones with issue #34). `node tools/panorama_textures.js build` regenerates them from the originals in commit
 `bc5b937` (decoded from PNG, raw BGRA8888 or DXT including scaled YCoCg, downscaled by area in linear light with
 alpha weighting, recompiled by Valve's resourcecompiler). `node tools/panorama_resources.js verify` checks that
 the committed textures match the list and that no uncompressed texture keeps an unused alpha channel.
@@ -719,3 +719,68 @@ match before and after, apart from animation. No water is visible on this map: i
 z ≈ 106) lies under the floor everywhere inside the walls (the centre pool's floor is at z ≈ 129), and only the void
 outside them drops lower. Fog of war looks the same too. The fix removes the failed loads and error-texture lookups,
 without a visible change.
+
+## Package contents
+
+Issue #34 removed 812 files (46.4 MiB) that the game never loads. The nine package entries went from 2,838 files
+(103.2 MiB) to 2,026 (56.8 MiB):
+
+- **Precache stylesheets** (31.5 MiB): `precache.css`, included by the HUD manifest, and
+  `collection/cosmetics/cosmetics_precache.css` listed images under selectors no panel matches (`#CustomPrecache`,
+  `.collection_cosmetics_precache`), so they loaded nothing. They made the compiler build images that scripts set at
+  runtime; the addon ships its images compiled, so at runtime they did nothing. The 131 images only they named went
+  with them, among them the old animated loading screen (`loading_screen/loading_seq_*`, 24 MiB), its banners and
+  buttons, the guide art (`game_info`), unused Dota HUD imports and old scoreboard textures.
+- **Images nothing names** (59, 6.1 MiB): the removed maps' previews; the large upgrade icons in `upgrades/` (the
+  upgrade panel shows the ones in `upgrades/generics/`); the old 1 MiB minimap texture
+  (`materials/overviews/ot3_necropolis_ffa_tga_*`, the minimap material uses
+  `custom_game/maps/ot3_necropolis_ffa_png_*`); collection tab icons and currency art of removed tabs; icons of items
+  and generic upgrades that do not exist (season 6 top-10/100 auras, the white high five, damage shield, extra common
+  choice, health and mana on kill); the QR, Patreon and mail icons; the ox and rabbit team icons, which no team uses;
+  the old kick vote's reason images.
+- **Flash icons** (86, 1.1 MiB): `resource/flash3/images` icons no `AbilityTextureName` or `GetTexture` names (old
+  neutral items, perks, seasonal items, ban hammer).
+- **Throne models** (71, 6.5 MiB): the map places `npc_dota_kobold_overboss`, whose model
+  (`midas_throne/kobold_overboss.vmdl`) embeds its mesh, morphs and animations, and the throne's desert cushions. The
+  external meshes, morphs, animation groups and animations of an older compile were never loaded, nor were the radiant
+  and underboss variants, the temp poses and the other thrones. Also two unused `gardenofskulls` models and the
+  treasure courier wings' external meshes.
+- **Particles** (444, 1.0 MiB): the chat wheel's sprays (`particles/sprays/chc_*`), aura sets no collection item uses
+  (crystal, sunken and Diretide emblems, TI fountain effects), the fountain range's target marker from before #42, and
+  old orb drop, last hit, ping, kill leader, promo and trap effects.
+- **Other:** five UI scene maps (`maps/ui/*.vpk`) no layout shows, two orb materials, the old kick vote layout
+  (`voting_to_kick`, replaced by `kick_voting`), the `dev_panel` and `flow_test` layouts (the demo panel has its own
+  dev controls) and four scripts nothing includes, among them the original chat script.
+
+Kept on purpose: 17 particles at base game paths (the pendulum trap, `ti10_emblem_effect_ground_spot`), which override
+Dota's own, differ from them and may be loaded by base game content; the icons of features that are only commented
+out (the `neutral_item_stats` generic upgrade, the `wards` and `kills_and_assists` MVP badges); the loading screen's
+hint videos, which play until every player has loaded.
+
+Checked in Workshop Tools: before the removal, `resource_list` at setup listed from the throne folder only
+`kobold_overboss.vmdl`, its `kobold_overboss/kobold_overboss_vmorf.vtex` and the desert cushions, and none of the
+13,606 models, particles and materials it listed was on the removal list. Afterwards a match ran from setup through
+hero selection, the game and the end screen (MVP view, collection): the boss rendered and animated on its throne, the
+team logos and badges showed, and the client log named no removed file.
+
+`run_tests.js` runs `package_images.js`, which fails if a shipped image (a `.vtex_c` under `panorama`, `materials` or
+`models`, or a PNG under `resource/flash3/images`) is not used. An image counts as used when one of these names it:
+
+- Lua, KeyValues or localization;
+- a Panorama layout, style or script reachable from `custom_ui_manifest.xml`, `custom_loading_screen.xml` or a path in
+  Lua or KeyValues. Compiled layouts are read from their LZ4-compressed KV3 block (`layoutStrings` in
+  `panorama_resources.js`), so layouts without an XML source count too. An unloaded layout or stylesheet does not
+  keep its images.
+- the external references (RERL) of a compiled material, model or particle;
+- for item and ability icons, a texture name in Lua or KeyValues.
+
+Scripts build some paths at runtime: a `${...}` in a template literal stands for one path segment, and a folder swap
+such as `.replace("/team_icons/", "/team_icons_hr/")` names both folders. Such a path matches every file of its
+folder that fits, so two families are checked by name as well: map previews (`custom_game/maps/<map>_png.vtex_c`) must
+belong to registered maps, and collection item images to the items of `collection_generated.js`. Not covered: the map
+VPK is not read (`maps/` is left out; its textures are checked by `map_textures.js`), compiled materials, models and
+particles count as loaded whether or not anything uses them, and models and particles themselves are not checked.
+
+Delete art together with the last code that shows it. A new image set only from a script needs no precache
+stylesheet in the package: compile it once through a temporary stylesheet, as `panorama_textures.js build` does, and
+commit the compiled file.

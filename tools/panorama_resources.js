@@ -117,6 +117,66 @@ function layoutSourceCrc(bytes) {
 	throw new Error("Missing DATA block");
 }
 
+// The compressed block (LaCo) is binary KV3, whose string table holds every attribute value: the styles and scripts
+// a layout includes and the images it shows. Valve compiles it as KV3 version 2, 4 or 5 with LZ4 compression.
+// Format reference: ValveResourceFormat/Resource/ResourceTypes/BinaryKV3.cs.
+function lz4(input, size) {
+	const output = Buffer.alloc(size);
+	let i = 0, o = 0;
+	const extend = (length) => {
+		for (let byte = 255; byte === 255; length += byte) byte = input[i++];
+		return length;
+	};
+	while (i < input.length) {
+		const token = input[i++];
+		const literals = token >> 4 === 15 ? extend(15) : token >> 4;
+		input.copy(output, o, i, i + literals);
+		i += literals;
+		o += literals;
+		if (i >= input.length) break;
+		const offset = input.readUInt16LE(i);
+		i += 2;
+		const match = (token & 15) === 15 ? extend(19) : (token & 15) + 4;
+		for (let end = o + match; o < end; o++) output[o] = output[o - offset];
+	}
+	if (o !== size) throw new Error("Invalid LZ4 block");
+	return output;
+}
+
+function layoutStrings(bytes) {
+	const table = 8 + bytes.readUInt32LE(8);
+	let laco;
+	for (let i = 0; i < bytes.readUInt32LE(12); i++) {
+		const entry = table + i * 12;
+		if (bytes.toString("ascii", entry, entry + 4) !== "LaCo") continue;
+		const start = entry + 4 + bytes.readUInt32LE(entry + 4);
+		laco = bytes.subarray(start, start + bytes.readUInt32LE(entry + 8));
+	}
+	if (!laco) throw new Error("Missing LaCo block");
+	const version = laco.readUInt8(0);
+	if (laco.readUInt32LE(0) >>> 8 !== 0x4b5633 || version < 2 || version > 5) throw new Error("Unsupported layout KV3 version");
+	const [count1, count4, count8] = [28, 32, 36].map(offset => laco.readInt32LE(offset));
+	const count2 = version >= 4 ? laco.readInt32LE(64) : 0;
+	const [size, compressed, header] = version >= 5 ? [laco.readInt32LE(72), laco.readInt32LE(76), 120]
+		: [laco.readInt32LE(48), laco.readInt32LE(52), version >= 4 ? 72 : 64];
+	const method = laco.readUInt32LE(20);
+	if (method > 1) throw new Error("Unsupported layout KV3 compression");
+	const buffer = method === 1 ? lz4(laco.subarray(header, header + compressed), size) : laco.subarray(header, header + size);
+	// One-byte, two-byte, four-byte and eight-byte values follow each other, each aligned to its size. The string count
+	// is the first four-byte value; version 5 keeps the strings at the start of the one-byte values, earlier versions
+	// after the eight-byte ones.
+	const align = (offset, to) => Math.ceil(offset / to) * to;
+	let offset = align(count2 ? align(count1, 2) + count2 * 2 : count1, 4);
+	const strings = new Array(buffer.readInt32LE(offset));
+	offset = version >= 5 ? 0 : align(offset + count4 * 4, 8) + count8 * 8;
+	for (let i = 0; i < strings.length; i++) {
+		const end = buffer.indexOf(0, offset);
+		strings[i] = buffer.toString("utf8", offset, end);
+		offset = end + 1;
+	}
+	return strings;
+}
+
 function compile(name, text) {
 	const input = path.join(content, name.replace(/\.vcss_c$/, ".css").replace(/\.vxml_c$/, ".xml"));
 	fs.mkdirSync(path.dirname(input), { recursive: true });
@@ -209,4 +269,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { parse, rebuild, crc32, styleText, layoutSourceCrc, root, sources, backups };
+module.exports = { parse, rebuild, crc32, styleText, layoutSourceCrc, layoutStrings, root, sources, backups };
