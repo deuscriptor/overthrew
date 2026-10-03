@@ -862,3 +862,40 @@ clients remain manual checks.
   through `GetAbilityKeyValuesByName`); `IsEligible` refuses Occult Bracelet and Brawny (neutral active and passive)
   and accepts Black King Bar and Butterfly; the Shard stock went from 0 at 0:05 to 1 at 1:15 (Turbo grant at 1:00).
   No Lua errors in the log.
+
+## 2026-10-03: Backend removal (#39)
+
+- Offline: `run_tests.js` passes, including the new checks: no Lua script creates an HTTP request, reads the dedicated
+  server key or names the backend host; the client's `collection_generated.js` and the server's `ITEM_DEFINITIONS`
+  list the same 139 items; and no Panorama resource, source, Lua script or localization file references a missing
+  `custom_game` image, layout, script or style (a deliberately deleted image made it fail). Localization parity
+  holds at 2630 tokens per language (710 removed, none added). `panorama_resources.js verify`: 26 scripts, 9 styles and 13
+  layouts compiled from source and verified, 81 re-encoded textures. `luacheck scripts/vscripts`: 0 warnings /
+  0 errors in 316 files. Recompiled unmodified layouts decompiled identically to the originals.
+- Dota Tools, one client with `-condebug`, `ot3_necropolis_ffa`:
+  - Loading screen: host settings, Claim host and Apply & Start as before, without the tournament toggle and the
+    weekend banner. Pick screen: Single Draft with the custom Random button; strategy screen unchanged.
+  - HUD: the top menu shows Dashboard, Dota Settings, Scoreboard and Collection; the minimap has no Battle Pass,
+    supporter or gift-orb panels. The Collection opens on Cosmetics (the only tab), shows "Golden Supporter" and
+    "Premium & Vanity - Free", and equips an aura (shown on the hero) and a spray (its ability slot updates) with
+    tooltips.
+  - Orb selection (queued rare orb, Kez): x999 rerolls, the shortened reroll tooltip, a reroll costing 2, the
+    auto-select delay changed to 2 s through the settings round trip, and the pick applied.
+  - Scoreboard with two bots: mute and Tip buttons, no rank column. `tips_smoke`: all checks ok, including no
+    backend requests; three toasts and five chat lines shown.
+  - End screen: victory, MVP and full score views with tips received, no rating column, server errors, Feedback
+    button or match ID; Show Collection opens the collection.
+  - `host_rules_smoke` passes in the same match. In a fresh match `single_draft_random_smoke` picks an offered hero.
+  - The log has no Lua or Panorama script errors. The missing `item_test_hero_effect` icon, the duplicate
+    `DOTA_Tooltip_Ability_chen_soul_persuasion_creeps_max_summoned` token and the missing upgrade tooltip tokens
+    predate this change.
+
+```text
+FREE_COLLECTION_ACCESS_PASS 139 items; premium tier 2; no backend client
+FREE_COLLECTION_EQUIP_PASS high_five_bronze
+TIPTEST ok no backend requests
+TIPTEST DONE
+HOST_RULES_PASS four native Single Draft offers
+HOST_RULES_PASS locked rules, orb rewards and Epic-linked reroll price
+SINGLE_DRAFT_RANDOM PASS hero=npc_dota_hero_templar_assassin
+```

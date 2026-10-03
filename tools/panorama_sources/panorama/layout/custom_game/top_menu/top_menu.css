@@ -1,0 +1,72 @@
+#CTM_Lines {
+	flow-children: down;
+	margin: 3px;
+}
+
+#CTM_Lines > Panel {
+	flow-children: right;
+}
+
+.CTM_DefultButton {
+	width: 35px;
+	height: 35px;
+	margin: 4px 0 0 4px;
+	background-image: url("s2r://panorama/images/custom_game/top_menu/bg_png.vtex");
+	background-size: 100%;
+	img-shadow: black 0 1px 1px 2;
+	opacity: 1;
+	wash-color: transparent;
+}
+
+.CTM_DefultButton:hover {
+	wash-color: white;
+	opacity: 1;
+}
+
+.CTM_DefultButton > Panel {
+	width: 100%;
+	height: 100%;
+	background-size: 38px;
+	background-position: 50%;
+	img-shadow: black 0 1px 1px 2;
+	background-repeat: no-repeat;
+}
+
+.CTM_DefultButton:hover > Panel {
+	background-size: 40px;
+	brightness: 1.5;
+}
+
+.CTM_DefultButton:active > Panel {
+	background-size: 36px;
+	brightness: 0.7;
+}
+
+#CTM_ReturnToDashboard > Panel {
+	background-image: url("s2r://panorama/images/custom_game/top_menu/arrow_png.vtex");
+}
+
+#CTM_Settings > Panel {
+	background-image: url("s2r://panorama/images/custom_game/top_menu/settings_png.vtex");
+	img-shadow: black 0 1px 4px 1;
+}
+
+#CTM_Scoreboard > Panel {
+	background-image: url("s2r://panorama/images/custom_game/top_menu/scoreboard_png.vtex");
+	background-image: url("s2r://panorama/images/custom_game/top_menu/scoreboard2_png.vtex");
+	img-shadow: black 0 1px 1px 1;
+	background-size: 35px;
+}
+
+#CTM_Collection > Panel {
+	background-image: url("s2r://panorama/images/custom_game/top_menu/collection_png.vtex");
+	background-image: url("s2r://panorama/images/custom_game/top_menu/collection2_png.vtex");
+}
+
+.Collection_FX {
+	width: 100%;
+	height: 100%;
+	margin: 0 1px 0 1px;
+	transition-property: opacity;
+	transition-duration: 0.15s;
+}

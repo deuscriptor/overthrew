@@ -108,7 +108,6 @@ function InitPickLocker() {
 	if (level >= 2) return;
 
 	let pick_button = FindDotaHudElement("LockInButton");
-	// let smart_random_button = FindDotaHudElement("SmartRandomButton");
 
 	let buttons = [pick_button, custom_random_button];
 
@@ -131,9 +130,7 @@ function InitPickLocker() {
 	GameUI.Player.RegisterForPlayerDataChanges(() => {
 		level = GameUI.Player.GetSubscriptionTier();
 
-		if (GameUI.GetOption("tournament_mode") || Game.IsInToolsMode()) {
-			level = 2;
-		}
+		if (Game.IsInToolsMode()) level = 2;
 
 		InitPickLocker();
 	});

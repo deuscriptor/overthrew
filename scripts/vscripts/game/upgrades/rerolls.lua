@@ -4,46 +4,25 @@ UpgradeRerolls = UpgradeRerolls or class({})
 function UpgradeRerolls:Init()
 	UpgradeRerolls.current_free_rerolls = {}
 	UpgradeRerolls.free_rerolls = false -- IsInToolsMode()
-
-	UpgradeRerolls.used_rerolls = {}
-
-	EventDriver:Listen("WebInventory:update", UpgradeRerolls._UpdateRerollCount, UpgradeRerolls)
 end
 
 
 function UpgradeRerolls:PreparePlayer(player_id)
 	UpgradeRerolls.current_free_rerolls[player_id] = (HostOptions.locked and HostOptions:GetOption("infinite_rerolls")) and 999 or 30
-	local current_consumable_rerolls = 0 -- WebInventory:GetItemCount(player_id, "bp_reroll")
 
 	if UpgradeRerolls.free_rerolls then
 		UpgradeRerolls.current_free_rerolls[player_id] = 99999
-		current_consumable_rerolls = 0
 	end
 
-	local complete_rerolls = UpgradeRerolls.current_free_rerolls[player_id] + current_consumable_rerolls
-
-	-- disabled consumable rerolls in tournament mode, force set of free rerolls
-	if HostOptions:GetOption(HOST_OPTION.TOURNAMENT) then
-		UpgradeRerolls.current_free_rerolls[player_id] = TOURNAMENT_REROLLS
-		complete_rerolls = TOURNAMENT_REROLLS
-	end
-
-	CustomNetTables:SetTableValue("rerolls", tostring(player_id), {
-		count = complete_rerolls
-	})
+	UpgradeRerolls:UpdateRerollCount(player_id)
 end
 
 
 function UpgradeRerolls:_ConsumeRerolls(player_id, rarity)
-	-- check if we have enough of free rerolls to spend
 	local current_free_rerolls = UpgradeRerolls.current_free_rerolls[player_id] or 0
-	local current_consumable_rerolls = 0 -- WebInventory:GetItemCount(player_id, "bp_reroll")
 
-	-- disabled consumable rerolls in tournament mode
-	if HostOptions:GetOption(HOST_OPTION.TOURNAMENT) then current_consumable_rerolls = 0 end
 	if UpgradeRerolls.free_rerolls then
 		current_free_rerolls = 99999
-		current_consumable_rerolls = 0
 		rarity = 0
 	end
 
@@ -51,20 +30,6 @@ function UpgradeRerolls:_ConsumeRerolls(player_id, rarity)
 		UpgradeRerolls.current_free_rerolls[player_id] = current_free_rerolls - rarity
 		return true
 	end
-
-	-- otherwise check if we have at least some free rerolls to reduce passed rarity for consumable rerolls
-	if current_free_rerolls > 0 and (current_free_rerolls + current_consumable_rerolls) >= rarity then
-		rarity = rarity - current_free_rerolls
-		UpgradeRerolls.current_free_rerolls[player_id] = 0
-	end
-
-	if current_consumable_rerolls >= rarity then
-		UpgradeRerolls.used_rerolls[player_id] = (UpgradeRerolls.used_rerolls[player_id] or 0) + rarity
-		WebInventory:ModifyBackendItemCount(player_id, "bp_reroll", -rarity)
-		return true
-	end
-
-	print("[UpgradeRerolls] not enough rerolls to reroll")
 
 	return false
 end
@@ -82,24 +47,10 @@ end
 
 
 function UpgradeRerolls:UpdateRerollCount(player_id)
-	local current_free_rerolls = UpgradeRerolls.current_free_rerolls[player_id] or 0
-	local current_consumable_rerolls = 0 -- WebInventory:GetItemCount(player_id, "bp_reroll")
-
-	if HostOptions:GetOption(HOST_OPTION.TOURNAMENT) or UpgradeRerolls.free_rerolls then
-		current_consumable_rerolls = 0
-	end
-
 	CustomNetTables:SetTableValue("rerolls", tostring(player_id), {
-		count = current_free_rerolls + current_consumable_rerolls
+		count = UpgradeRerolls.current_free_rerolls[player_id] or 0
 	})
 end
-
-
-function UpgradeRerolls:_UpdateRerollCount(event)
-	if not IsValidPlayerID(event.player_id) then return end
-	UpgradeRerolls:UpdateRerollCount(event.player_id)
-end
-
 
 
 UpgradeRerolls:Init()

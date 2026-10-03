@@ -444,7 +444,7 @@ for (const epic of [false, true]) {
 		FindDotaHudElement: panel,
 		Game: { EmitSound() {} },
 		GameEvents: { SendToServerEnsured: name => requests.push(name) },
-		GameUI: { Collection: { Show() {}, OpenSubPanel() {} } },
+		GameUI: {}, // nothing to buy: an empty balance must not open the collection
 	});
 	vm.runInContext(upgradesSource.slice(0, upgradesSource.lastIndexOf("(function () {")), context);
 	for (const balance of [0, 1, 2, 3, 4, 30]) {
@@ -454,13 +454,13 @@ for (const epic of [false, true]) {
 		}});`, context);
 		const allowed = balance >= (epic ? 1 : 4);
 		panel("#RerollButton").events.onmouseover();
-		assert.equal(events.at(-1)[2], allowed ? (epic ? "#reroll_tooltip_epic_only" : "#reroll_tooltip") : "#reroll_buy_in_shop_hint");
+		assert.equal(events.at(-1)[2], epic ? "#reroll_tooltip_epic_only" : "#reroll_tooltip");
 		const before = requests.length;
 		vm.runInContext("Reroll(); Reroll();", context);
 		assert.equal(requests.length - before, allowed ? 1 : 0, `epic=${epic}, balance=${balance}`);
 	}
 }
-console.log("PASS: server-supplied reroll price, final 1–3 rerolls, empty balance, duplicate-click guard and normal-map pricing");
+console.log("PASS: server-supplied reroll price, final 1–3 rerolls, empty balance without a shop, duplicate-click guard and normal-map pricing");
 
 // Scoreboard Tip button: greyed out during the cooldown and once the per-game cap is used.
 {

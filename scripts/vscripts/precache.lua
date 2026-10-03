@@ -11,9 +11,6 @@ PrecacheManager.particles = {
 	"particles/capture_point_ring/capture_point_ring.vpcf",
 	"particles/capture_point_ring/capture_point_ring_capturing.vpcf",
 	"particles/capture_point_ring/capture_point_ring_clock.vpcf",
-	"particles/orb_common_christmas.vpcf",
-	"particles/orb_rare_christmas.vpcf",
-	"particles/orb_christmas.vpcf",
 	"particles/orb_spree/orb_spree_shockwave.vpcf",
 	"particles/epic_pathfinder.vpcf",
 	"particles/ui/fountain_range/fountain_range.vpcf",
@@ -45,7 +42,6 @@ PrecacheManager.particles = {
 PrecacheManager.soundevents = {
 	"soundevents/game_sounds.vsndevts",
 	"soundevents/soundevents_custom.vsndevts",
-	"soundevents/custom_soundboard_soundevents.vsndevts",
 	"soundevents/game_sounds_hero_demo.vsndevts",
 	"soundevents/stickers/soundevents_stickers_season11.vsndevts",
 	"soundevents/stickers/soundevents_stickers_season12.vsndevts",

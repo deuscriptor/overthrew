@@ -10,20 +10,6 @@ const HUD = {
 	MUTE_ALL_BUTTON: $("#MuteAllButton"),
 };
 let interval_funcs = {};
-let CACHED_PLAYERS = {};
-
-function UpdateMutedPlayers_Request() {
-	let mute_data = { voice: {}, text: {} };
-
-	for (let player_id of Object.keys(CACHED_PLAYERS)) {
-		player_id = parseInt(player_id);
-		if (player_id == LOCAL_PLAYER_ID) continue;
-		mute_data.voice[player_id] = Game[`IsPlayerMutedVoice`](player_id);
-		mute_data.text[player_id] = Game[`IsPlayerMutedText`](player_id);
-	}
-
-	GameEvents.SendToServerEnsured("GameMode:set_muted_players", { mute_data: mute_data });
-}
 
 function ScoreboardUpdater() {
 	Object.values(interval_funcs).forEach((func) => {
@@ -96,10 +82,6 @@ function UpdatePlayerStats(root, player_id) {
 	root.SetDialogVariableInt("deaths", player_info.player_deaths);
 	root.SetDialogVariableInt("assists", player_info.player_assists);
 	root.SetDialogVariable("player_gold", FormatBigNumber(player_info.player_gold));
-
-	const game_stat = CustomNetTables.GetTableValue("game_state", "player_stats");
-	const custom_player_info = game_stat ? game_stat[player_id] : {};
-	root.SetDialogVariableInt("rank", custom_player_info ? custom_player_info.rating || 1500 : 1500);
 }
 
 function UpdateNeutralItemForPlayer(root, player_id) {
@@ -150,7 +132,6 @@ function CreatePanelForPlayer(player_id) {
 	player_root.SetHasClass("BPlayerMuted_Voice", Game.IsPlayerMutedVoice(player_id));
 	player_root.SetHasClass("BPlayerMuted_Text", Game.IsPlayerMutedText(player_id));
 
-	CACHED_PLAYERS[player_id] = player_root;
 	player_root.player_id = player_id;
 
 	const mute = (type, force_state) => {
@@ -161,8 +142,6 @@ function CreatePanelForPlayer(player_id) {
 
 		player_root.SetHasClass(`BPlayerMuted_${type}`, is_muted);
 		player_root[`custom_mute_${type}`] = is_muted;
-
-		UpdateMutedPlayers_Request();
 	};
 
 	player_root.mute = mute;
@@ -236,7 +215,6 @@ function InitPlayers() {
 }
 
 function MuteAll() {
-	let mute_data = {};
 	for (const player_id of Game.GetAllPlayerIDs()) {
 		const player_panel = $(`#${player_root_name(player_id)}`);
 		if (!player_panel) continue;
@@ -247,9 +225,7 @@ function MuteAll() {
 			player_panel.SetHasClass("PlayerMuted", false);
 			Game.SetPlayerMuted(player_id, false);
 		}
-		mute_data[player_id] = Game.IsPlayerMuted(player_id);
 	}
-	GameEvents.SendToServerEnsured("update_mute_players", mute_data);
 }
 
 function SetScoreboardVisibleState(b_show) {
@@ -274,20 +250,12 @@ interval_funcs.UpdateTipsBlock = UpdateTipsBlock;
 function EnableKickVoting() {
 	HUD.CONTEXT.SetHasClass("BKickVotingEnabled", true);
 }
-function UpdateFirstMuteState() {
-	const local_player_info = Game.GetPlayerInfo(LOCAL_PLAYER_ID);
-	const selected_hero = local_player_info?.player_selected_hero_entity_index;
-	if (!selected_hero || selected_hero < 0) return void $.Schedule(0.1, UpdateFirstMuteState);
-
-	$.Schedule(2, UpdateMutedPlayers_Request);
-}
 (function () {
 	HUD.TEAMS_ROOT.RemoveAndDeleteChildren();
 	HUD.CONTEXT.SetHasClass("BKickVotingEnabled", false);
 
 	GameUI.SetDefaultUIEnabled(DotaDefaultUIElement_t.DOTA_DEFAULT_UI_FLYOUT_SCOREBOARD, false);
 	InitPlayers();
-	UpdateFirstMuteState();
 	SetScoreboardVisibleState(false);
 	$.RegisterEventHandler("DOTACustomUI_SetFlyoutScoreboardVisible", HUD.CONTEXT, SetScoreboardVisibleState);
 

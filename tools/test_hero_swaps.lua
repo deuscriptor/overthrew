@@ -129,14 +129,13 @@ HeroSwaps:CaptureBaseUpgrades(hero)
 hero.upgrades.generic.account_bonus.count = 9
 assert(HeroSwaps.base_generics[0].account_bonus.count == 2, "Baseline must not alias live upgrades")
 for _, rarity in ipairs({1, 2, 4, 4}) do HeroSwaps:RecordOrbSelection(hero, {upgrade_rarity=rarity}) end
-HeroSwaps:RecordOrbSelection(hero, {upgrade_rarity=2, is_lucky_trinket_proc=true})
-assert(#HeroSwaps.spent_orbs[0] == 5 and HeroSwaps.spent_orbs[0][5].is_lucky_trinket_proc)
+HeroSwaps:RecordOrbSelection(hero, {upgrade_rarity=2})
+assert(#HeroSwaps.spent_orbs[0] == 5 and HeroSwaps.spent_orbs[0][5].rarity == 2)
 state = 10
 HeroSwaps:RecordOrbSelection(hero, {upgrade_rarity=4})
 assert(#HeroSwaps.spent_orbs[0] == 5, "Only pre-match orbs need a refund ledger")
 HeroSwaps.Execute = real_execute
--- Refund into the player's existing queue without rolling trinkets or granting
--- new starting bonuses. Repeating a swap must not duplicate refunded rewards.
+-- Refund into the player's existing queue without granting new starting bonuses. Repeating a swap must not duplicate refunded rewards.
 state = 8
 local sent_queue
 Upgrades = {disabled_upgrades_per_player={}, pending_selection={[0]={old=true}},
@@ -145,12 +144,10 @@ Upgrades = {disabled_upgrades_per_player={}, pending_selection={[0]={old=true}},
 	SendUpgradesData=function() end, SendPendingFavorites=function() end,
 	ShowSelection=function(_, unit, rarity, player_id) sent_queue = {unit, rarity, player_id} end,
 }
-HeroChallenges = {active_challenges={[0]={old=true}}, OnHeroInitFinished=function() end, SetClientChallenges=function() end}
 local new_hero = {upgrades={}, FindModifierByName=function() return nil end}
 HeroSwaps:RefreshPlayer(0, new_hero)
 assert(#Upgrades.queued_selection[0] == 6 and sent_queue[1] == new_hero and sent_queue[2] == 1)
 for index, rarity in ipairs({1, 1, 2, 4, 4, 2}) do assert(Upgrades.queued_selection[0][index].rarity == rarity) end
-assert(Upgrades.queued_selection[0][6].is_lucky_trinket_proc)
 assert(not Upgrades.pending_selection[0] and not next(HeroSwaps.spent_orbs[0]))
 assert(not Upgrades.favorites_upgrades[0].old_hero and Upgrades.favorites_upgrades[0].generic.keep == 1)
 assert(new_hero.upgrades.generic.account_bonus.count == 2)

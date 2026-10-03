@@ -2,7 +2,6 @@ let CACHED_GUILD_TAG_COLORS = {};
 let GUILD_TAGS = {};
 let hero_ranks = {};
 let default_chat_area, redirect_chat_area;
-let cached_names_width = {};
 
 function UpdateHeroRanks(_hero_ranks) {
 	hero_ranks = _hero_ranks;
@@ -26,8 +25,6 @@ function ParseGuildTags() {
 			const full_name = temp.GetChild(0).text;
 			GUILD_TAGS[player_id] = EscapeHTML(full_name.replace(player_info.player_name, "").trim());
 			temp.DeleteAsync(0);
-
-			CalcNameLength(player_id);
 		});
 	}
 }
@@ -107,17 +104,6 @@ function AddAbilitiesIcons(abilities = {}, message) {
 	return text_value;
 }
 
-function AddMasteryIcon(mastery, message) {
-	if (!mastery) return;
-
-	const icon = $.CreatePanel("Panel", CONTEXT, "Mastery");
-	icon.BLoadLayoutSnippet("Mastery");
-	icon.FindChild(
-		"MasteryIcon",
-	).style.backgroundImage = `url('file://{images}/custom_game/collection/mastery/icons/${mastery}.png')`;
-	icon.SetParent(message);
-}
-
 function SetupPlayersInfo(message, data) {
 	for (const [p_id, p_data] of Object.entries(data))
 		for (const [p_k, p_v] of Object.entries(p_data))
@@ -137,15 +123,6 @@ function CheckMuteMessage(sender_id) {
 	// if (FindModifier(hero, "modifier_auto_attack") != -1 && GameUI.Player.GetSettingValue("mute_bots")) return true;
 
 	return false;
-}
-
-function AddHeroChallenge(message, text, challenge_type) {
-	const challenge = $.Localize(`#hero_challenges_${GetChallengeTypeName(challenge_type)}`, message);
-	text = text.replaceAll("%challenge_desc%", challenge);
-	text = text.replaceAll("<span class='ChallengeValue'>", "<font color='red'><span class='ChallengeValue'>");
-	text = text.replaceAll("</span>", "</span></font>");
-
-	return text;
 }
 
 function CreateCustomMessage(data) {
@@ -171,10 +148,6 @@ function CreateCustomMessage(data) {
 		}
 	}
 
-	// Dialog vars should be set before other stuff
-	let chat_wheel_loc_message = LocalizeChatPhrase(data?.extra_data?.chat_wheel_phrase || "");
-	message.SetDialogVariable("message", chat_wheel_loc_message);
-
 	let text = "";
 	const allies_tag = $.Localize("#DOTA_ChatCommand_GameAllies_Name");
 
@@ -195,58 +168,8 @@ function CreateCustomMessage(data) {
 
 	const extra_data = data.extra_data;
 	if (extra_data) {
-		if (extra_data.mastery) AddMasteryIcon(extra_data.mastery, message);
 		if (extra_data.remaining_time)
 			text = text.replaceAll(extra_data.remaining_time.key, RemainingTimeToText(extra_data.remaining_time.value));
-		if (extra_data.challenge_type != undefined) text = AddHeroChallenge(message, text, extra_data.challenge_type);
-
-		if (extra_data.chat_wheel_color) {
-			message.AddClass("BHasCWCustomColor");
-
-			for (const c of message.Children()) if (c.BHasClass("CW_SubChannel")) c.DeleteAsync(0);
-
-			const channels =
-				GameUI.Inventory.GetItemDefinition(`chat_wheel_${extra_data.chat_wheel_color}`)?.chat_wheel_details
-					?.channels || 0;
-			$.Schedule(0, () => {
-				const new_root = $.CreatePanel("Panel", message.GetParent(), "", {
-					class: "ChatLine",
-					style: "margin-left:0px;",
-				});
-				new_root.BLoadLayout(
-					"file://{resources}/layout/custom_game/custom_chat/custom_chat_filler.xml",
-					true,
-					false,
-				);
-				message.SetParent(new_root);
-				new_root.AddClass(extra_data.chat_wheel_color);
-
-				for (let x = 0; x < channels; x++) {
-					const l = $.CreatePanel("Label", new_root, "", {
-						class: `CW_SubChannel CW_SubChannel_${x} ${x == 0 ? extra_data.chat_wheel_color : ``}`,
-						hittest: false,
-						html: true,
-					});
-
-					const nick_length = (cached_names_width[data.sender_id] || 0) / new_root.actualuiscale_x;
-					const extra_padding = 4 / new_root.actualuiscale_x;
-
-					$.CreatePanel("Panel", l, "ChatWheelFiller", {
-						style: `height: 5px;width: ${FILLER_LENGTH + extra_padding + nick_length}px;`,
-					});
-					l.SetDialogVariable("channel_text", chat_wheel_loc_message);
-					l.text = $.Localize("chat_wheel_color_channels_filler", l);
-				}
-
-				ExpireMessageInTime(new_root);
-			});
-		}
-		if (extra_data.chat_wheel_emoji) {
-			$.CreatePanel("DOTAEmoticon", message, "ChatWheelEmoji", {
-				emoticonid: extra_data.chat_wheel_emoji,
-				style: "height: 26px;width: 26px;",
-			});
-		}
 	}
 
 	text = text.replaceAll(
@@ -255,13 +178,6 @@ function CreateCustomMessage(data) {
 	);
 
 	text = text.replace(/ +(?= )/g, "");
-
-	if (data.main_token == "chat_wheel_sound_message_chat") {
-		$.CreatePanel("Image", message, "ChatWheelSoundIcon", {
-			style: "width:20px;height:20px;",
-			src: "s2r://panorama/images/hud/reborn/icon_scoreboard_mute_sound_psd.vtex",
-		});
-	}
 
 	$.CreatePanel("Panel", message, "CustomChatFiller", {
 		style: `height: 1px;width:${FILLER_LENGTH}px;`,
@@ -368,24 +284,6 @@ function InitCustomChatOverrideArea() {
 function ExpireMessageInTime(panel) {
 	$.Schedule(7, () => {
 		if (panel.IsValid()) panel.AddClass("Expired");
-	});
-}
-
-function CalcNameLength(player_id) {
-	const name = $.CreatePanel("Label", CONTEXT, "", {
-		text: `\u00A0${GetPlayerNameWithTag(player_id)} : <child id='ChatWheelSoundIcon'>\u00A0`,
-		style: "font-size:18px;font-weight:bold;opacity:0.001;",
-		html: true,
-	});
-
-	$.CreatePanel("Image", name, "ChatWheelSoundIcon", {
-		style: "width:20px;height:20px;",
-		src: "s2r://panorama/images/hud/reborn/icon_scoreboard_mute_sound_psd.vtex",
-	});
-
-	$.Schedule(0, () => {
-		cached_names_width[player_id] = name.contentwidth;
-		name.DeleteAsync(0);
 	});
 }
 

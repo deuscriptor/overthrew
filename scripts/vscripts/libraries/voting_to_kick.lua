@@ -2,7 +2,6 @@ Kicks = Kicks or {}
 
 
 Kicks.supporters_kick_threshold = {
-	[-1] = 0.8, -- new players (lower than 5 games)
 	[0] = 0.6,
 	[1] = 0.7,
 	[2] = 0.8,
@@ -216,9 +215,7 @@ function Kicks:UpdateVotingForKick()
 		end
 	end
 
-	local target_id = self.voting.target
-	local is_new_player = WebApi.playerMatchesCount and WebApi.playerMatchesCount[target_id] and WebApi.playerMatchesCount[target_id] < 5
-	local level = is_new_player and -1 or WebPlayer:GetSubscriptionTier(target_id)
+	local level = WebPlayer:GetSubscriptionTier(self.voting.target)
 	self.votes_for_kick = math.floor(max_voices_in_team * self.supporters_kick_threshold[level])
 end
 

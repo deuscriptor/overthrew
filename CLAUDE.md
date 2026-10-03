@@ -29,7 +29,7 @@ It adds a host-configurable free-for-all mode on `ot3_necropolis_ffa`.
 | `scripts/npc/`, `scripts/shops/`, `scripts/upgrades/` | KeyValues data: heroes, items, abilities, shops, orb upgrades |
 | `resource/addon_{english,russian,ukrainian}.txt` | Localization |
 | `panorama/` | **Compiled** UI resources (`.vjs_c`, `.vcss_c`, `.vxml_c`). Never edit these by hand |
-| `tools/panorama_sources/` | Editable Panorama JS (and `toasts.css`), compiled into `panorama/` |
+| `tools/panorama_sources/` | Editable Panorama sources (JS, CSS, XML layouts), compiled into `panorama/` |
 | `tools/panorama_backups/` | Original compiled resources that the builds start from |
 | `tools/panorama_textures.json` | Re-encoded UI textures: size, dropped alpha, where each is shown |
 | `tools/test_*.lua`, `tools/*.js` | Offline test suite and helper scripts |
@@ -46,6 +46,7 @@ Run everything from the addon root. Requires Node.js 24. In Git Bash, if `node` 
 npm ci --prefix tools/runtime --ignore-scripts --no-audit --no-fund   # once, or when runner deps are missing
 node tools/run_tests.js                  # full offline suite: Lua tests on Fengari, localization parity, map textures, Panorama tests
 node tools/panorama_test.js              # Panorama logic only (already included in run_tests.js)
+node tools/panorama_resources.js extract panorama/<path>.vxml_c   # make a compiled resource (.vjs_c/.vcss_c/.vxml_c) editable
 node tools/panorama_resources.js build   # after editing tools/panorama_sources/: rebuild panorama/*_c
 node tools/panorama_resources.js verify  # compiled resources match their sources, textures their list (CI runs this)
 node tools/panorama_textures.js build    # after editing tools/panorama_textures.json: re-encode the listed textures
@@ -93,11 +94,12 @@ Always-on FFA features, each documented in `tools/README.md`:
 - Fountain protection: only while on the own fountain (no linger), disarmed, no damage dealt or taken, untargetable
   by enemies; debuffs still apply; no orb captures; dark look of the native AFK fountain invulnerability
   (`game/fountain_protection.lua`, `Filters:FountainDamageFilter`).
-- Free local premium and collection. Backend writes are blocked, match events are not polled, Misc-slot gameplay
-  boosts are not granted, and the Collection shows only the Cosmetics tab.
+- Free local premium (tier 2) and the full cosmetics collection; equipment, favourite builds and orb-selection
+  settings last for the match (`libraries/webapi/`). There is no backend: its client and every feature that needed
+  it (rating, mail, leaderboards, shop, subscriptions, Misc boosts, hero challenges, chat wheel, ...) were removed
+  (issue #39; "Backend removal" in `tools/README.md`).
 - Scoreboard player tips (`libraries/webapi/tips.lua`). They are local only: a toast, a chat line and an
   end-screen tally, limited to 3 per match with a 30s cooldown. No currency moves.
-- A host-fixed kill goal: the original "+1 kill goal" vote is suppressed server-side, and GG Tokens are refused.
 
 ### Recipe: adding a boolean host option
 
@@ -120,11 +122,13 @@ Then add the option to the table above, to `tools/README.md` and to `README.md` 
 
 ### Panorama
 
-- The runtime loads only compiled resources. Edit JS in `tools/panorama_sources/`, then `build`, then `verify`.
-  Commit both the source and the rebuilt `_c` file.
-- XML containers are never modified. The only CSS with an editable source is `toasts/toasts.css`.
-  Styles compile through Valve's `game/bin/win64/resourcecompiler.exe` via the untracked
-  `content/dota_addons/overthrew/` folder, so building CSS needs Windows with Workshop Tools installed.
+- The runtime loads only compiled resources. Edit sources in `tools/panorama_sources/`, then `build`, then `verify`.
+  Commit both the source and the rebuilt `_c` file. A resource without a source gets one with `extract`
+  (layouts need `Source2Viewer-CLI` on the PATH), which also backs up the original in `tools/panorama_backups/`.
+- Styles and layouts compile through Valve's `game/bin/win64/resourcecompiler.exe` via the untracked
+  `content/dota_addons/overthrew/` folder, so building them needs Windows with Workshop Tools installed.
+- A HUD layout loads only if `custom_ui_manifest.xml` or another layout includes it. `run_tests.js` fails if Panorama,
+  Lua or localization references a `custom_game` image, layout, script or style that doesn't exist.
 - Image URLs in CSS sources must stay `s2r://…_png.vtex`. No PNG sources exist, and `file://{images}`
   compiles to empty paths.
 - The compiler does not validate property names, so check the client log (`-condebug`) after a style change.
@@ -155,7 +159,10 @@ Then add the option to the table above, to `tools/README.md` and to `README.md` 
 - New engine API globals go into the `engine` list in `.luacheckrc`. The repo's own globals and the
   `table`/`string`/`math` extensions are collected automatically.
 - There is one map, so code doesn't branch on the map name. Per-map data stays keyed by `GetMapName()`
-  (`TEAMS_LAYOUTS`, MVP rewards, neutral drop times, `scripts/upgrades/overrides/<map>/`).
+  (`TEAMS_LAYOUTS`, neutral drop times, `scripts/upgrades/overrides/<map>/`).
+- No backend or HTTP: player data, settings and the collection are local to the match. `run_tests.js` fails on
+  `CreateHTTPRequest`, `GetDedicatedServerKey*` or the backend host in Lua, and if the client's
+  `collection_generated.js` and the server's `ITEM_DEFINITIONS` list different items.
 - Modifiers on heroes are copied to every illusion, and the engine visits each Lua modifier of every hero unit on
   every attack and damage instance (see "Illusions and performance" in `tools/README.md`). Keep them few, and never
   declare a global `MODIFIER_EVENT_*` in them: register the handler with `UnitEvents` (`libraries/unit_events.lua`)

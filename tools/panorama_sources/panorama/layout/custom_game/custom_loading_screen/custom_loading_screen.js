@@ -8,7 +8,6 @@ const LOADING_HUD = {
 	LS_HINT_TIMER_TEXT: $("#LS_StartTimer_Timer"),
 	CHAT: FindDotaHudElementInLS("LoadingScreenChat"),
 	OPTIONS_CONTAINER: $("#HostOptions"),
-	BANNER_TOURNAMENT_FFA: $("#Banner_Tournament_FFA"),
 };
 
 const LOADING_STATES_DATA = {
@@ -18,7 +17,6 @@ const LOADING_STATES_DATA = {
 };
 
 const hints = [
-	// ["tournament", 25],
 	["orbs", 12],
 	["progress", 7],
 	["epic", 8],
@@ -26,14 +24,6 @@ const hints = [
 ];
 const additional_hints_config = {
 	settings: { b_image: true, b_hide_desc: true, b_ignore_hover: true },
-	tournament: {
-		b_image: true,
-		b_hide_desc: true,
-		b_ignore_hover: true,
-		click_callback: () => {
-			$.DispatchEvent("ExternalBrowserGoToURL", "https://discord.gg/hZyjvskZvM");
-		},
-	},
 };
 let current_hint;
 let matchRulesPageChanged;
@@ -700,42 +690,12 @@ GameUI.GetOption = (option_name) => {
 	return table ? table[option_name] || false : false;
 };
 
-function UdpateWeekendsDates(dates) {
-	let weekends_event_info = CustomNetTables.GetTableValue("game_state", "weekends_event_info");
-	if (!weekends_event_info) return;
-	// weekends_event_info.is_event_active = 1;
-	const is_event_active = weekends_event_info.is_event_active == 1;
-
-	LOADING_HUD.CONTEXT.AddClass("BShowWeekendsEvent", is_event_active);
-	LOADING_HUD.CONTEXT.SetHasClass("BWeekendsEventActive", is_event_active);
-	const set_date = (_n) => {
-		const date = weekends_event_info.dates[_n].replace(/-/g, ".");
-		LOADING_HUD.CONTEXT.SetDialogVariable(`weekend_event_date_${_n}`, date);
-	};
-	LOADING_HUD.CONTEXT.SetDialogVariableLocString(
-		"weekend_event_header",
-		`ls_weekend_banner_header_event_${is_event_active ? "on" : "off"}`,
-	);
-	set_date(1);
-	set_date(2);
-}
-CustomNetTables.SubscribeNetTableListener("game_state", UdpateWeekendsDates);
-
-function UpdateTournamentDates() {
-	LOADING_HUD.BANNER_TOURNAMENT_FFA.SetDialogVariableTime("t_ffa_signups_start", 1710583200);
-	LOADING_HUD.BANNER_TOURNAMENT_FFA.SetDialogVariableTime("t_ffa_signups_end", 1711188000);
-	LOADING_HUD.BANNER_TOURNAMENT_FFA.SetDialogVariableTime("t_ffa_start", 1711792800);
-	LOADING_HUD.BANNER_TOURNAMENT_FFA.SetDialogVariableTime("t_ffa_end", 1711814400);
-}
 (() => {
 	UpdateChatStyle();
 	FindDotaHudElementInLS("SidebarAndBattleCupLayoutContainer").visible = false;
 	if (IsMatchStarting()) return void ReleaseLoadingScreen(false);
-	LOADING_HUD.CONTEXT.RemoveClass("BShowWeekendsEvent");
-	UdpateWeekendsDates();
 	UpdateLoadingScreen();
 	InitHints();
-	// UpdateTournamentDates();
 
 	GameEvents.Subscribe("HostOptions:show", ShowHostOptions);
 	CustomNetTables.SubscribeNetTableListener("game_options", function(table, key) {

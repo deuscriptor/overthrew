@@ -17,10 +17,6 @@ ITEM_DEFINITIONS["aura_green_1"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.UNCOMMON,
 
-	unlocked_with = {
-		subscription_tier = 1,
-	},
-
 	particles = {
 		{
 			path = "particles/cosmetic/auras/test_aura_1_sup1/test_aura_1_sup1.vpcf",
@@ -37,10 +33,6 @@ ITEM_DEFINITIONS["aura_purple_1"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.COMMON,
 
-	unlocked_with = {
-		currency = 500,
-	},
-
 	particles = {
 		{
 			path = "particles/cosmetic/auras/test_aura_3_treasure/test_aura_3_treasure.vpcf",
@@ -54,10 +46,6 @@ ITEM_DEFINITIONS["diretide_emblem_orange"] = {
 	slot = INVENTORY_SLOTS.AURA,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.IMMORTAL,
-
-	unlocked_with = {
-		currency = 10000,
-	},
 
 	particles = {
 		{
@@ -73,10 +61,6 @@ ITEM_DEFINITIONS["emblem_ti7"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.LEGENDARY,
 
-	unlocked_with = {
-		treasure = "treasure_1",
-	},
-
 	particles = {
 		{
 			path = "particles/econ/events/ti7/ti7_hero_effect.vpcf",
@@ -90,10 +74,6 @@ ITEM_DEFINITIONS["emblem_ti8"] = {
 	slot = INVENTORY_SLOTS.AURA,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.LEGENDARY,
-
-	unlocked_with = {
-		treasure = "treasure_2",
-	},
 
 	particles = {
 		{
@@ -109,10 +89,6 @@ ITEM_DEFINITIONS["emblem_ti9"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.LEGENDARY,
 
-	unlocked_with = {
-		treasure = "treasure_3",
-	},
-
 	particles = {
 		{
 			path = "particles/cosmetic/auras/overgrown_emblem/overgrown_emblem.vpcf",
@@ -127,10 +103,6 @@ ITEM_DEFINITIONS["emblem_ti10"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.IMMORTAL,
 
-	unlocked_with = {
-		subscription_tier = 2,
-	},
-
 	particles = {
 		{
 			path = "particles/econ/events/ti10/emblem/ti10_emblem_effect.vpcf",
@@ -144,10 +116,6 @@ ITEM_DEFINITIONS["newbloom_aura"] = {
 	slot = INVENTORY_SLOTS.AURA,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.RARE,
-
-	unlocked_with = {
-		currency = 1500,
-	},
 
 	particles = {
 		{
@@ -833,9 +801,6 @@ ITEM_DEFINITIONS["aura_dc"] = {
 	slot = INVENTORY_SLOTS.AURA,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.LEGENDARY,
-	unlocked_with = {
-		treasure = "treasure_chat_wheel_dc",
-	},
 	particles = {
 		{
 			path = "particles/cosmetic/auras/aura_dc/aura_dc.vpcf",

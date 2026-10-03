@@ -101,10 +101,8 @@ function MakeAbilityUpgradePanel(upgrade_panel, upgrade_info, data) {
 		ability_upgrades_counter == 3 &&
 		GameUI.Player.GetSubscriptionTier(LOCAL_PLAYER_ID) < 2 &&
 		selection_rarity != RARITY.COMMON;
-	const tournament_mode_status = GameUI.GetOption("tournament_mode");
-
-	upgrade_panel.SetHasClass("BLockedBySupp_1", locked_for_pick_by_supp_1 && !tournament_mode_status);
-	upgrade_panel.SetHasClass("BLockedBySupp_2", locked_for_pick_by_supp_2 && !tournament_mode_status);
+	upgrade_panel.SetHasClass("BLockedBySupp_1", locked_for_pick_by_supp_1);
+	upgrade_panel.SetHasClass("BLockedBySupp_2", locked_for_pick_by_supp_2);
 
 	upgrade_panel.IsFavorite = () => {
 		return (
@@ -154,8 +152,7 @@ function MakeAbilityUpgradePanel(upgrade_panel, upgrade_info, data) {
 
 	const select_upgrade = () => {
 		if (upgrade_panel.BHasClass("BLockedBySupp_1") || upgrade_panel.BHasClass("BLockedBySupp_2")) {
-			GameUI.Collection.OpenSpecificTab("subscription");
-			GameUI.Subscriptions.OpenAllSubscriptionBonuses();
+			return;
 		} else {
 			const selection_id = current_selection_id;
 			ToggleShow(false, true);
@@ -173,16 +170,6 @@ function MakeAbilityUpgradePanel(upgrade_panel, upgrade_info, data) {
 	});
 }
 
-const TRINKET_FX_COLORS_RGB = {
-	1: ["rgb(178 189 208)", "rgb(200 215 240)"],
-	2: ["rgb(86 147 210)", "rgb(56 131 208)"],
-	4: ["rgb(221 50 163)", "rgb(245 162 255)"],
-};
-
-function GetTrinketFXColor(rarity, idx) {
-	return TRINKET_FX_COLORS_RGB[rarity][idx].replace(/rgb\(|\)/g, "");
-}
-
 function ShowUpgrades(data) {
 	const upgrades = data.upgrades;
 	if (!upgrades) return;
@@ -194,7 +181,6 @@ function ShowUpgrades(data) {
 	current_rarity = upgrades.upgrade_rarity || 1;
 	current_reroll_price = upgrades.reroll_price === undefined ? current_rarity : upgrades.reroll_price;
 
-	HUD.ROOT.SetHasClass("BLuckyTrinketUpgrade", !!upgrades.is_lucky_trinket_proc);
 	HUD.ROOT.SetHasClass("BRerollRequestSent", false);
 
 	HUD.UPGRADES_CONTAINER.RemoveAndDeleteChildren();
@@ -203,7 +189,6 @@ function ShowUpgrades(data) {
 
 	if (upgrades.upgrade_rarity) UpdatePanelHeaderText(HUD.UPGRADES_WRAPPER, upgrades);
 
-	upgrades.is_lucky_trinket_proc = false;
 	let delay = 0.15;
 
 	for (const upgrade_info of Object.values(upgrades.choices)) {
@@ -217,27 +202,6 @@ function ShowUpgrades(data) {
 
 		MakeAbilityUpgradePanel(upgrade_panel, upgrade_info, upgrades);
 
-		if (upgrades.is_lucky_trinket_proc) {
-			upgrade_panel.AddClass("BHas_Trinket_FX");
-			const trinket_fx = upgrade_panel.FindChildTraverse("Upgrade_Trinket_FX");
-			const update_fx = () => {
-				if (!trinket_fx.BHasClass("SceneLoaded")) {
-					$.Schedule(0, update_fx);
-					return;
-				}
-				trinket_fx.FireEntityInput(
-					"trinket_glow",
-					"SetControlPoint",
-					`10: ${GetTrinketFXColor(upgrades.upgrade_rarity, 0)}`,
-				);
-				trinket_fx.FireEntityInput(
-					"trinket_glow",
-					"SetControlPoint",
-					`11: ${GetTrinketFXColor(upgrades.upgrade_rarity, 1)}`,
-				);
-			};
-			update_fx();
-		}
 		upgrade_panel.style.transitionDuration = delay + "s";
 		upgrade_panel.style.transform = "translateX(0px)";
 		delay += 0.15;
@@ -251,7 +215,6 @@ function ShowUpgrades(data) {
 	ToggleShow(true);
 	HandleToast();
 
-	if (upgrades.is_lucky_trinket_proc && !upgrades.reroll) Game.EmitSound("ui.trophy_new");
 }
 
 function ToggleShow(state, upgradeSelected) {
@@ -283,9 +246,6 @@ function Reroll() {
 			HUD.ROOT.SetHasClass("BRerollRequestSent", true);
 			GameEvents.SendToServerEnsured("Upgrades:reroll", {selection_id: current_selection_id});
 		}
-	} else {
-		GameUI.Collection.Show();
-		GameUI.Collection.OpenSubPanel("C_PayCurrency");
 	}
 }
 
@@ -298,22 +258,13 @@ function ClickBehaviorHandler() {
 	HUD.ROOT.hittestchildren = !in_target_mode;
 	HUD.ROOT.SetHasClass(
 		"AbilityCast",
-		in_target_mode && !GameUI.Player.GetSettingValue("disable_transparent_upgrade_ui"),
+		in_target_mode,
 	);
 }
 
-let current_reroll_items = 0;
 function UpdateRerollButton() {
 	// The server supplies the price independently of the reward rarity.
-	const is_using_consumable_rerolls = current_reroll_count - current_reroll_items < current_reroll_price;
-	const no_rerolls = current_reroll_count < current_reroll_price;
-
-	HUD.REROLL_BUTTON.SetHasClass("is_using_consumable_rerolls", is_using_consumable_rerolls);
-
-	let reroll_tooltip = "reroll_tooltip";
-	if (no_rerolls) reroll_tooltip = "reroll_buy_in_shop_hint";
-	else if (is_using_consumable_rerolls) reroll_tooltip = "reroll_tooltip_consumable";
-	if (IS_FLAT_REROLL_MAP && !no_rerolls) reroll_tooltip = "reroll_tooltip_epic_only";
+	const reroll_tooltip = IS_FLAT_REROLL_MAP ? "reroll_tooltip_epic_only" : "reroll_tooltip";
 
 	HUD.REROLL_BUTTON.SetPanelEvent("onmouseover", () => {
 		$.DispatchEvent("DOTAShowTextTooltip", HUD.REROLL_BUTTON, `#${reroll_tooltip}`);
@@ -444,13 +395,6 @@ function AutoSelectUpgrade(skip_re_animation) {
 		UpdateRerollButton();
 	});
 
-	GameUI.Inventory.RegisterForInventoryChanges(() => {
-		current_reroll_items = GameUI.Inventory.GetItemCount("bp_reroll");
-
-		if (GameUI.GetOption("tournament_mode")) current_reroll_items = 0;
-
-		UpdateRerollButton();
-	});
 
 	ClickBehaviorHandler();
 })();

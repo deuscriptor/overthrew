@@ -10,7 +10,6 @@ local DEFAULT_ON_FLAGS = {
 --- Known host option types
 ---@type table<string, string>
 HOST_OPTION = {
-	TOURNAMENT = "tournament_mode",
 	BOTS = "fill_with_bots"
 }
 
@@ -67,14 +66,6 @@ function HostOptions:Init()
 		end
 
 		if event.state == DOTA_GAMERULES_STATE_HERO_SELECTION then
-			if HostOptions:GetOption(HOST_OPTION.TOURNAMENT) then
-				-- delay is needed otherwise it sends to team select chat
-				-- state is not yet switched to hero selection on client
-				Timers:CreateTimer(1, function()
-					GameRules:SendCustomMessage("#tournament_mode_note", HostOptions.host:GetPlayerID(), 1)
-				end)
-			end
-
 			if HostOptions:GetOption(HOST_OPTION.BOTS) then
 				print("filling with bots")
 				SendToServerConsole("dota_bot_populate")
@@ -92,7 +83,7 @@ function HostOptions:SetOptionState(option_name, state)
 	if self.locked or GameRules:State_Get() > DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then return end
 	if option_name == "kill_goal" and not self:IsValidKillGoal(state) then return end
 	if not HostOptions:IsOptionAvailable(option_name) then
-		print("[Host Options] attempted to change state of unavailable host option!\nHINT: use SetOptionAvailable or edit available_options to enable by default")
+		print("[Host Options] attempted to change state of unavailable host option!\nHINT: edit available_options to enable it by default")
 		return
 	end
 
@@ -225,17 +216,6 @@ end
 
 function HostOptions:GetOption(option_name)
 	return HostOptions.options[option_name] or false
-end
-
-
-function HostOptions:SetOptionAvailable(option_name, state)
-	HostOptions.available_options[option_name] = state
-
-	if IsValidEntity(HostOptions.host) then
-		CustomGameEventManager:Send_ServerToPlayer(HostOptions.host, "HostOptions:show", {
-			available_options = HostOptions.available_options,
-		})
-	end
 end
 
 

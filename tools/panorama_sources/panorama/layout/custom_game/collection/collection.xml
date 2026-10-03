@@ -1,0 +1,48 @@
+<root>
+	<styles>
+		<include src="s2r://panorama/styles/dotastyles.vcss_c" />
+		<include src="s2r://panorama/layout/custom_game/collection/collection.vcss_c" />
+	</styles>
+	<scripts>
+		<include src="s2r://panorama/layout/custom_game/scripts/utils.vjs_c" />
+		<include src="s2r://panorama/layout/custom_game/collection/const.vjs_c" />
+		<include src="s2r://panorama/layout/custom_game/collection/collection.vjs_c" />
+	</scripts>
+	<snippets>
+		<snippet name="Tab">
+			<Button class="Tab">
+				<Panel class="Overlay" />
+				<Panel class="TabInfo">
+					<Image id="Icon" />
+					<Label text="{s:tab_name}" />
+				</Panel>
+			</Button>
+		</snippet>
+	</snippets>
+	<Panel class="Collection_Root" hittest="false">
+		<Panel class="Collection_Wrap">
+			<Image class="C_Glow" src="s2r://panorama/images/custom_game/collection/glow_png.vtex">
+				<Label text="Collection" />
+			</Image>
+			<Panel class="C_Wrap" onactivate="">
+				<Panel class="C_TopBar">
+					<Panel class="C_PlayerInfoRoot">
+						<DOTAAvatarImage id="C_PlayerAvatar" steamid="local" />
+						<Panel>
+							<DOTAUserName id="C_PlayerName" steamid="local" />
+							<Label class="C_PlayerSubscriptionState" text="{s:sub_state_text}" />
+						</Panel>
+					</Panel>
+					<Panel id="C_TopBar_ButtonsRoot" />
+				</Panel>
+				<Panel class="C_MainPanelShadow">
+					<Panel class="C_Content_Root">
+						<Panel id="C_Tabs" />
+						<Panel id="C_Content" />
+					</Panel>
+				</Panel>
+			</Panel>
+			<Button class="CloseCollection" onactivate="ToggleCollectionShow()" />
+		</Panel>
+	</Panel>
+</root>

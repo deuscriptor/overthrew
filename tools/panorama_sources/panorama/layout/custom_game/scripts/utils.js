@@ -803,36 +803,8 @@ function CheckLocalizeArray(keys_array, default_value) {
 	return result;
 }
 
-function LocalizeChatPhrase(phrase) {
-	return CheckLocalizeArray(
-		[
-			phrase,
-			phrase.replace(/^chat_wheel_/, ""),
-			phrase.replace(/^c_chat_wheel_/, ""),
-			`dota_chatwheel_label_${phrase}`,
-			`dota_chatwheel_label_${phrase.replace("npc_dota_hero_", "")}`,
-			`dota_chatwheel_label_${phrase.replace(/^chat_wheel_/, "")}`,
-		],
-		phrase,
-	);
-}
-
-function CreateSubChannelsCW(label, color_name) {
-	for (const c of label.Children()) if (c.BHasClass("CW_SubChannel")) c.DeleteAsync(0);
-
-	const channels = GameUI.Inventory.GetItemDefinition(color_name)?.chat_wheel_details?.channels || -1;
-	if (channels <= 1) return;
-
-	$.Schedule(0, () => {
-		if (!label.IsValid()) return;
-		for (let x = 0; x < channels - 1; x++) {
-			$.CreatePanel("Label", label, "", {
-				text: label.text,
-				class: `CW_SubChannel CW_SubChannel_${x + 1}`,
-				hittest: false,
-			});
-		}
-	});
+function LocalizeItemName(item_name) {
+	return CheckLocalizeArray([item_name], item_name);
 }
 
 // =========================================

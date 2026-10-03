@@ -42,6 +42,50 @@ const baseKeyValueLoaders = luaFiles(path.join(root, 'scripts/vscripts'))
   .map(file => path.relative(root, file));
 assert.deepEqual(baseKeyValueLoaders, [], 'Read base game data with GetAbilityKeyValuesByName/GetUnitKeyValuesByName, not by loading its files');
 console.log('PASS no Lua script loads the base game ability, item, unit or hero KeyValues');
+// The original backend never answers a Local Host lobby, so the addon has no backend client (issue #39).
+const backendUsers = luaFiles(path.join(root, 'scripts/vscripts'))
+  .filter(file => /CreateHTTPRequest(ScriptVM)?\s*\(|GetDedicatedServerKey|dota2unofficial/.test(fs.readFileSync(file, 'utf8')))
+  .map(file => path.relative(root, file));
+assert.deepEqual(backendUsers, [], 'No Lua script sends HTTP requests or names the original backend');
+console.log('PASS no Lua script sends HTTP requests or names the original backend');
+// The client keeps its own copy of the collection's item definitions.
+const luaItems = luaFiles(path.join(root, 'scripts/vscripts/libraries/webapi/item_definitions'))
+  .flatMap(file => [...fs.readFileSync(file, 'utf8').matchAll(/^ITEM_DEFINITIONS\["([^"]+)"\]/gm)].map(match => match[1]));
+const clientItems = Object.keys(require('node:vm').runInNewContext(
+  read('tools/panorama_sources/panorama/layout/custom_game/scripts/collection_generated.js') + '\nITEM_DATA'));
+assert.deepEqual(clientItems.sort(), luaItems.sort(), 'collection_generated.js lists the same items as the Lua definitions');
+console.log(`PASS the client and server collections define the same ${luaItems.length} items`);
+// Every addon UI file the Panorama sources, compiled styles and scripts, Lua and localization point to exists.
+// Compiled-only layouts keep their markup compressed, so only layouts with an XML source are checked.
+{
+  const { parse, styleText } = require('./panorama_resources');
+  const walk = dir => fs.readdirSync(dir, { withFileTypes: true })
+    .flatMap(entry => entry.isDirectory() ? walk(path.join(dir, entry.name)) : [path.join(dir, entry.name)]);
+  const texts = [];
+  for (const file of walk(path.join(root, 'panorama/layout'))) {
+    if (file.endsWith('.vjs_c')) texts.push(parse(fs.readFileSync(file)).source);
+    if (file.endsWith('.vcss_c')) texts.push(styleText(fs.readFileSync(file)));
+  }
+  for (const file of walk(path.join(__dirname, 'panorama_sources'))) texts.push(fs.readFileSync(file, 'utf8'));
+  for (const file of luaFiles(path.join(root, 'scripts/vscripts'))) texts.push(fs.readFileSync(file, 'utf8'));
+  for (const language of ['english', 'russian', 'ukrainian']) texts.push(read(`resource/addon_${language}.txt`));
+  // Already missing before #39: an empty slot's portrait falls back to an image no build ever shipped.
+  const knownMissing = ['panorama/images/custom_game/unassigned_png.vtex_c'];
+  const missing = new Set();
+  for (const text of texts) {
+    for (const [, ref] of text.matchAll(/(s2r:\/\/panorama\/[^"'\s)]+|file:\/\/\{(?:images|resources)\}\/[^"'\s)`]+)/g)) {
+      if (ref.includes('${')) continue;
+      let file = ref.startsWith('s2r://') ? ref.slice(6)
+        : ref.startsWith('file://{images}/') ? 'panorama/images/' + ref.slice(16) : 'panorama/' + ref.slice(19);
+      if (!file.includes('custom_game/')) continue;
+      file = file.replace(/\.(png|jpg|psd)$/, '_$1.vtex_c').replace(/\.vtex$/, '.vtex_c')
+        .replace(/\.xml$/, '.vxml_c').replace(/\.js$/, '.vjs_c').replace(/\.css$/, '.vcss_c');
+      if (!fs.existsSync(path.join(root, file)) && !knownMissing.includes(file)) missing.add(file);
+    }
+  }
+  assert.deepEqual([...missing], [], 'Panorama, Lua and localization reference only files that exist');
+  console.log('PASS Panorama, Lua and localization reference only addon UI files that exist');
+}
 
 const result = spawnSync(process.execPath, [
   path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
@@ -126,16 +170,6 @@ assert.equal(tips.error, undefined);
 assert.equal(tips.status, 0);
 assert.equal((tips.stderr || '').trim(), '');
 assert.match(tips.stdout, /PASS tips:/);
-const earlyConsumables = spawnSync(process.execPath, [
-  path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
-  'tools/test_early_consumables.lua',
-], { cwd: root, encoding: 'utf8' });
-if (earlyConsumables.stdout) process.stdout.write(earlyConsumables.stdout);
-if (earlyConsumables.stderr) process.stderr.write(earlyConsumables.stderr);
-assert.equal(earlyConsumables.error, undefined);
-assert.equal(earlyConsumables.status, 0);
-assert.equal((earlyConsumables.stderr || '').trim(), '');
-assert.match(earlyConsumables.stdout, /PASS early consumables:/);
 const fountainSmoke = spawnSync(process.execPath, [
   path.join(__dirname, 'runtime/node_modules/fengari-node-cli/src/lua-cli.js'),
   'tools/test_fountain_smoke.lua',

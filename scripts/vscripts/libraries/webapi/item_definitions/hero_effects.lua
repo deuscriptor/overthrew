@@ -10,9 +10,6 @@ ITEM_DEFINITIONS["item_test_hero_effect"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.LEGENDARY,
 	--[[
-	unlocked_with = {
-		subscription_tier = 2,
-	},
 	]]
 
 	particles = {

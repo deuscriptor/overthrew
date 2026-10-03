@@ -1,0 +1,421 @@
+#C_Content .Custom_Cosmetics {
+	width: 100%;
+	height: 100%;
+	flow-children: right;
+	margin: 5px 7px 10px 7px;
+}
+
+#CC_Tabs {
+	flow-children: down;
+	padding-top: -2px;
+	overflow: scroll;
+	padding-right: 5px;
+}
+
+VerticalScrollBar {
+	width: 5px;
+	margin: 3px 0;
+}
+
+#ScrollThumb {
+	background-color: #5f5e6a;
+}
+
+.Cosmetic_Tab {
+	width: 180px;
+	height: 50px;
+	margin: 5px 3px 3px 3px;
+	background-image: url("s2r://panorama/images/custom_game/collection/cosmetics/tab_bg_png.vtex");
+	background-size: 100%;
+	box-shadow: black 0px 0px 3px 2;
+	transition: brightness 0.15s ease-in-out 0s;
+}
+
+.CT_ActiveOverlay {
+	width: 100%;
+	height: 100%;
+	background-image: url("s2r://panorama/images/custom_game/collection/cosmetics/tab_bg_active_png.vtex");
+	background-size: 100%;
+	opacity: 0;
+	transition: opacity 0.15s ease-in-out 0s;
+}
+
+.Cosmetic_Tab.BActive .CT_ActiveOverlay {
+	opacity: 1;
+}
+
+.CT_Root {
+	align: center center;
+	flow-children: right;
+	padding: 0 5px;
+}
+
+#CT_Icon {
+	height: 21px;
+	width: height-percentage(100%);
+	background-size: 0%;
+	vertical-align: center;
+}
+
+#CT_Icon > Panel {
+	width: 100%;
+	height: 100%;
+	background-color: #d1d6fa;
+}
+
+.Cosmetic_Tab.BActive #CT_Icon {
+	background-size: 100%;
+}
+
+.Cosmetic_Tab:not(.BActive):hover {
+	brightness: 1.5;
+}
+
+.Cosmetic_Tab:not(.BActive):active {
+	brightness: 0.85;
+}
+
+.Cosmetic_Tab.BActive #CT_Icon > Panel {
+	background-color: gradient(linear, 0% 100%, 0% 0%, from(#a0b3d0), to(white));
+}
+
+#CC_Tab_AURA #CT_Icon {
+	background-image: url("s2r://panorama/images/custom_game/collection/cosmetics/icons/tab_icon_auras_shadow_png.vtex");
+}
+
+#CC_Tab_AURA #CT_Icon > Panel {
+	opacity-mask: url("s2r://panorama/images/custom_game/collection/cosmetics/icons/tab_icon_auras_png.vtex");
+}
+
+#CC_Tab_PET #CT_Icon {
+	background-image: url("s2r://panorama/images/custom_game/collection/cosmetics/icons/tab_icon_pets_shadow_png.vtex");
+}
+
+#CC_Tab_PET #CT_Icon > Panel {
+	opacity-mask: url("s2r://panorama/images/custom_game/collection/cosmetics/icons/tab_icon_pets_png.vtex");
+}
+
+#CC_Tab_KILL_EFFECT #CT_Icon {
+	background-image: url("s2r://panorama/images/custom_game/collection/cosmetics/icons/tab_icon_kill_effects_shadow_png.vtex");
+}
+
+#CC_Tab_KILL_EFFECT #CT_Icon > Panel {
+	opacity-mask: url("s2r://panorama/images/custom_game/collection/cosmetics/icons/tab_icon_kill_effects_png.vtex");
+}
+
+#CC_Tab_COSMETIC_SKILL #CT_Icon {
+	background-image: url("s2r://panorama/images/custom_game/collection/cosmetics/icons/tab_icon_cosmetic_abilities_shadow_png.vtex");
+}
+
+#CC_Tab_COSMETIC_SKILL #CT_Icon > Panel {
+	opacity-mask: url("s2r://panorama/images/custom_game/collection/cosmetics/icons/tab_icon_cosmetic_abilities_png.vtex");
+}
+
+#CC_Tab_HIGH_FIVE #CT_Icon {
+	background-image: url("s2r://panorama/images/custom_game/collection/cosmetics/icons/tab_icon_high_five_shadow_png.vtex");
+}
+
+#CC_Tab_HIGH_FIVE #CT_Icon > Panel {
+	opacity-mask: url("s2r://panorama/images/custom_game/collection/cosmetics/icons/tab_icon_high_five_png.vtex");
+}
+
+#CC_Tab_SPRAY #CT_Icon {
+	background-image: url("s2r://panorama/images/custom_game/collection/cosmetics/icons/tab_icon_spray_shadow_png.vtex");
+}
+
+#CC_Tab_SPRAY #CT_Icon > Panel {
+	opacity-mask: url("s2r://panorama/images/custom_game/collection/cosmetics/icons/tab_icon_spray_png.vtex");
+}
+
+#CC_Tab_HERO_EFFECT #CT_Icon {
+	background-image: url("s2r://panorama/images/custom_game/collection/cosmetics/icons/tab_icon_hero_effect_shadow_png.vtex");
+}
+
+#CC_Tab_HERO_EFFECT #CT_Icon > Panel {
+	opacity-mask: url("s2r://panorama/images/custom_game/collection/cosmetics/icons/tab_icon_hero_effect_png.vtex");
+}
+
+.CT_Root > Label {
+	text-align: center;
+	margin-left: 5px;
+	color: #cfd4f8;
+	text-shadow: black 0px 1px 3px 2;
+	vertical-align: bottom;
+}
+
+.CC_MainPanel {
+	width: 100%;
+	height: 100%;
+	margin: 3px 4px 3px 5px;
+	background-image: url("s2r://panorama/images/custom_game/collection/cosmetics/cosmetic_content_bg_png.vtex");
+	background-size: 100%;
+	box-shadow: rgba(0, 0, 0, 0.8) 0px 0px 3px 2;
+	flow-children: down;
+}
+
+.CC_HeaderRoot {
+	width: 100%;
+	flow-children: right;
+	padding: 10px 15px 0 15px;
+}
+
+@define BlackBackground: rgba(0, 0, 0, 0.6);
+
+#CC_SortingText {
+	color: #b4c0ec;
+	text-align: right;
+	vertical-align: center;
+	text-shadow: rgba(0, 0, 0, 0.75) 0px 1px 3px 2;
+}
+
+#CC_SortingOptions {
+	vertical-align: center;
+	margin-left: 15px;
+	width: 200px;
+	height: 34px;
+	margin-right: 10px;
+	background-size: 27px 27px;
+	background-position: right 33px 35%;
+	padding: 0px 0px;
+	background-color: #2b2b39;
+	border: 2px solid transparent;
+	border-radius: 3px;
+	box-shadow: inset 0px 0px 10px -3px rgba(0, 0, 0, 0.5);
+}
+
+#CC_SortingOptions.DropDownMenuVisible {
+	border-bottom-left-radius: 0px;
+	border-bottom-right-radius: 0px;
+}
+
+#CC_SortingOptions Label {
+	vertical-align: center;
+	color: #d9e1ff;
+	text-shadow: rgba(0, 0, 0, 0.75) 0px 1px 3px 2;
+	transition: color 0.15s ease-in-out 0s;
+}
+
+#CC_SortingOptions:hover {
+	background-color: #272737;
+}
+
+#CC_SortingOptions:hover Label {
+	color: gradient(linear, 0% 100%, 0% 0%, from(#a0b3d0), to(white));
+}
+
+#CC_SortingOptions:active {
+	background-color: #232332;
+	box-shadow: inset 0px 0px 10px -3px rgba(0, 0, 0, 0.75);
+}
+
+#CC_SortingOptions:focus:hover {
+	background-color: #272737;
+}
+
+#CC_SortingOptionsDropDownMenu {
+	width: 200px;
+	background-color: transparent;
+	box-shadow: rgba(0, 0, 0, 0) 0px 0px 0px 0px;
+}
+
+#CC_SortingOptionsDropDownMenu Label {
+	background-color: #2b2b39;
+	padding-left: 8px;
+	border-top: 0px solid black;
+	color: #8f98ad;
+	box-shadow: inset 0px 0px 10px -3px rgba(0, 0, 0, 0.2);
+	transition: box-shadow 0.1s ease-in-out 0s;
+}
+
+#CC_SortingOptionsDropDownMenu Label:hover {
+	background-color: #272737;
+	color: #b4c1db;
+	box-shadow: inset 0px 0px 10px -3px rgba(0, 0, 0, 0.5);
+}
+
+#CC_SortingOptionsDropDownMenu Label:active {
+	background-color: #232332;
+}
+
+#CC_SortingOptionsDropDownMenu Label:focus {
+	background-color: #232332;
+	color: #b4c1db;
+}
+
+#CC_ContentRoot {
+	height: 100%;
+	width: 100%;
+}
+
+.Cosmetic_Content {
+	visibility: collapse;
+	flow-children: right-wrap;
+	overflow: squish scroll;
+	height: 100%;
+	margin-top: 5px;
+	padding: 8px 10px 0 0;
+}
+
+.Cosmetic_Content VerticalScrollBar {
+	margin: 0 0 5px 0;
+}
+
+.Cosmetic_Content.BActive {
+	visibility: visible;
+}
+
+.Cosmetic_Item {
+	width: 120px;
+	height: 160px;
+	margin: 0 0 8px 14px;
+	flow-children: down;
+	box-shadow: rgba(0, 0, 0, 0.6) 0px 0px 4px 1px;
+}
+
+.BHidden:not(.BOwned),.BHiddenOwned {
+	visibility: collapse;
+}
+
+.Cosmetic_Item.HighlightFocus {
+	animation-name: new_item_glow;
+	animation-duration: 1s;
+	animation-timing-function: linear;
+	animation-iteration-count: infinite;
+}
+
+@keyframes 'new_item_glow' {
+	0% {
+		box-shadow: #d80f00 0px 0px 3px 0px;
+	}
+	50% {
+		box-shadow: #d80f00 0px 0px 10px 0px;
+	}
+	100% {
+		box-shadow: #d80f00 0px 0px 3px 0px;
+	}
+}
+
+.CI_Background {
+	width: 100%;
+	height: width-percentage(100%);
+	padding: 2px;
+}
+
+#CI_Image {
+	width: 100%;
+	height: 100%;
+	background-color: gradient(linear, 0% 100%, 0% 0%, from(#23242b), to(#1a1b1f));
+}
+
+#CI_Details {
+	width: 21px;
+	height: 21px;
+	background-image: url("s2r://panorama/images/hud/reborn/icon_inspect_psd.vtex");
+	background-size: 100%;
+	margin: 5px;
+	visibility: collapse;
+}
+
+#CI_Details:hover {
+	brightness: 1.5;
+}
+
+#CI_Details:active {
+	brightness: 0.5;
+	margin: 6px;
+	width: 19px;
+	height: 19px;
+}
+
+.CI_Count {
+	text-align: center;
+	font-weight: lighter;
+	background-color: gradient( linear, 0% 0%, 100% 0%, from(transparent), color-stop(0.5, rgba(0, 0, 0, 0.76)), to(rgba(0, 0, 0, 0.96)) );
+	padding: 0 5px 0 10px;
+	min-width: 35px;
+	text-align: right;
+	align: right top;
+	text-shadow: rgba(0, 0, 0, 0.8) 0px 0px 3px 2;
+	color: #bccee2;
+	visibility: collapse;
+}
+
+.BManyItems .CI_Count {
+	visibility: visible;
+}
+
+.CI_Name {
+	vertical-align: bottom;
+	width: 100%;
+	text-align: center;
+	padding: 3px 2px;
+	background-color: rgba(0, 0, 0, 0.9);
+	visibility: collapse;
+}
+
+#CI_ActionButton {
+	width: 100%;
+	height: 100%;
+	background-image: url("s2r://panorama/images/custom_game/collection/cosmetics/action_button_unavailable_png.vtex");
+	background-size: 100%;
+}
+
+.Cosmetic_Item.BOwned.BEquipable #CI_ActionButton Label {
+	background-size: 0%;
+	padding: 0px;
+	font-size: 18px;
+	color: gradient(linear, 0% 100%, 0% 0%, from(#ffd163), to(#fffff1));
+}
+
+.Cosmetic_Item.BOwned.BEquipable.BEquipped #CI_ActionButton Label {
+	color: gradient(linear, 0% 100%, 0% 0%, from(#1ea529), to(#9eff85));
+}
+
+.Cosmetic_Item.BOwned.BEquipable.BEquipped #CI_ActionButton {
+	box-shadow: inset rgba(0, 140, 16, 0.3) 0px 0px 10px -4px;
+}
+
+.Cosmetic_Item.BAvailable #CI_ActionButton,.Cosmetic_Item.BOwned #CI_ActionButton {
+	background-image: url("s2r://panorama/images/custom_game/collection/cosmetics/action_button_png.vtex");
+}
+
+.CI_ActionButtonOverlay {
+	width: 100%;
+	height: 100%;
+	background-size: 100%;
+	opacity: 0;
+	transition: opacity 0.1s ease-in-out 0s;
+}
+
+.CI_ActionButtonOverlay.Hover {
+	background-image: url("s2r://panorama/images/custom_game/collection/cosmetics/action_button_hover_png.vtex");
+}
+
+.CI_ActionButtonOverlay.Active {
+	background-image: url("s2r://panorama/images/custom_game/collection/cosmetics/action_button_active_png.vtex");
+}
+
+#CI_ActionButton Label {
+	align: center center;
+	text-align: center;
+	text-shadow: black 0px 1px 3px 2;
+	text-overflow: shrink;
+}
+
+.CI_BackgroundWrap {
+	horizontal-align: center;
+}
+
+.CI_EquippedItemFlag {
+	width: 20px;
+	height: 20px;
+	horizontal-align: right;
+	background-image: url("s2r://panorama/images/custom_game/collection/cosmetics/item_equipped_png.vtex");
+	background-size: 100%;
+	brightness: 2;
+	visibility: collapse;
+}
+
+.BEquipped .CI_EquippedItemFlag {
+	visibility: visible;
+}

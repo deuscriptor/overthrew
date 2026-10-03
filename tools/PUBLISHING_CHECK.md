@@ -12,8 +12,9 @@ FFA map. This is not a successful Workshop upload or downloaded-package test.
   The other original maps and the custom variants were removed.
 - Host options operate outside tools mode. Debug respawns, automatic demo setup
   and cheat enabling are guarded by tools mode.
-- All 27 edited Panorama resources match their editable sources; resource bounds,
-  CRCs, JavaScript syntax and the shop image alias verify successfully.
+- All edited Panorama resources match their editable sources (48 on 2026-10-03: 26
+  scripts, 9 styles, 13 layouts); resource bounds, CRCs, JavaScript syntax and the shop
+  image alias verify successfully.
 - Full regression suite passes, including host authorization and Turbo item timing.
 
 ## Local launch options
@@ -42,9 +43,10 @@ Reference: https://developer.valvesoftware.com/wiki/Dota_2_Workshop_Tools/Addon_
   Do not include development folders `.git` (about 163 MiB) or `tools`, AGENTS.md, CLAUDE.md, editor thumbnail/asset caches or
   `panorama_debugger.cfg`. Inspect the publisher's file list; this check did not
   run the publisher or assume it excludes these automatically.
-- Some original backend integrations still run outside tools mode. Local premium
-  and vanity access is independent of backend success; this check does not
-  certify original account, leaderboard or online-service features.
+- Since issue #39 (2026-10-03) the addon has no backend integrations: the backend
+  client and every feature that depended on it were removed, premium and the
+  collection are local, and `run_tests.js` fails if a Lua script creates an HTTP
+  request (see "Backend removal" in [README.md](README.md)).
 - Local Host ownership resolution is implemented. Dedicated-region lobby-owner
   behavior and a downloaded Workshop package have not been tested.
 - The GitHub **Build** workflow (`.github/workflows/build.yml`, also run by the manual

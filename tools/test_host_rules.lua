@@ -82,10 +82,6 @@ for draft = 0, 1 do for epic = 0, 1 do for turbo = 0, 1 do
     assert(HostOptions.options.kill_goal == 45, "locked goal changed")
     GameLoop:DecreaseScoreByPlayerDisconnect(0)
     GameLoop:IncreaseScoreByPlayerDisconnect(0, 10)
-    GameLoop:IncreaseTimeAndGoal(10)
-    EarlyConsumables = {RegisterScoreVoteForPlayer = function() end}
-    EXTRA_SCORE_VOTE_TYPE = {DEFAULT=0}
-    GameLoop:IncreaseScoreByVote(0)
     assert(GameLoop.target_kill_goal == 45, "fixed goal changed during match")
     for _, rarity in ipairs({1, 2, 4}) do
         assert(ResolveOrbRarity(rarity) == (epic == 1 and 4 or rarity))

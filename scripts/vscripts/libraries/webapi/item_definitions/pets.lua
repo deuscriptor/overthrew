@@ -3,10 +3,6 @@ ITEM_DEFINITIONS["forest_wolf"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.UNCOMMON,
 
-	unlocked_with = {
-		currency = 1500,
-	},
-
 	model_path = "models/items/lycan/ultimate/_ascension_of_the_hallowed_beast_form/_ascension_of_the_hallowed_beast_form.vmdl",
 	model_scale = 0.5,
 
@@ -22,10 +18,6 @@ ITEM_DEFINITIONS["onibi"] = {
 	slot = INVENTORY_SLOTS.PET,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.LEGENDARY,
-
-	unlocked_with = {
-		treasure = "treasure_3"
-	},
 
 	model_path = "models/items/courier/onibi_lvl_21/onibi_lvl_21.vmdl",
 	model_scale = 1,
@@ -59,10 +51,6 @@ ITEM_DEFINITIONS["flying_void_rex"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.MYTHICAL,
 
-	unlocked_with = {
-		treasure = "treasure_3",
-	},
-
 	model_path = "models/items/courier/faceless_rex/faceless_rex_flying.vmdl",
 	model_scale = 1,
 	is_flying = true,
@@ -90,10 +78,6 @@ ITEM_DEFINITIONS["gold_dragon"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.IMMORTAL,
 
-	unlocked_with = {
-		currency = 12500,
-	},
-
 	model_path = "models/courier/baby_winter_wyvern/baby_winter_wyvern.vmdl",
 	model_scale = 1.2,
 	material_group = "2",
@@ -120,10 +104,6 @@ ITEM_DEFINITIONS["nian"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.MYTHICAL,
 
-	unlocked_with = {
-		treasure = "treasure_2"
-	},
-
 	model_path = "models/items/courier/nian_courier/nian_courier.vmdl",
 	model_scale = 1,
 
@@ -139,10 +119,6 @@ ITEM_DEFINITIONS["lefty_default"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.COMMON,
 
-	unlocked_with = {
-		treasure = "treasure_1"
-	},
-
 	model_path = "models/items/courier/hand_courier/hand_courier_radiant_lv1.vmdl",
 	model_scale = 0.9,
 
@@ -157,10 +133,6 @@ ITEM_DEFINITIONS["lefty_gem"] = {
 	slot = INVENTORY_SLOTS.PET,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.RARE,
-
-	unlocked_with = {
-		treasure = "treasure_1"
-	},
 
 	model_path = "models/items/courier/hand_courier/hand_courier_dire_lv2.vmdl",
 	model_scale = 0.9,
@@ -182,10 +154,6 @@ ITEM_DEFINITIONS["lefty_ultimate"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.COMMON,
 
-	unlocked_with = {
-		treasure = "treasure_1"
-	},
-
 	model_path = "models/items/courier/hand_courier/hand_courier_radiant_lv3.vmdl",
 	model_scale = 0.9,
 
@@ -206,10 +174,6 @@ ITEM_DEFINITIONS["lefty_linken"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.UNCOMMON,
 
-	unlocked_with = {
-		treasure = "treasure_2"
-	},
-
 	model_path = "models/items/courier/hand_courier/hand_courier_dire_lv4.vmdl",
 	model_scale = 0.9,
 
@@ -224,10 +188,6 @@ ITEM_DEFINITIONS["lefty_refresh"] = {
 	slot = INVENTORY_SLOTS.PET,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.RARE,
-
-	unlocked_with = {
-		treasure = "treasure_2"
-	},
 
 	model_path = "models/items/courier/hand_courier/hand_courier_dire_lv5.vmdl",
 	model_scale = 0.9,
@@ -249,10 +209,6 @@ ITEM_DEFINITIONS["lefty_octarine"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.MYTHICAL,
 
-	unlocked_with = {
-		treasure = "treasure_3"
-	},
-
 	model_path = "models/items/courier/hand_courier/hand_courier_radiant_lv6.vmdl",
 	model_scale = 0.9,
 
@@ -272,10 +228,6 @@ ITEM_DEFINITIONS["lefty_aegis"] = {
 	slot = INVENTORY_SLOTS.PET,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.ARCANA,
-
-	unlocked_with = {
-		currency = 50000,
-	},
 
 	model_path = "models/items/courier/hand_courier/hand_courier_dire_lv7.vmdl",
 	model_scale = 1,
@@ -298,10 +250,6 @@ ITEM_DEFINITIONS["chicken"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.COMMON,
 
-	unlocked_with = {
-		currency = 100,
-	},
-
 	model_path = "models/items/courier/mighty_chicken/mighty_chicken.vmdl",
 	model_scale = 1,
 }
@@ -310,10 +258,6 @@ ITEM_DEFINITIONS["golden_greevil"] = {
 	slot = INVENTORY_SLOTS.PET,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.IMMORTAL,
-
-	unlocked_with = {
-		currency = 10000,
-	},
 
 	model_path = "models/courier/greevil/gold_greevil.vmdl",
 	model_scale = 1,
@@ -342,10 +286,6 @@ ITEM_DEFINITIONS["golden_krobeling"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.IMMORTAL,
 
-	unlocked_with = {
-		currency = 15000,
-	},
-
 	model_path = "models/items/courier/krobeling_gold/krobeling_gold.vmdl",
 	model_scale = 1,
 
@@ -366,10 +306,6 @@ ITEM_DEFINITIONS["golden_huntling"] = {
 	slot = INVENTORY_SLOTS.PET,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.IMMORTAL,
-
-	unlocked_with = {
-		currency = 20000,
-	},
 
 	model_path = "models/courier/huntling/huntling.vmdl",
 	model_scale = 1,
@@ -393,10 +329,6 @@ ITEM_DEFINITIONS["golden_doomling"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.IMMORTAL,
 
-	unlocked_with = {
-		currency = 30000,
-	},
-
 	model_path = "models/courier/doom_demihero_courier/doom_demihero_courier.vmdl",
 	model_scale = 1,
 	material_group = "1",
@@ -418,10 +350,6 @@ ITEM_DEFINITIONS["golden_flopjaw"] = {
 	slot = INVENTORY_SLOTS.PET,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.IMMORTAL,
-
-	unlocked_with = {
-		currency = 88888,
-	},
 
 	model_path = "models/courier/flopjaw/flopjaw.vmdl",
 	model_scale = 1,
@@ -445,10 +373,6 @@ ITEM_DEFINITIONS["golden_seekling"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.IMMORTAL,
 
-	unlocked_with = {
-		currency = 25000,
-	},
-
 	model_path = "models/courier/seekling/seekling.vmdl",
 	model_scale = 1,
 	material_group = "1",
@@ -470,10 +394,6 @@ ITEM_DEFINITIONS["golden_venoling"] = {
 	slot = INVENTORY_SLOTS.PET,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.IMMORTAL,
-
-	unlocked_with = {
-		currency = 17500,
-	},
 
 	model_path = "models/courier/venoling/venoling.vmdl",
 	model_scale = 1,
@@ -497,10 +417,6 @@ ITEM_DEFINITIONS["golden_devourling"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.IMMORTAL,
 
-	unlocked_with = {
-		currency = 22500,
-	},
-
 	model_path = "models/items/courier/devourling/devourling.vmdl",
 	model_scale = 1,
 	material_group = "1",
@@ -523,10 +439,6 @@ ITEM_DEFINITIONS["roshan_platinum"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.ARCANA,
 
-	unlocked_with = {
-		treasure = "treasure_3"
-	},
-
 	model_path = "models/courier/baby_rosh/babyroshan_alt.vmdl",
 	model_scale = 1,
 	material_group = "2",
@@ -548,10 +460,6 @@ ITEM_DEFINITIONS["roshan_courier"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.UNCOMMON,
 
-	unlocked_with = {
-		subscription_tier = 1,
-	},
-
 	model_path = "models/courier/baby_rosh/babyroshan.vmdl",
 	model_scale = 1,
 }
@@ -560,10 +468,6 @@ ITEM_DEFINITIONS["roshan_ti10"] = {
 	slot = INVENTORY_SLOTS.PET,
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.IMMORTAL,
-
-	unlocked_with = {
-		subscription_tier = 2,
-	},
 
 	model_path = "models/courier/baby_rosh/babyroshan_ti10_dire.vmdl",
 	model_scale = 0.9,
@@ -582,10 +486,6 @@ ITEM_DEFINITIONS["scotty_christmas_2023"] = {
 	type = ITEM_TYPES.EQUIPMENT,
 	rarity = ITEM_RARITIES.UNIQUE,
 	is_hidden = true,
-
-	unlocked_with = {
-		christmas = 2023,
-	},
 
 	model_path = "models/items/courier/scuttling_scotty_penguin/scuttling_scotty_penguin.vmdl",
 	model_scale = 1.2,

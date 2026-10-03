@@ -57,21 +57,15 @@ TEAMS_LAYOUTS = {
 
 		starting_drop_weights = {},
 
-		gg_token_kill_goal_bonus = 10,
-		rating_changes = {28, 20, 12, 4, -4, -12, -20, -28},
 		stalemate_game_time_limit = 180,
 
 		leader_overthrow_reward_min = 4,
 		leader_overthrow_reward_max = 5,
 		leader_overthrow_threshold = 5,
-
-		min_connected_players = 2,
 	},
 }
 
 PREGAME_TIME = 20
-
-GAME_DURATION_OPTIONAL_EARLY_CONSUMABLES_TIME = 20
 
 LEADER_KILL_GOLD_REWARD_PER_DIFFERENCE = 60
 LEADER_KILLS_TO_DIFFERENCE = 2
@@ -146,12 +140,8 @@ MAX_NEUTRAL_ITEMS_PER_PLAYER = 1
 
 PRINT_EXTENDED_DEBUG = false
 DEV_BOTS_ENABLED = false
-DEV_RANDOM_WINRATES = false
 DEV_ENABLE_SPECTATOR_TEAM = false
 DEV_ORB_DROP_PINGS = false
-
-RATING_MULTIPLIER = 0.0125
-RATING_CHANGE_CAP = 20
 
 -- 10 minutes for simulated end game, makes sure we won't hog dedicated servers with neverending games
 SIMULATED_END_GAME_DELAY = 600
@@ -167,13 +157,3 @@ DEVELOPERS = {
     ["76561198040469212"] = true, -- Draze22
 	["76561198007063562"] = true, -- Daser27
 }
-
-
-KNOWN_LOCALE_ALIASES = {
-	eng = "english",
-	en = "english",
-	ru = "russian",
-	fr = "french"
-}
-
-END_GAME_PLAYER_COUNT_CHECK_ENABLED = not IsInToolsMode()

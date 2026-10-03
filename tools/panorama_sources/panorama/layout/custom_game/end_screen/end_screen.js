@@ -76,11 +76,6 @@ function FillPlayerStats(root, player_id, stats) {
 	set_number_value_stat("xpm", stats.xpm);
 	set_number_value_stat("observers", stats.wards.npc_dota_observer_wards);
 	set_number_value_stat("sentries", stats.wards.npc_dota_sentry_wards);
-	set_number_value_stat("current_rating", stats.current_rating);
-	set_number_value_stat("mmr_change", Math.abs(stats.rating_change));
-
-	root.SetDialogVariable("rating_operator", stats.rating_change > -1 ? "+" : "-");
-	if (stats.rating_change != 0) root.AddClass(stats.rating_change > 0 ? "MmrInc" : "MmrDec");
 }
 
 function CreateTipsBadge(root, stats) {
@@ -378,12 +373,6 @@ function _EndScreenPhase2(data) {
 	HUD.EG_PHASE_2.RemoveClass("EG_ShowLocalKills");
 	HUD.CONTEXT.RemoveClass("ShowFooter");
 
-	HUD.EG_PHASE_2_CHALLENGE.RemoveClass("ShowChallengeInit");
-	HUD.EG_PHASE_2_CHALLENGE.RemoveClass("ShowChallengeStateBG");
-	HUD.EG_PHASE_2_CHALLENGE.RemoveClass("ShowChallengeStateText");
-	HUD.EG_PHASE_2_CHALLENGE.RemoveClass("ShowChallengeEnds");
-	HUD.EG_PHASE_2_CHALLENGE_REWARDS.RemoveAndDeleteChildren();
-
 	const animation_phase_2 = new RunSkippableStaggeredActions(0);
 	animation_phase_2.actions = [
 		new SkippableWaitAction(2),
@@ -473,107 +462,9 @@ function _EndScreenPhase2(data) {
 	}
 	local_player_parallel_animations.add(local_kills_animation);
 
-	const challenge_animation_pull = new RunSequentialActions();
-	if (data.active_challenge && data.active_challenge.id) {
-		const challenge = data.active_challenge;
-		const is_completed = challenge.completed;
-
-		const challenge_value_animation = new SkippableLerpAction(1);
-		const challenge_target_value = is_completed ? challenge.target : challenge.progress;
-
-		const challenge_type_name = GetChallengeTypeName(challenge.challenge_type);
-
-		const set_challenge_progress = (_value) => {
-			HUD.CONTEXT.SetDialogVariableInt("value", _value);
-			HUD.CONTEXT.SetDialogVariableInt("target", challenge.target);
-			HUD.CONTEXT.SetDialogVariable("span_cls", is_completed ? "ChallengeValue" : "ChallengeProgress");
-
-			const description = $.Localize(`hero_challenges_${challenge_type_name}_ingame`, HUD.CONTEXT);
-
-			HUD.EG_PHASE_2_CHALLENGE.SetDialogVariable(
-				"challenge_desc",
-				$.Localize(description, HUD.EG_PHASE_2_CHALLENGE),
-			);
-		};
-
-		challenge_value_animation.apply_progress = (progress) => {
-			set_challenge_progress(Math.floor(Lerp(progress, 0, challenge_target_value)));
-		};
-		set_challenge_progress(0);
-
-		const challenge_rewards_animation_pull = new RunSkippableStaggeredActions(0.3);
-		const add_reward_to_challenge = (name, count) => {
-			const reward = CreateReward(HUD.EG_PHASE_2_CHALLENGE_REWARDS, name, count);
-			challenge_rewards_animation_pull.add(new AddClassAction(reward, "Show"));
-		};
-
-		if (challenge.rewards && is_completed) {
-			if (challenge.rewards.currency) add_reward_to_challenge("currency", challenge.rewards.currency);
-			if (challenge.rewards.items)
-				for (const [item_name, item_count] of Object.entries(challenge.rewards.items))
-					add_reward_to_challenge(item_name, item_count);
-		}
-		const state_txt = is_completed ? "completed" : "failed";
-
-		HUD.EG_PHASE_2_CHALLENGE.SetDialogVariableLocString(
-			"active_challenge_state",
-			`end_game_hero_challenge_${state_txt}`,
-		);
-		HUD.EG_PHASE_2_CHALLENGE.SetHasClass("BChallengeCompleted", is_completed);
-
-		challenge_animation_pull.actions = [
-			new AddClassAction(HUD.EG_PHASE_2_CHALLENGE, "ShowChallengeInit"),
-			new SkippableWaitAction(0.5),
-			challenge_value_animation,
-			challenge_rewards_animation_pull,
-			new SkippableWaitAction(0.5),
-			new AddClassAction(HUD.EG_PHASE_2_CHALLENGE, "ShowChallengeStateBG"),
-			new SkippableWaitAction(0.4),
-			new PlaySoundEffectAction(`end_game.challenge_${state_txt}`),
-			new WaitForClassAction(HUD.EG_PHASE_2_CHALLENGE_PFX_COMPLTED, "SceneLoaded"),
-			new FireEntityInputAction(HUD.EG_PHASE_2_CHALLENGE_PFX_COMPLTED, "challenge_completed_pfx", "Stop", ""),
-			new FireEntityInputAction(HUD.EG_PHASE_2_CHALLENGE_PFX_COMPLTED, "challenge_failed_pfx", "Stop", ""),
-			new RunFunctionAction(() => {
-				$.DispatchEvent(
-					"DOTAGlobalSceneSetCameraEntity",
-					"EG_C_Particle_Completed",
-					`challenge_${state_txt}`,
-					0,
-				);
-			}),
-			new FireEntityInputAction(HUD.EG_PHASE_2_CHALLENGE_PFX_COMPLTED, `challenge_${state_txt}_pfx`, "Start", ""),
-			new AddClassAction(HUD.EG_PHASE_2_CHALLENGE, "ShowChallengeStateText"),
-			new SkippableWaitAction(0.3),
-			new AddClassAction(HUD.EG_PHASE_2_CHALLENGE, "ShowChallengeEnds"),
-		];
-	}
-
 	animation_phase_2.add(local_player_parallel_animations);
-	animation_phase_2.add(challenge_animation_pull);
 	animation_phase_2.add(new StopSkippingAheadAction());
 	SEQUENCE_RUNNER.add(animation_phase_2);
-}
-
-function CreateReward(rewards_container, reward_name, reward_amount) {
-	const reward = $.CreatePanel("Panel", rewards_container, "");
-	reward.BLoadLayoutSnippet("MVP_Reward");
-
-	reward.SetDialogVariableInt("reward_amount", reward_amount);
-	if (reward_name == "currency") reward.AddClass("Reward_currency");
-	else {
-		reward.FindChildTraverse("MVP_Reward_Icon").SetImage(GameUI.Inventory.GetItemImagePath(reward_name));
-	}
-	reward.SwitchClass("rarity", GameUI.Inventory.GetItemRarityName(reward_name) || "COMMON");
-	reward.SwitchClass("slot", GameUI.Inventory.GetItemSlotName(reward_name) || "NONE");
-	reward.SetDialogVariableLocString("reward_name", reward_name);
-
-	reward.SetPanelEvent("onmouseover", () => {
-		$.DispatchEvent("DOTAShowTextTooltip", reward, $.Localize(reward_name));
-	});
-	reward.SetPanelEvent("onmouseout", () => {
-		$.DispatchEvent("DOTAHideTextTooltip");
-	});
-	return reward;
 }
 
 function _EndScreenPhase3(data) {
@@ -627,49 +518,13 @@ function _EndScreenPhase3(data) {
 		mvp.SetDialogVariableInt("deaths", Players.GetDeaths(mvp_data.player_id));
 		mvp.SetDialogVariableInt("assists", Players.GetAssists(mvp_data.player_id));
 
-		if (mvp_data.rewards) {
-			const rewards_container = mvp.FindChildTraverse("MVP_Rewards");
-			const add_reward = (reward_name, reward_amount) => {
-				const reward = $.CreatePanel("Panel", rewards_container, "");
-				reward.BLoadLayoutSnippet("MVP_Reward");
-
-				reward.SetDialogVariableInt("reward_amount", reward_amount);
-				if (reward_name == "currency") reward.AddClass("Reward_currency");
-				else {
-					reward
-						.FindChildTraverse("MVP_Reward_Icon")
-						.SetImage(GameUI.Inventory.GetItemImagePath(reward_name));
-				}
-				reward.SwitchClass("rarity", GameUI.Inventory.GetItemRarityName(reward_name) || "COMMON");
-				reward.SwitchClass("slot", GameUI.Inventory.GetItemSlotName(reward_name) || "NONE");
-				reward.SetDialogVariableLocString("reward_name", reward_name);
-
-				reward.SetPanelEvent("onmouseover", () => {
-					$.DispatchEvent("DOTAShowTextTooltip", reward, $.Localize(reward_name));
-				});
-				reward.SetPanelEvent("onmouseout", () => {
-					$.DispatchEvent("DOTAHideTextTooltip");
-				});
-			};
-			if (mvp_data.rewards.currency) CreateReward(rewards_container, "currency", mvp_data.rewards.currency);
-			if (mvp_data.rewards.items)
-				for (const [item_name, item_count] of Object.entries(mvp_data.rewards.items))
-					CreateReward(rewards_container, item_name, item_count);
-		}
-
 		const mvp_entity_animation = new RunSkippableStaggeredActions(0.4);
 
-		const rewards_animation = new RunParallelActions();
-		rewards_animation.actions = [
-			new PlaySoundEffectAction("end_game.mvp_rewards"),
-			new AddClassAction(mvp, "ShowRewards"),
-		];
 		const root_animation = new RunParallelActions();
 		root_animation.actions = [new PlaySoundEffectAction("end_game.mvp"), new AddClassAction(mvp, "ShowRoot")];
 
 		mvp_entity_animation.add(root_animation);
 		mvp_entity_animation.add(new AddClassAction(mvp, "ShowModel"));
-		mvp_entity_animation.add(rewards_animation);
 		mvp_entity_animation.add(new AddClassAction(mvp, "ShowBadges"));
 
 		animation_phase_3.add(mvp_entity_animation);
@@ -692,7 +547,6 @@ function _EndScreenPhase4(data) {
 
 	HUD.EG_PHASE_4_BASIC_TEAMS_CONTAINER.RemoveAndDeleteChildren();
 	HUD.EG_PHASE_4_FULL_ROWS_CONTAINER.RemoveAndDeleteChildren();
-	HUD.EG_PHASE_4_ERRORS_CONTAINER.RemoveAndDeleteChildren();
 
 	GetTeamPlace = (team_id) => {
 		return Object.keys(data.sorted_teams).find((key) => data.sorted_teams[key].team == team_id);
@@ -842,71 +696,13 @@ function _EndScreenPhase4(data) {
 
 	animation_phase_4.add(new SkippableWaitAction(0.5));
 
-	if (data.errors) {
-		const errors = Object.values(data.errors);
-		const b_has_errors = errors.length > 0;
-		for (const error of errors) {
-			$.CreatePanel("Label", HUD.EG_PHASE_4_ERRORS_CONTAINER, "", {
-				text: `• ${$.Localize(error)}`,
-				html: true,
-			});
-		}
-		if (b_has_errors) {
-			animation_phase_4.add(new AddClassAction(HUD.CONTEXT, "BShowServerErrors_Indicator"));
-			animation_phase_4.add(new AddClassAction(HUD.CONTEXT, "BShowServerErrors"));
-		}
-	}
-
-	// animation_phase_4.add(new AddClassAction(HUD.CONTEXT, "BShowFeedbackForm"));
 	animation_phase_4.add(new AddClassAction(HUD.CONTEXT, "ShowTopButtons"));
 	animation_phase_4.add(new StopSkippingAheadAction());
 
 	SEQUENCE_RUNNER.add(animation_phase_4);
 }
-function EndGameToggleFeedback() {
-	if (!GameUI.ToggleFeedback()) HUD.CONTEXT.SetFocus();
-}
-GameUI.SetEndgameFocus = () => {
-	HUD.CONTEXT.SetFocus();
-};
-
-function _EndScreenPhasePromo(data) {
-	const animation_phase_promo = new RunSkippableStaggeredActions(0);
-
-	animation_phase_promo.actions = [
-		new SwitchClassAction(HUD.CONTEXT, "eg_phase", "EG_StartPhase_Promo"),
-		new SkippableWaitAction(1),
-		new AddClassAction(HUD.CONTEXT, "BFirstPromoView"),
-		new SkippableWaitAction(10),
-		new StopSkippingAheadAction(),
-		new RemoveClassAction(HUD.CONTEXT, "BFirstPromoView"),
-	];
-
-	HUD.CONTEXT.SwitchClass("promo-game", `CurrentPromoGame_${CURRENT_PROMO_GAME}`);
-	HUD.CONTEXT.SetDialogVariableLocString("promo_game_name", `end_screen_promo_game_${CURRENT_PROMO_GAME}`);
-	HUD.CONTEXT.SetDialogVariableLocString(
-		"end_screen_promo_header_1",
-		`end_screen_promo_header_${CURRENT_PROMO_GAME}`,
-	);
-
-	[1, 2, 3].forEach((n) => {
-		HUD.CONTEXT.SetDialogVariableLocString(
-			`end_screen_promo_content_${n}`,
-			`end_screen_promo_content_${CURRENT_PROMO_GAME}_${n}`,
-		);
-	});
-
-	SEQUENCE_RUNNER.add(animation_phase_promo);
-}
-function OpenPromoGamePage() {
-	$.DispatchEvent("DOTAShowCustomGamePage", PROMO_GAME_LINKS[CURRENT_PROMO_GAME]);
-}
 
 function UpdateMatchInfo() {
-	const match_id = CustomNetTables.GetTableValue("game_state", "match_id")?.match_id;
-
-	HUD.CONTEXT.SetDialogVariable("match_id", match_id || -1);
-
 	const match_duration = Game.GetDOTATime(false, false);
 	HUD.CONTEXT.SetDialogVariable("match_duration", FormatSeconds(match_duration, match_duration >= 3600));
 }
@@ -927,7 +723,6 @@ function StartEndScreen(data) {
 	ClearSortHeaders();
 
 	$.RegisterForUnhandledEvent("Cancelled", StartSkippingAhead);
-	GameUI.CloseFeedback();
 
 	if (data.sorted_teams) {
 		data.teams_scores = {};
@@ -937,7 +732,6 @@ function StartEndScreen(data) {
 	_EndScreenPhase1(data);
 	_EndScreenPhase2(data);
 	_EndScreenPhase3(data);
-	if (IS_PROMO_ENABLED) _EndScreenPhasePromo(data);
 	_EndScreenPhase4(data);
 
 	RunSingleAction(SEQUENCE_RUNNER);
@@ -967,12 +761,6 @@ function SetUIForEndGameVisible(bool) {
 	GameUI.SetDefaultUIEnabled(DotaDefaultUIElement_t.DOTA_DEFAULT_UI_ACTION_PANEL, bool);
 	GameUI.SetDefaultUIEnabled(DotaDefaultUIElement_t.DOTA_DEFAULT_UI_ACTION_MINIMAP, bool);
 	GameUI.SetDefaultUIEnabled(DotaDefaultUIElement_t.DOTA_DEFAULT_UI_TOP_MENU_BUTTONS, bool);
-}
-function Custom_HideServerErros() {
-	HUD.CONTEXT.RemoveClass("BShowServerErrors");
-}
-function Custom_HideFeedbackForm() {
-	HUD.CONTEXT.RemoveClass("BShowFeedbackForm");
 }
 
 const chat_style = {
@@ -1046,10 +834,6 @@ function MoveChat(b_to_custom_root) {
 
 	HUD.CONTEXT.SwitchClass("eg_phase", "none");
 	HUD.CONTEXT.RemoveClass("ShowTopButtons");
-	HUD.CONTEXT.RemoveClass("BShowServerErrors_Indicator");
-	HUD.CONTEXT.SetHasClass("BPromoEnabled", IS_PROMO_ENABLED);
-	Custom_HideServerErros();
-	Custom_HideFeedbackForm();
 
 	RestoreEndScreenArt = ParkImages(HUD.CONTEXT);
 

@@ -1,0 +1,21 @@
+<root>
+	<styles>
+		<include src="s2r://panorama/styles/dotastyles.vcss_c" />
+		<include src="s2r://panorama/styles/hud/hud_reborn.vcss_c" />
+		<include src="s2r://panorama/layout/custom_game/minimap_overlay/minimap_overlay.vcss_c" />
+	</styles>
+	<scripts>
+		<include src="s2r://panorama/layout/custom_game/scripts/utils.vjs_c" />
+		<include src="s2r://panorama/layout/custom_game/minimap_overlay/minimap_overlay.vjs_c" />
+	</scripts>
+	<Panel class="MapOverlayRoot" hittest="false">
+		<Panel class="MapContainer" hittest="false">
+			<Panel class="MapOverlay_Top" hittest="false" />
+			<Panel id="MapOverlay" hittest="false" />
+		</Panel>
+		<Panel id="MinimapContainer" hittest="false">
+			<Button id="CollectionButton" onactivate="OpenCollection()" />
+			<Label id="CollectionHighlight" text="!" />
+		</Panel>
+	</Panel>
+</root>

@@ -85,7 +85,7 @@ function Filters:OrbAddedToInventoryFilter(item, hInventoryParent)
 
 		UTIL_Remove(item)
 		EmitAnnouncerSoundForTeam("custom." .. orb_rarity .. "_orb", owner_team)
-		Upgrades:QueueSelectionForTeam(owner_team, rarity_value, source_rarity)
+		Upgrades:QueueSelectionForTeam(owner_team, rarity_value)
 		EndGameStats:AddCapturedOrb(owner_team, ORB_CAPTURE_TYPE.SHOP, rarity_value)
 
 		CustomChat:MessageToTeam(player_id, PlayerResource:GetTeam(player_id), "orb_purchased_chat_message_" .. orb_rarity)
