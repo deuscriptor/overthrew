@@ -946,3 +946,22 @@ SINGLE_DRAFT_RANDOM PASS hero=npc_dota_hero_templar_assassin
   - Russian client loading screen: the four tabs ОСНОВНЫЕ, БАЛАНС, ПРЕДМЕТЫ and ПРОЧЕЕ fit, with four page bullets. The
     Balance page shows «Фонтанная лень» switched on, with its tooltip.
   - The log has no Lua or Panorama script errors.
+
+## 2026-10-04: Illusion cosmetics (#31)
+
+- Offline: `run_tests.js` passes (48 checks). `test_illusion_performance.lua` adds the hosted status effect (server
+  and client), host creation for cosmetics without upgrades, which items an illusion copies (aura and hero effect
+  particles; not the status effect modifier, kill effects or pets), Meepo clones keeping `modifier_hero_status_fx`,
+  and particle removal for a killed illusion but not for a live one whose host is replaced.
+  `panorama_resources.js verify` passes. `luacheck scripts/vscripts`: 0 warnings / 0 errors in 321 files.
+- Dota Tools, one client with `-condebug`, `ot3_necropolis_ffa`, fresh session:
+  - `illusion_cosmetics_smoke`: all 19 checks ok. With Aura Green and Constellation equipped, three Phantom Lancer
+    illusions carried the status effect in `modifier_illusion_generic_upgrades`, had no `modifier_hero_status_fx`
+    and copied both particles. A force-killed illusion, still in the world and dead, had dropped its host and both
+    particles (so `IsAlive()` is already false when the engine removes the host at death); the others kept theirs.
+    A live illusion processed again kept its particles and status effect. With only the aura equipped and no
+    upgrades, an illusion got a host without a status effect, and lost the aura at death.
+  - Screenshots: the hero and two live illusions with the aura. The owner sees their own illusions with the native
+    blue illusion tint, so the hero effect's colours can't be compared by eye from the owner's side; this
+    single-client session has no enemy view. The status effect keeps the default priority of the old modifier.
+  - The log has no Lua or Panorama script errors.

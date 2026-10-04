@@ -177,7 +177,9 @@ Then add the option to the table above, to `tools/README.md` and to `README.md` 
 - Illusions carry their generic upgrades in one modifier, `modifier_illusion_generic_upgrades`. A new generic upgrade
   goes into `IllusionGenericUpgrades.HOSTED` (`game/upgrades/illusion_generic_upgrades.lua`) if it follows the rules
   listed there; a new property it needs goes into `IllusionGenericUpgrades.PROPERTIES`. `test_illusion_performance.lua`
-  checks both.
+  checks both. The same host carries the hero effect's status effect and destroys the illusion's cosmetic particles
+  at death (`entity_killed` doesn't fire for illusions), so a cosmetic copied to illusions must not add a modifier
+  of its own (see "Illusions and performance" in `tools/README.md`).
 - Read base game data with the engine's `GetAbilityKeyValuesByName` (items too) and `GetUnitKeyValuesByName`
   (heroes too), never by loading `npc_abilities.txt`, `items.txt`, `npc_units.txt` or `npc_heroes.txt` into Lua
   (`run_tests.js` fails on it). Each call builds a new table, so cache what a per-tick path needs. Hero names come

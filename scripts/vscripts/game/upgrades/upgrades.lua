@@ -788,11 +788,14 @@ end
 
 
 --- An illusion carries the generic upgrades of `source` that IllusionGenericUpgrades can host in one modifier, and the
---- rest as modifiers of their own; its stats are recalculated once.
+--- rest as modifiers of their own; its stats are recalculated once. The host also carries the status effect of the
+--- owner's hero effect and drops the illusion's cosmetics at death, so an illusion with cosmetics always gets one.
 function Upgrades:AddIllusionGenericUpgrades(illusion, source)
-	-- creation keys of the host modifier: the hosted counts
+	-- creation keys of the host modifier: the hosted counts and the status effect
 	local hosted = {duration = -1}
 	local hosts_any = false
+	local has_particles = false
+	if Equipment then hosted.status_fx, has_particles = Equipment:GetCopiedLook(illusion:GetPlayerOwnerID()) end
 	local applied = illusion:HasModifier("modifier_illusion_generic_upgrades")
 	illusion:RemoveModifierByName("modifier_illusion_generic_upgrades")
 
@@ -809,9 +812,9 @@ function Upgrades:AddIllusionGenericUpgrades(illusion, source)
 		end
 	end
 
-	if hosts_any then
+	if hosts_any or hosted.status_fx or has_particles then
 		illusion:AddNewModifier(illusion, nil, "modifier_illusion_generic_upgrades", hosted)
-		applied = true
+		applied = applied or hosts_any
 	end
 
 	if applied and illusion.CalculateStatBonus then

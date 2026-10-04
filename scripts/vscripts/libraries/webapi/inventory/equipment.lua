@@ -176,7 +176,7 @@ function Equipment:ParticleFromData(player_id, particle_data, unit, target_table
 	end
 
 	-- unset `persists` flag defaults to true
-	if particle_data.persists == nil or particle_data == true then
+	if particle_data.persists ~= false then
 		table.insert(target_table, p_id)
 	else
 		ParticleManager:ReleaseParticleIndex(p_id)
@@ -186,7 +186,8 @@ function Equipment:ParticleFromData(player_id, particle_data, unit, target_table
 end
 
 
-function Equipment:PlayItemEffects(player_id, item_name, target_override, particle_variant)
+--- `skip_status_fx`: leave out status effects (illusions get theirs from modifier_illusion_generic_upgrades).
+function Equipment:PlayItemEffects(player_id, item_name, target_override, particle_variant, skip_status_fx)
 	-- print("[Equipment] PlayItemEffects", player_id, item_name, target_override)
 	local definition = ITEM_DEFINITIONS[item_name]
 	local modifiers = {}
@@ -211,14 +212,16 @@ function Equipment:PlayItemEffects(player_id, item_name, target_override, partic
 
 	for _, particle_data in pairs(definition.particles or {}) do
 		if particle_data.attach_type == PATTACH_SPECIAL_STATUS_FX then
-			unit:RemoveModifierByName("modifier_hero_status_fx")
+			if not skip_status_fx then
+				unit:RemoveModifierByName("modifier_hero_status_fx")
 
-			local modifier = unit:AddNewModifier(unit, nil, "modifier_hero_status_fx", {
-				duration = -1,
-				status_fx_name = particle_data.path
-			})
+				local modifier = unit:AddNewModifier(unit, nil, "modifier_hero_status_fx", {
+					duration = -1,
+					status_fx_name = particle_data.path
+				})
 
-			table.insert(modifiers, modifier)
+				table.insert(modifiers, modifier)
+			end
 		else
 			Equipment:ParticleFromData(player_id, particle_data, unit, particles)
 		end
@@ -366,17 +369,45 @@ function Equipment:OnEntityKilled(event)
 end
 
 
+--- What units copying the player's hero look need beyond particles: the status effect of the equipped items
+--- (a hero effect's), and whether they put any lasting particle on the unit (Equipment:OnNpcSpawned).
+function Equipment:GetCopiedLook(player_id)
+	local status_fx, has_particles = nil, false
+	for slot, item in pairs(Equipment.equipped_items[player_id] or {}) do
+		local definition = not Equipment.slot_callbacks[slot] and ITEM_DEFINITIONS[item.name]
+		for _, particle_data in pairs(definition and definition.particles or {}) do
+			if particle_data.attach_type == PATTACH_SPECIAL_STATUS_FX then
+				status_fx = particle_data.path
+			elseif particle_data.persists ~= false then
+				has_particles = true
+			end
+		end
+	end
+	return status_fx, has_particles
+end
+
+
+--- An illusion that is gone for good drops its cosmetics. entity_killed, which clears Meepo clones, doesn't fire
+--- for illusions: modifier_illusion_generic_upgrades calls this when the engine removes it at death.
+function Equipment:OnIllusionKilled(illusion)
+	Equipment:_RemoveBoundAssets(illusion)
+end
+
+
 function Equipment:OnNpcSpawned(event)
 	if not event.unit:IsIllusion() and not event.unit:IsClone() and not event.unit:IsTempestDouble() then return end
 
 	local player_id = event.unit:GetPlayerOwnerID()
 	if not player_id or not PlayerResource:IsValidPlayerID(player_id) then return end
 
+	-- an illusion's status effect comes with its generic upgrades host instead of a modifier of its own
+	local skip_status_fx = event.unit:IsIllusion()
+
 	Equipment:_RemoveBoundAssets(event.unit)
 	event.unit._equipment_bound_assets = {}
 	for slot, item in pairs(Equipment.equipped_items[player_id] or {}) do
 		if not Equipment.slot_callbacks[slot] then
-			local modifiers, particles = Equipment:PlayItemEffects(player_id, item.name, event.unit)
+			local modifiers, particles = Equipment:PlayItemEffects(player_id, item.name, event.unit, nil, skip_status_fx)
 			event.unit._equipment_bound_assets[item.name] = {
 				modifiers = modifiers,
 				particles = particles

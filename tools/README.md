@@ -562,6 +562,22 @@ What the code does:
   modifier that sets the BAT. It used to start another per-frame timer, printing to the console, for every
   modifier added while such a buff was active.
 - Backpack Items reconciles each illusion once (see above).
+- Cosmetics (issue #31): illusions keep their hero's look (aura, hero effect particles and colours), so they can't
+  be told apart, but cost no extra Lua modifier and don't outlive their death:
+  - A hero effect's status effect (its `PATTACH_SPECIAL_STATUS_FX` part, which recolours the model) comes with
+    the illusion's host, `modifier_illusion_generic_upgrades` (creation key and transmitted `status_fx`), instead
+    of a `modifier_hero_status_fx` per illusion. Before, it added a Lua modifier to every illusion: +19% damage
+    processing cost with 30 illusions. The hero, Meepo clones and Tempest Double keep `modifier_hero_status_fx`.
+  - An illusion whose owner has cosmetics equipped always gets a host, even without generic upgrades.
+    `Equipment:GetCopiedLook` tells `Upgrades:AddIllusionGenericUpgrades` the status effect and whether lasting
+    particles are copied (auras, hero effects; not kill effects, pets, sprays, cosmetic skills or high fives).
+  - The cosmetic particles were destroyed on `entity_killed`, which doesn't fire for illusions, so killed
+    illusions kept them for their 5-15 seconds in the world. The host now destroys them when the engine removes it
+    at death (`RemoveOnDeath`, illusions that don't come back). A live illusion that gets a new host (Monkey King
+    soldiers, hero swaps) keeps them. Meepo clones still drop theirs on `entity_killed`.
+  - Living illusions still draw their auras and hero effects: with 30 on screen they add about 0.36 ms of client
+    frame time, the price of looking like the hero.
+  - Cosmetics equipped or removed while illusions exist apply to illusions created afterwards, as before.
 
 Server wall-clock times with 30 Phantom Lancer illusions, both heroes level 30 with the same 14 generic upgrades
 and items (same machine, Tools mode): before, with the event routing and death cleanup, and with hosted upgrades.
@@ -583,8 +599,12 @@ modifier application 0.16 ms (was 0.51 ms). The server frame is 33 ms. What rema
 cost for its other Lua modifiers (the controller, the attribute reader, the BAT handler and the host).
 
 `test_illusion_performance.lua` covers the event routing, the BAT handler, the death rule, the hosting rules
-(every hosted upgrade qualifies, and shares only additive properties), the host on the server and the client, and
-the single stat recalculation; `test_backpack_items.lua` the reconcile-once rule. `illusion_perf_smoke.lua`
+(every hosted upgrade qualifies, and shares only additive properties), the host on the server and the client, the
+single stat recalculation, the hosted status effect, when an illusion gets a host for its cosmetics, which
+cosmetics it copies and their removal at death; `test_backpack_items.lua` the reconcile-once rule.
+`illusion_cosmetics_smoke.lua` (fresh Tools session, a few seconds) checks the status effect in the host, the copied
+particles, their removal from a killed illusion and their survival on a live one processed again.
+`illusion_perf_smoke.lua`
 (fresh Tools session, about two minutes) prints the measurements above and checks that hosted upgrades give an
 illusion the same stats as upgrade modifiers, a hosted attack proc, the routed lifesteal, disable status
 resistance, magic resistance reduction and BAT handler, the backpack of an illusion and the modifiers left on a
