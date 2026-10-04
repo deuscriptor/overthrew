@@ -965,3 +965,24 @@ SINGLE_DRAFT_RANDOM PASS hero=npc_dota_hero_templar_assassin
     blue illusion tint, so the hero effect's colours can't be compared by eye from the owner's side; this
     single-client session has no enemy view. The status effect keeps the default priority of the old modifier.
   - The log has no Lua or Panorama script errors.
+
+## 2026-10-04: Swapped Arc Warden's Tempest Double crash (#26)
+
+- Reproduced in Dota Tools (one client with `-condebug`, `ot3_necropolis_ffa`; the Steam account has Arc Warden
+  cosmetics equipped). Player 0 picked Sven, a bot took Arc Warden precached for the bot as a pick does, and they
+  swapped. When player 0's Arc Warden cast Tempest Double, the log reported "requested is not loaded" for player 0's
+  equipped Arc Warden cosmetics (`aw_ti9_immortal_shoulders`, `galactic_sentinel_arms`, `galactic_sentinel_back`,
+  `galactic_wanderer_head`), and the client crashed. In a fresh session where Arc Warden was also precached for
+  player 0 after the swap, the cast caused no resource errors and no crash.
+- Fix: a swap waits until each hero is precached with its new owner's cosmetics.
+- Offline: `run_tests.js` passes (48 checks). `test_hero_swaps.lua` checks that the swap waits for both precaches, each
+  hero precached for its new owner, once per match. `panorama_resources.js verify` passes. `luacheck scripts/vscripts`:
+  0 warnings / 0 errors.
+- Dota Tools, fresh session each:
+  - `hero_swaps_tempest_smoke`: the swap ran after the precache, and Tempest Double spawned for player 0. No resource
+    errors after the cast and no crash.
+  - `hero_swaps_smoke`: passes, now waiting for the swap after accept.
+  - `swap_pregame_stun_smoke`: all checks ok.
+  - `backpack_items_multiplayer_smoke`: done, 0 failures; both swaps run in their accept step after the precache warm-up.
+  - No script errors besides `hero_swaps_smoke`'s expected "Select a hero" asserts before the hero existed.
+- Not verified: an online lobby with several clients.

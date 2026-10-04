@@ -65,6 +65,8 @@ assert(HeroSwaps:Handle("request", 0, {target=id}))
 local request = HeroSwaps.next_id
 assert(not HeroSwaps:Handle("accept", 0, {request_id=request}), "Sender cannot accept own request")
 assert(HeroSwaps:Handle("accept", id, {request_id=request}))
+-- The swap waits until both heroes are precached for their new owners (issue #26); the bot stays "connected".
+local function check_swap()
 assert(PlayerResource:GetSelectedHeroEntity(0) == b and PlayerResource:GetSelectedHeroEntity(id) == a)
 assert(PlayerResource:GetSelectedHeroName(0) == b:GetUnitName() and PlayerResource:GetSelectedHeroName(id) == a:GetUnitName())
 assert(b:GetPlayerOwnerID() == 0 and a:GetPlayerOwnerID() == id)
@@ -84,6 +86,14 @@ assert(GameLoop.hero_by_player_id[0] == b and GameLoop.heroes_by_team[team_a][1]
 assert(GameLoop.hero_by_player_id[id] == a and GameLoop.heroes_by_team[team_b][1] == a)
 assert(not next(HeroSwaps.requests) and not next(HeroSwaps.accepted))
 print("HERO_SWAPS_SMOKE_PASS cross-team ownership, facets, teams, items, gold, rerolls, mixed-rarity refunds, buff reset, filtered hero availability and caches")
+end
+local waited = 0
+Timers:CreateTimer(0.1, function()
+	if HeroSwaps.accepted[request] and waited < 100 then waited = waited + 1 return 0.1 end
+	local checked, failure = pcall(check_swap)
+	PlayerResource.GetConnectionState = get_connection
+	if not checked then print("HERO_SWAPS_SMOKE_FAIL " .. tostring(failure)) end
 end)
-PlayerResource.GetConnectionState = get_connection
+end)
+if not ok then PlayerResource.GetConnectionState = get_connection end
 assert(ok, err)

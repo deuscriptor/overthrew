@@ -50,8 +50,15 @@ local function describe(label, hero)
 		label, hero:GetPlayerOwnerID(), hero:GetTeam(), tostring(modifier ~= nil), modifier and modifier:GetRemainingTime() or -1, tostring(hero:IsStunned())))
 end
 
+-- a swap waits until each hero is precached with its new owner's cosmetics (issue #26)
+local function precached()
+	local sven_ready = HeroSwaps:PrecacheHeroFor(sven:GetUnitName(), bot_id)
+	return HeroSwaps:PrecacheHeroFor(lina:GetUnitName(), 0) and sven_ready
+end
 local stage = _G.swapstun_stage or 0
+if stage == 1 and not precached() then print("SWAPSTUN waiting for the precache, rerun") return end
 if stage == 0 then
+	precached()
 	-- bot players added mid-game spawn at the map centre; production heroes start on their fountain
 	FindClearSpaceForUnit(lina, GameLoop.towers[lina:GetTeam()]:GetAbsOrigin(), true)
 	-- longer than PREGAME_TIME so the checks below finish while the stun is still running

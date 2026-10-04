@@ -180,4 +180,26 @@ for key, value in pairs(swapped) do unstunned[key] = value end
 unstunned.modifiers, added = {}, nil
 HeroSwaps:Assign(unstunned, 1, {x = 0})
 assert(added == nil, "no stun added after the horn")
-output("PASS hero swaps: sender authentication, recipient consent, cross-team requests, phase limits, expiry, cancellation, disconnects, stale heroes, concurrent requests, deferred execution, exact orb ledger")
+-- Issue #26: before the swap, each hero is precached with its new owner's cosmetics, and the swap waits for both.
+local precached = {}
+PrecacheUnitByNameAsync = function(name, callback, player_id) table.insert(precached, {name, callback, player_id}) end
+local sven = {initialized = true, GetUnitName = function() return "npc_dota_hero_sven" end, GetAbsOrigin = function() return {} end}
+local warden = {initialized = true, GetUnitName = function() return "npc_dota_hero_arc_warden" end, GetAbsOrigin = function() return {} end}
+PlayerResource.GetSelectedHeroEntity = function(_, id) return id == 0 and sven or id == 1 and warden or nil end
+HeroSwaps.GetOwnedUnits = function() error("past the precache gate") end
+HeroSwaps.precached = {}
+local swap = {id = 7, from = 0, to = 1}
+assert(HeroSwaps:Execute(swap) == false and HeroSwaps:Execute(swap) == false, "the swap waits for the precache")
+assert(#precached == 2, "each hero is precached once")
+assert(precached[1][1] == "npc_dota_hero_arc_warden" and precached[1][3] == 0, "Arc Warden is precached for its new owner")
+assert(precached[2][1] == "npc_dota_hero_sven" and precached[2][3] == 1, "and Sven for its new owner")
+precached[1][2]()
+assert(HeroSwaps:Execute(swap) == false, "both precaches must finish")
+precached[2][2]()
+local passed, gate_error = pcall(HeroSwaps.Execute, HeroSwaps, swap)
+assert(not passed and tostring(gate_error):find("past the precache gate"), "then the swap runs")
+-- precached once per match: swapping the same heroes between the same players again doesn't wait
+passed, gate_error = pcall(HeroSwaps.Execute, HeroSwaps, {id = 8, from = 0, to = 1})
+assert(not passed and tostring(gate_error):find("past the precache gate") and #precached == 2, "a known pair is not precached again")
+assert(HeroSwaps:PrecacheHeroFor("npc_dota_hero_sven", 0) == false and #precached == 3, "another player's copy is precached separately")
+output("PASS hero swaps: sender authentication, recipient consent, cross-team requests, phase limits, expiry, cancellation, disconnects, stale heroes, concurrent requests, deferred execution, exact orb ledger, precache for new owners")

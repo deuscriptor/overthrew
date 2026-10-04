@@ -394,6 +394,19 @@ end)
 
 -- 6. Hero swap between player 0 and a bot while both carry equipped backpack items.
 local swap_items = {}
+-- A swap waits until each hero is precached with its new owner's cosmetics (issue #26): warm both swaps up front so
+-- each runs in the server step of its accept.
+local function precache_swaps()
+	local ready = true
+	for _, pair in ipairs({{lina, 0}, {sven, ids[lina]}, {sven, 0}, {lina, ids[lina]}}) do
+		ready = HeroSwaps:PrecacheHeroFor(pair[1]:GetUnitName(), pair[2]) and ready
+	end
+	return ready
+end
+step(0, precache_swaps)
+step(3, function()
+	check(precache_swaps(), "both heroes precached for both players before the swaps")
+end)
 step(0, function()
 	swap_items.heart = give(sven, "item_heart")
 	swap_items.wings = give(sven, "item_butterfly")

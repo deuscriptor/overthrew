@@ -180,6 +180,17 @@ so the new fountain's debuff immunity suppressed it: the hero could walk until i
 the fountain and was then stunned. `swap_pregame_stun_smoke.lua` reproduces this in
 Tools (which skips the production stun) and checks the fix.
 
+An accepted swap waits until each hero is precached with its new owner's cosmetics
+(`HeroSwaps:PrecacheHeroFor`: `PrecacheUnitByNameAsync` with the new owner's player ID, once
+per hero and player for the match), which usually takes a fraction of a second. A pick
+precaches the hero with its picker's cosmetics only, while the engine dresses its copies of
+a hero, such as Arc Warden's Tempest Double, in their owner's cosmetics. So a swapped Arc
+Warden's Tempest Double wore cosmetics no client had loaded, and players crashed or
+disconnected, depending on what the new owner had equipped (issue #26).
+`hero_swaps_tempest_smoke.lua` swaps a bot's Arc Warden to player 0 and casts Tempest
+Double. With an account that has Arc Warden cosmetics equipped, it crashed the Tools client
+before the fix, with "requested is not loaded" errors for those models.
+
 The menu uses the host settings' style: a dark gradient panel with a gold hairline and
 gold title. Rows are cards with portraits and player-colour strips, as on the tip toast.
 The row accent is gold for an incoming request and faint gold for one you sent. Accept
