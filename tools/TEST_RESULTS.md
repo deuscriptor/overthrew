@@ -926,7 +926,7 @@ SINGLE_DRAFT_RANDOM PASS hero=npc_dota_hero_templar_assassin
 - Offline: `run_tests.js` passes (48 checks), including the new `test_fountain_sloth.lua`. `test_host_rules.lua` and
   `panorama_test.js` cover the new flag, its default and the Balance page among four. `panorama_resources.js verify`:
   26 scripts, 7 styles, 13 layouts and 78 re-encoded textures. `luacheck scripts/vscripts`: 0 warnings / 0 errors in
-  320 files.
+  321 files.
 - Dota Tools, one client with `-condebug`, `ot3_necropolis_ffa`:
   - Engine probes. `MODIFIER_PROPERTY_COOLDOWN_PERCENTAGE_ONGOING` on a Lua modifier was called 0 times and left the
     speed at 1.00 for -50, -100, -200, 50 and 100, also for a real Warcry cast. Visage's native Lurker at 8 stacks
@@ -965,3 +965,19 @@ SINGLE_DRAFT_RANDOM PASS hero=npc_dota_hero_templar_assassin
     blue illusion tint, so the hero effect's colours can't be compared by eye from the owner's side; this
     single-client session has no enemy view. The status effect keeps the default priority of the old modifier.
   - The log has no Lua or Panorama script errors.
+
+## 2026-10-04: Aeon Disk host option (#25)
+
+- Offline: `run_tests.js` passes (48 checks). `test_host_settings.lua` checks all eight Rapier/Dagon/Aeon Disk
+  combinations, each restricted item (Aeon Disk and its recipe included) following its own option.
+  `test_host_rules.lua` and `panorama_test.js` cover the new flag, its default, the apply payload and the Items page
+  order (Divine Rapier, Dagon, Aeon Disk). `panorama_resources.js build` and `verify` pass (rebuilt
+  `custom_loading_screen.vjs_c`). `luacheck scripts/vscripts`: 0 warnings / 0 errors in 321 files.
+- Dota Tools, one client with `-condebug`, `ot3_necropolis_ffa`, fresh session:
+  - `host_settings_smoke`: setup and engine stages pass. Before Apply & Start, Aeon Disk is disabled like Rapier and
+    Dagon; after it, Aeon Disk and its recipe are enabled and `item_aeon_disk` is purchasable. Its setup check that
+    Infinite Rerolls starts off was stale (the option has defaulted on since #2) and now expects it on.
+  - `host_items_smoke`: all 10 cases pass. With the option off, an assembled Aeon Disk on the hero and on the courier
+    returns as its combine-locked components and recipe with gold unchanged; with it on, it
+    assembles normally. Rapier, Dagon and the shared-component Radiance case are unchanged.
+  - The log has no script errors besides the stale assertion above.

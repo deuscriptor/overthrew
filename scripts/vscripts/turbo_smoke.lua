@@ -9,7 +9,7 @@ if GameRules:State_Get() == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
 	GameRules:SetPreGameTime(300)
 	PlayerDC.CheckEndGame = function() end -- keep the single-player test alive
 	HostOptions:ClaimHost(0) -- no automatic host: claim it as a player would
-	assert(HostOptions:ApplyRules({PlayerID=0, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, epic_orbs=0, single_draft=0, turbo=1, backpack_items=0, fountain_sloth=1, kill_goal=30}))
+	assert(HostOptions:ApplyRules({PlayerID=0, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, aeon_disk=0, epic_orbs=0, single_draft=0, turbo=1, backpack_items=0, fountain_sloth=1, kill_goal=30}))
 	print("TURBO_SMOKE_SETUP_PASS")
 	return
 end

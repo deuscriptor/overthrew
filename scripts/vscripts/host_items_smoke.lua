@@ -20,10 +20,13 @@ end
 local scenarios = {
 	{hero, "item_recipe_rapier", "item_rapier", "divine_rapier", false},
 	{hero, "item_recipe_dagon", "item_dagon", "dagon", false},
+	{hero, "item_recipe_aeon_disk", "item_aeon_disk", "aeon_disk", false},
 	{courier, "item_recipe_rapier", "item_rapier", "divine_rapier", false},
 	{courier, "item_recipe_dagon", "item_dagon", "dagon", false},
+	{courier, "item_recipe_aeon_disk", "item_aeon_disk", "aeon_disk", false},
 	{hero, "item_recipe_rapier", "item_rapier", "divine_rapier", true},
 	{hero, "item_recipe_dagon", "item_dagon", "dagon", true},
+	{hero, "item_recipe_aeon_disk", "item_aeon_disk", "aeon_disk", true},
 	{hero, "item_recipe_radiance", "item_radiance", "divine_rapier", false},
 }
 local index = 0
@@ -33,6 +36,7 @@ local function nextTest()
 	if not test then
 		HostOptions.options.divine_rapier = true
 		HostOptions.options.dagon = true
+		HostOptions.options.aeon_disk = true
 		clear(hero)
 		clear(courier)
 		print("HOST_ITEMS_ENGINE_PASS hero/courier assembly, components preserved, enabled items, shared components")

@@ -2936,6 +2936,7 @@
 		"collection_local_free" "Преміум і косметика — безплатно"
 		"host_rules_divine_rapier" "Divine Rapier"
 		"host_rules_dagon" "Dagon"
+		"host_rules_aeon_disk" "Aeon Disk"
 		"host_rules_category_core" "Основні"
 		"host_rules_category_balance" "Баланс"
 		"host_rules_fountain_sloth" "Фонтанні лінощі"
@@ -2976,6 +2977,7 @@
 		"host_rules_invincible_wards_tip" "Встановлені варди не можна атакувати чи пошкодити"
 		"host_rules_divine_rapier_tip" "Дозволити Divine Rapier"
 		"host_rules_dagon_tip" "Дозволити Dagon"
+		"host_rules_aeon_disk_tip" "Дозволити Aeon Disk"
 		"host_rules_fountain_sloth_tip" "На власному фонтані зарядка здібностей героїв триває вдвічі довше. Починає діяти через 5 секунд після кожного відродження чи викупу"
 	}
 }

@@ -56,11 +56,11 @@ for draft = 0, 1 do for epic = 0, 1 do for turbo = 0, 1 do
     assert(not HostOptions:GetOption("epic_orbs"), "Epic Orbs must default off")
     assert(not HostOptions:GetOption("backpack_items"), "Backpack Items must default off")
     for _, on in ipairs({"single_draft", "turbo", "fountain_sloth", "infinite_rerolls", "all_vision",
-        "invincible_wards", "longer_wards", "divine_rapier", "dagon"}) do
+        "invincible_wards", "longer_wards", "divine_rapier", "dagon", "aeon_disk"}) do
         assert(HostOptions:GetOption(on), on .. " must default on")
     end
     assert(HostOptions.options.kill_goal == 50)
-    local event = {PlayerID = 1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft = draft, epic_orbs = epic, turbo = turbo, backpack_items = 0, fountain_sloth = 1, kill_goal = 45}
+    local event = {PlayerID = 1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, aeon_disk=0, single_draft = draft, epic_orbs = epic, turbo = turbo, backpack_items = 0, fountain_sloth = 1, kill_goal = 45}
     assert(not HostOptions:ApplyRules(event), "non-host accepted")
     event.PlayerID = 0
     event.epic_orbs = "true"
@@ -99,17 +99,17 @@ for _, goal in ipairs({1, 15, 30, 45, 60, 90}) do
     HostOptions:Init()
     assert(HostOptions:ClaimHost(0))
     assert(HostOptions:ApplyRules({PlayerID=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, fountain_sloth=1, kill_goal=goal,
-        infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0}))
+        infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, aeon_disk=0}))
     assert(GameLoop.current_layout.game_base_duration == DEFAULT_MATCH_LENGTH * (goal / 30))
     assert(publishedGoal.goal == goal and publishedGoal.limit == GameLoop.current_layout.game_base_duration,
         "HUD and server must receive the same scaled limit")
 end
-for _, name in ipairs({"backpack_items", "fountain_sloth", "infinite_rerolls", "all_vision", "invincible_wards", "longer_wards", "divine_rapier", "dagon"}) do
+for _, name in ipairs({"backpack_items", "fountain_sloth", "infinite_rerolls", "all_vision", "invincible_wards", "longer_wards", "divine_rapier", "dagon", "aeon_disk"}) do
     HostOptions:Init()
     assert(HostOptions:ClaimHost(0))
     assert(HostOptions:GetOption(name) == (name ~= "backpack_items"), name .. " default")
     local event = {PlayerID=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=1, fountain_sloth=0, kill_goal=30,
-        infinite_rerolls=1, all_vision=1, invincible_wards=1, longer_wards=0, divine_rapier=1, dagon=1}
+        infinite_rerolls=1, all_vision=1, invincible_wards=1, longer_wards=0, divine_rapier=1, dagon=1, aeon_disk=1}
     local value = event[name]
     event[name] = "true"
     assert(not HostOptions:ApplyRules(event), "invalid new flag accepted")
@@ -126,13 +126,13 @@ assert(slothApplied == backpackApplied, "Applying rules must configure Fountain 
 -- Kill goal validation, with player 1 as host.
 HostOptions:Init()
 assert(HostOptions:ClaimHost(1))
-assert(not HostOptions:ApplyRules({PlayerID=0, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, fountain_sloth=1, kill_goal=30}))
+assert(not HostOptions:ApplyRules({PlayerID=0, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, aeon_disk=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, fountain_sloth=1, kill_goal=30}))
 for _, invalid in ipairs({0, -1, 1.5, "30", false, math.huge, 2147483648}) do
-    assert(not HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, fountain_sloth=1, kill_goal=invalid}))
+    assert(not HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, aeon_disk=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, fountain_sloth=1, kill_goal=invalid}))
     HostOptions:SetOptionState("kill_goal", invalid)
     assert(HostOptions.options.kill_goal == 50)
 end
-assert(HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, fountain_sloth=1, kill_goal=30}))
+assert(HostOptions:ApplyRules({PlayerID=1, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, aeon_disk=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, fountain_sloth=1, kill_goal=30}))
 -- Claim host: nobody is host until a player claims it, and only once setup has begun and
 -- every player has loaded. Load order and native privileges (player 1) play no part.
 local claim = listeners["HostOptions:claim_host"]
@@ -180,7 +180,7 @@ connection[0] = nil
 HostOptions:PublishRules()
 assert(publishedRules.host_id == 1 and HostOptions.options.kill_goal == 60, "returning player took host or settings reset")
 local apply = listeners["HostOptions:apply_rules"]
-local event = {PlayerID=0, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, fountain_sloth=1, kill_goal=60}
+local event = {PlayerID=0, infinite_rerolls=0, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=0, dagon=0, aeon_disk=0, single_draft=0, epic_orbs=0, turbo=0, backpack_items=0, fountain_sloth=1, kill_goal=60}
 apply(event, 0)
 assert(not HostOptions.locked, "non-host started match")
 event.PlayerID = 1

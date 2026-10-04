@@ -298,7 +298,7 @@ function InitMatchRules() {
 	const categories = [
 		{ id: "core", options: ["single_draft", "turbo", "epic_orbs", "backpack_items", "kill_goal"] },
 		{ id: "balance", options: ["fountain_sloth"] },
-		{ id: "items", options: ["divine_rapier", "dagon"] },
+		{ id: "items", options: ["divine_rapier", "dagon", "aeon_disk"] },
 		{ id: "other", options: ["all_vision", "infinite_rerolls", "longer_wards", "invincible_wards"] },
 	];
 	// Category tabs replace the per-page heading; unvisited pages glow until opened.

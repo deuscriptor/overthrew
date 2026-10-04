@@ -88,7 +88,7 @@ and fallback for every other client language), Russian
 (`resource/addon_russian.txt`) and Ukrainian (`resource/addon_ukrainian.txt`).
 Every token added, renamed or removed in one file must be changed in the other
 two in the same commit, with real translations rather than copied English text.
-Russian keeps item, hero and game-mode names (Divine Rapier, Dagon, Single Draft,
+Russian keeps item, hero and game-mode names (Divine Rapier, Dagon, Aeon Disk, Single Draft,
 Turbo) in English, as in the Russian Dota client. Ukrainian follows the official
 Dota 2 Ukrainian client, whose files (`resource/localization/*_ukrainian.txt`)
 are inside `game/dota/pak01_dir.vpk` and serve as the terminology reference:
@@ -213,8 +213,8 @@ Other lists All Vision, Infinite Rerolls, Longer Wards and Invincible Wards in t
 order. Infinite Rerolls (999 instead of 30) defaults on, as does Longer Wards
 (60-minute Observer/Sentry lifetime, including Sentry detection, and initial
 Observer shop stock of four per team). Reroll
-prices still follow the Epic-Only setting. Items contains Divine Rapier and Dagon
-(all levels), both default on. Settings remain host-only and lock before picking.
+prices still follow the Epic-Only setting. Items contains Divine Rapier, Dagon
+(all levels) and Aeon Disk, all default on. Settings remain host-only and lock before picking.
 
 Disabled item assemblies are disassembled by the engine into their components
 and recipe, with native combine locks to prevent an immediate rebuild. Components

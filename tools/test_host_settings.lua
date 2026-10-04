@@ -6,7 +6,7 @@ function HostOptions:GetOption(name) return self.options[name] or false end
 GameRules = {
 	SetWhiteListEnabled = function(_, value) assert(not value) end,
 }
-local restricted = {"item_rapier", "item_recipe_rapier", "item_dagon", "item_recipe_dagon"}
+local restricted = {"item_rapier", "item_recipe_rapier", "item_dagon", "item_recipe_dagon", "item_aeon_disk", "item_recipe_aeon_disk"}
 for level = 1, 5 do table.insert(restricted, "item_dagon_" .. level) end
 dofile("scripts/vscripts/game/host_items.lua")
 local stockCalls = 0
@@ -42,15 +42,18 @@ for _, enabled in ipairs({false, true}) do
 	assert(UpgradeRerolls:_ConsumeRerolls(0, 4))
 	assert(UpgradeRerolls.current_free_rerolls[0] == (enabled and 995 or 26), "Allowance must not change rarity costs")
 end
-for _, rapier in ipairs({false, true}) do for _, dagon in ipairs({false, true}) do
+for _, rapier in ipairs({false, true}) do for _, dagon in ipairs({false, true}) do for _, aeon_disk in ipairs({false, true}) do
 	HostOptions.options.divine_rapier = rapier
 	HostOptions.options.dagon = dagon
+	HostOptions.options.aeon_disk = aeon_disk
+	local allowed = {divine_rapier = rapier, dagon = dagon, aeon_disk = aeon_disk}
 	HostItems:ApplyRules()
 	assert(not HostItems:IsDisabled("item_branches") and not HostItems:IsDisabled("item_epic_orb_ffa"))
 	for _, name in ipairs(restricted) do
-		assert((not HostItems:IsDisabled(name)) == (HostItems:OptionForItem(name) == "divine_rapier" and rapier or HostItems:OptionForItem(name) == "dagon" and dagon))
+		local option = HostItems:OptionForItem(name)
+		assert(option and (not HostItems:IsDisabled(name)) == allowed[option], name .. " follows its own option")
 	end
-end end
+end end end
 local pending = {}
 Timers = {CreateTimer = function(_, delay, callback) assert(delay == 0); table.insert(pending, callback) end}
 IsValidEntity = function(entity) return entity and not entity.removed end
