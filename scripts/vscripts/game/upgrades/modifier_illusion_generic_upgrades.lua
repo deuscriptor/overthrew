@@ -2,6 +2,9 @@
 -- The server gets the counts as creation keys, {generic_armor = 2, ...}, and clients as transmitted data. Both build
 -- the upgrades in OnCreated and never change them, so Upgrades:AddIllusionGenericUpgrades creates a new modifier
 -- instead of updating one.
+-- It also carries the cosmetics of the hero's look that would need a modifier of their own (issue #31): the status
+-- effect of an equipped hero effect (`status_fx`, a creation key and transmitted), and the cleanup of the illusion's
+-- cosmetic particles when it dies.
 require("game/upgrades/illusion_generic_upgrades")
 
 modifier_illusion_generic_upgrades = modifier_illusion_generic_upgrades or class({})
@@ -18,6 +21,7 @@ function modifier_illusion_generic_upgrades:OnCreated(kv)
 		for upgrade_name in pairs(IllusionGenericUpgrades.HOSTED) do
 			if kv[upgrade_name] then self.counts[upgrade_name] = kv[upgrade_name] end
 		end
+		self.status_fx = kv.status_fx
 		self:SetHasCustomTransmitterData(true)
 	end
 	self:BuildUpgrades()
@@ -26,6 +30,15 @@ end
 
 function modifier_illusion_generic_upgrades:OnDestroy()
 	self:DestroyUpgrades()
+	if not IsServer() then return end
+	-- removed at death (RemoveOnDeath); a live illusion only gets a new host (Monkey King soldiers, hero swaps)
+	local parent = self:GetParent()
+	if Equipment and not parent:IsAlive() then Equipment:OnIllusionKilled(parent) end
+end
+
+
+function modifier_illusion_generic_upgrades:GetStatusEffectName()
+	return self.status_fx
 end
 
 
@@ -44,13 +57,14 @@ end
 
 
 function modifier_illusion_generic_upgrades:AddCustomTransmitterData()
-	return {counts = self.counts}
+	return {counts = self.counts, status_fx = self.status_fx}
 end
 
 
 -- Clients get the data before OnCreated, when the modifier cannot tell its parent yet.
 function modifier_illusion_generic_upgrades:HandleCustomTransmitterData(data)
 	self.counts = data.counts or {}
+	self.status_fx = data.status_fx
 end
 
 

@@ -74,7 +74,9 @@ local function Unit(fields)
 	function unit:IsIllusion() return self.illusion end
 	function unit:IsMonkeyKingSoldier() return self.soldier end
 	function unit:IsTempestDouble() return self.tempest end
-	function unit:IsClone() return false end
+	function unit:IsClone() return self.clone == true end
+	function unit:IsAlive() return not self.dead end
+	function unit:GetPlayerOwnerID() return self.player_id or 0 end
 	function unit:IsSpiritBear() return false end
 	function unit:IsHero() return true end
 	function unit:GetTeam() return self.team or 2 end
@@ -367,6 +369,24 @@ host:Destroy()
 add(body, Plain("modifier_stunned"))
 assert(disables == 1 and #host.upgrades == 0, "the host's upgrades stop with it")
 
+-- Issue #31: the host carries the hero effect's status effect, and drops the illusion's cosmetics when it dies.
+assert(host:GetStatusEffectName() == nil and host:AddCustomTransmitterData().status_fx == nil, "no status effect without a hero effect")
+local cleared = {}
+Equipment = {OnIllusionKilled = function(_, unit) table.insert(cleared, unit) end}
+local styled_body = HostParent({illusion = true, primary = DOTA_ATTRIBUTE_STRENGTH})
+local styled_host = Host(styled_body)
+styled_host:OnCreated({duration = -1, status_fx = "particles/skin.vpcf"})
+assert(#styled_host.upgrades == 0 and styled_host:GetStatusEffectName() == "particles/skin.vpcf"
+	and styled_host:AddCustomTransmitterData().status_fx == "particles/skin.vpcf", "a host carries the status effect it was created with")
+styled_host:Destroy()
+assert(#cleared == 0, "a live illusion whose host is replaced keeps its cosmetics")
+local dying_host = Host(styled_body)
+dying_host:OnCreated({duration = -1})
+styled_body.dead = true
+dying_host:Destroy()
+assert(#cleared == 1 and cleared[1] == styled_body, "a host removed at death drops the illusion's cosmetics")
+Equipment = nil
+
 -- Client: the counts arrive before OnCreated, when the modifier cannot tell its parent yet.
 IsServer = function() return false end
 local client_body = HostParent({illusion = true, primary = DOTA_ATTRIBUTE_AGILITY})
@@ -376,11 +396,13 @@ client_host.GetParent = function(self)
 	assert(parent_ready, "the parent is asked for before OnCreated")
 	return self.parent
 end
-client_host:HandleCustomTransmitterData({counts = {generic_armor = 2, generic_primary_attribute = 1}})
+client_host:HandleCustomTransmitterData({counts = {generic_armor = 2, generic_primary_attribute = 1}, status_fx = "particles/skin.vpcf"})
 parent_ready = true
 client_host:OnCreated()
 assert(client_host:GetModifierPhysicalArmorBonus() == 6 and client_host:GetModifierBonusStats_Agility() == 7,
 	"clients host the same upgrades, for the stats they show")
+assert(client_host:GetStatusEffectName() == "particles/skin.vpcf", "clients show the transmitted status effect")
+client_host:Destroy()
 IsServer = function() return true end
 
 -- Upgrades: an illusion gets a new host with its counts; other clones get upgrade modifiers; stats are recalculated once.
@@ -442,5 +464,85 @@ assert(meepo_clone.stat_bonus == 1, "their stats are recalculated once too")
 local single = Clone()
 assert(Upgrades:AddGenericUpgradeModifier(single, "generic_armor", 1) == true and single.stat_bonus == 1, "a single upgrade still recalculates")
 
+-- Issue #31: the host carries the owner's status effect, and an illusion with cosmetics gets one even without upgrades.
+local looks = {}
+Equipment = {GetCopiedLook = function(_, player_id) local look = looks[player_id] or {} return look[1], look[2] or false end}
+looks[0] = {"particles/skin.vpcf", true}
+local styled = Clone({illusion = true})
+Upgrades:ProcessClone(styled, source)
+kv = styled.created.modifier_illusion_generic_upgrades
+assert(kv and kv.status_fx == "particles/skin.vpcf" and kv.generic_armor == 4, "the host is created with the owner's status effect")
+local bare_source = Unit()
+bare_source.upgrades = {generic = {}}
+looks[0] = {nil, true}
+local aura_only = Clone({illusion = true})
+Upgrades:ProcessClone(aura_only, bare_source)
+assert(aura_only:HasModifier("modifier_illusion_generic_upgrades") and aura_only.stat_bonus == 0,
+	"an illusion with only cosmetic particles gets a host, to drop them at death, and no stat recalculation")
+looks[0] = nil
+local plain = Clone({illusion = true})
+Upgrades:ProcessClone(plain, bare_source)
+assert(not plain:HasModifier("modifier_illusion_generic_upgrades"), "an illusion without upgrades or cosmetics gets no host")
+Equipment = nil
+
+-- Equipment (issue #31): illusions copy the hero's cosmetic particles but not the status effect modifier, which their
+-- host carries; Meepo clones keep the modifier; a killed illusion's particles are destroyed.
+INVENTORY_SLOTS = {SPRAY = "1", AURA = "2", HERO_EFFECT = "3", KILL_EFFECT = "4", PET = "5", COSMETIC_SKILL = "6", HIGH_FIVE = "7"}
+PATTACH_SPECIAL_STATUS_FX, PATTACH_POINT_FOLLOW = "STATUS_FX", 4
+ITEM_DEFINITIONS = {
+	test_aura = {slot = INVENTORY_SLOTS.AURA, particles = {{path = "aura.vpcf", attach_type = PATTACH_ABSORIGIN_FOLLOW}}},
+	test_skin = {slot = INVENTORY_SLOTS.HERO_EFFECT, particles = {
+		{path = "skin.vpcf", attach_type = PATTACH_SPECIAL_STATUS_FX},
+		{path = "skin_attach.vpcf", attach_type = PATTACH_POINT_FOLLOW},
+	}},
+	test_kill = {slot = INVENTORY_SLOTS.KILL_EFFECT,
+		particle_variants = {hero = {path = "kill.vpcf", attach_type = PATTACH_ABSORIGIN_FOLLOW, persists = false}}},
+	test_pet = {slot = INVENTORY_SLOTS.PET, particles = {{path = "pet.vpcf", attach_type = PATTACH_ABSORIGIN_FOLLOW}}},
+}
+PlayerResource = {IsValidPlayerID = function(_, player_id) return player_id == 0 or player_id == 1 end}
+local live_particles, particle_count = {}, 0
+ParticleManager = {
+	CreateParticle = function(_, path) particle_count = particle_count + 1 live_particles[particle_count] = path return particle_count end,
+	DestroyParticle = function(_, id) live_particles[id] = nil end,
+	ReleaseParticleIndex = function() end,
+	SetParticleControlEnt = function() end,
+	SetParticleControl = function() end,
+}
+dofile("scripts/vscripts/libraries/webapi/inventory/equipment.lua")
+Equipment.equipped_items[0] = {
+	[INVENTORY_SLOTS.AURA] = {name = "test_aura"},
+	[INVENTORY_SLOTS.HERO_EFFECT] = {name = "test_skin"},
+	[INVENTORY_SLOTS.KILL_EFFECT] = {name = "test_kill"},
+	[INVENTORY_SLOTS.PET] = {name = "test_pet"},
+}
+Equipment.equipped_items[1] = {[INVENTORY_SLOTS.KILL_EFFECT] = {name = "test_kill"}}
+local status_fx, has_particles = Equipment:GetCopiedLook(0)
+assert(status_fx == "skin.vpcf" and has_particles == true, "the look names the hero effect's status effect and lasting particles")
+status_fx, has_particles = Equipment:GetCopiedLook(1)
+assert(status_fx == nil and has_particles == false, "kill effects (one-off) and slots with their own handling are not copied")
+assert(Equipment:GetCopiedLook(2) == nil, "a player with nothing equipped")
+
+local function particles_of(unit)
+	local paths = {}
+	for _, assets in pairs(unit._equipment_bound_assets or {}) do
+		for _, id in ipairs(assets.particles or {}) do
+			if live_particles[id] then table.insert(paths, live_particles[id]) end
+		end
+	end
+	table.sort(paths)
+	return table.concat(paths, ",")
+end
+local copied_illusion = Clone({illusion = true})
+Equipment:OnNpcSpawned({unit = copied_illusion})
+assert(particles_of(copied_illusion) == "aura.vpcf,skin_attach.vpcf", "an illusion copies the lasting particles (" .. particles_of(copied_illusion) .. ")")
+assert(not copied_illusion:HasModifier("modifier_hero_status_fx"), "an illusion gets no status effect modifier of its own")
+local meepo = Clone({clone = true})
+Equipment:OnNpcSpawned({unit = meepo})
+assert(meepo:HasModifier("modifier_hero_status_fx") and meepo.created.modifier_hero_status_fx.status_fx_name == "skin.vpcf"
+	and particles_of(meepo) == "aura.vpcf,skin_attach.vpcf", "a Meepo clone keeps the status effect modifier and the particles")
+Equipment:OnIllusionKilled(copied_illusion)
+assert(particles_of(copied_illusion) == "" and particles_of(meepo) == "aura.vpcf,skin_attach.vpcf",
+	"a killed illusion's particles are destroyed, and only its own")
+
 assert(#errors == 0, "no handler errors: " .. tostring(errors[1]))
-print("PASS illusion performance: unit-scoped events, BAT handler, killed illusions drop upgrade modifiers, hosted generic upgrades, clone stats")
+print("PASS illusion performance: unit-scoped events, BAT handler, killed illusions drop upgrade modifiers, hosted generic upgrades, clone stats, hosted hero effect and cosmetics dropped at death")
