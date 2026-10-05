@@ -2,9 +2,10 @@
 assert(IsInToolsMode())
 if GameRules:State_Get() == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
 	assert(HostOptions:GetOption("longer_wards"))
-	assert(not HostOptions:GetOption("infinite_rerolls"))
+	assert(HostOptions:GetOption("infinite_rerolls"), "Infinite Rerolls defaults on")
 	assert(HostItems:IsDisabled("item_rapier"))
 	assert(HostItems:IsDisabled("item_dagon"))
+	assert(HostItems:IsDisabled("item_aeon_disk"))
 	for id, callback in pairs(EventDriver.serverside_events["Events:npc_spawned"] or {}) do
 		if callback[1] == OT3Demo.OnNPCSpawned then EventDriver:CancelListener("Events:npc_spawned", id) end
 	end
@@ -12,7 +13,7 @@ if GameRules:State_Get() == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
 	PlayerDC.CheckEndGame = function() end
 	HostOptions:ClaimHost(0) -- no automatic host: claim it as a player would
 	assert(HostOptions:ApplyRules({PlayerID=0, epic_orbs=0, single_draft=0, turbo=0, backpack_items=0, fountain_sloth=1, kill_goal=60,
-		infinite_rerolls=1, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=1, dagon=1}))
+		infinite_rerolls=1, all_vision=0, invincible_wards=0, longer_wards=1, divine_rapier=1, dagon=1, aeon_disk=1}))
 	assert(GameLoop.current_layout.game_base_duration == DEFAULT_MATCH_LENGTH * 2)
 	assert(CustomNetTables:GetTableValue("game_options", "score_goal").limit == DEFAULT_MATCH_LENGTH * 2)
 	print("HOST_SETTINGS_SETUP_PASS")
@@ -24,11 +25,11 @@ assert(UpgradeRerolls.current_free_rerolls[0] == 999)
 for _, team in ipairs(TEAMS_LAYOUTS[GetMapName()].teamlist) do
 	assert(GameRules:GetItemStockCount(team, "item_ward_observer", -1) == 4, "Initial Observer stock must be four")
 end
-for _, name in ipairs({"item_rapier", "item_recipe_rapier", "item_dagon", "item_dagon_2", "item_dagon_3", "item_dagon_4", "item_dagon_5", "item_recipe_dagon", "item_branches"}) do
+for _, name in ipairs({"item_rapier", "item_recipe_rapier", "item_dagon", "item_dagon_2", "item_dagon_3", "item_dagon_4", "item_dagon_5", "item_recipe_dagon", "item_aeon_disk", "item_recipe_aeon_disk", "item_branches"}) do
 	assert(not HostItems:IsDisabled(name), name .. " not enabled")
 end
 hero:ModifyGold(50000, true, DOTA_ModifyGold_CheatCommand)
-for _, name in ipairs({"item_rapier", "item_dagon"}) do
+for _, name in ipairs({"item_rapier", "item_dagon", "item_aeon_disk"}) do
 	local item = CreateItem(name, hero, hero)
 	assert(IsValidEntity(item) and item:IsPurchasable(), name .. " not restored")
 	UTIL_Remove(item)
