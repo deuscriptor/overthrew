@@ -3,6 +3,7 @@ HeroSwaps = HeroSwaps or {}
 function HeroSwaps:Init()
 	self.requests, self.accepted, self.cooldowns = {}, {}, {}
 	self.spent_orbs, self.base_generics = {}, {}
+	self.precached = {}
 	self.next_id = 0
 	for _, action in ipairs({"request", "accept", "decline", "cancel"}) do
 		EventStream:Listen("HeroSwaps:" .. action, function(event, source)
@@ -238,12 +239,32 @@ function HeroSwaps:RefreshPlayer(id, hero)
 	if queue[1] then Upgrades:ShowSelection(hero, queue[1].rarity, id, false) end
 end
 
+--- Precaches a hero with the player's cosmetics, once per match. True once it is done.
+function HeroSwaps:PrecacheHeroFor(name, player_id)
+	local key = player_id .. ":" .. name
+	if self.precached[key] == nil then
+		self.precached[key] = false
+		PrecacheUnitByNameAsync(name, function() self.precached[key] = true end, player_id)
+	end
+	return self.precached[key]
+end
+
+--- A pick precaches the hero with its player's cosmetics, and the engine dresses its copies of a hero (Tempest Double)
+--- in their owner's cosmetics. So each hero is precached with its new owner's cosmetics before the swap: a swapped Arc
+--- Warden's Tempest Double wore models no client had loaded, which crashed them (issue #26). True once both are done.
+function HeroSwaps:PrecacheForNewOwners(request, hero_a, hero_b)
+	local ready_a = self:PrecacheHeroFor(hero_b:GetUnitName(), request.from)
+	local ready_b = self:PrecacheHeroFor(hero_a:GetUnitName(), request.to)
+	return ready_a and ready_b
+end
+
 function HeroSwaps:Execute(request)
 	local a, b = request.from, request.to
 	local hero_a, hero_b = PlayerResource:GetSelectedHeroEntity(a), PlayerResource:GetSelectedHeroEntity(b)
 	-- Native hero entities do not exist during selection/strategy. Hold accepted
 	-- requests until both spawn, then reassign the actual heroes (including facets).
 	if not IsValidEntity(hero_a) or not IsValidEntity(hero_b) or not hero_a.initialized or not hero_b.initialized then return false end
+	if not self:PrecacheForNewOwners(request, hero_a, hero_b) then return false end
 	local pos_a, pos_b = hero_a:GetAbsOrigin(), hero_b:GetAbsOrigin()
 	local units_a, units_b = self:GetOwnedUnits(hero_a), self:GetOwnedUnits(hero_b)
 	local items_a, items_b = take_items(hero_a), take_items(hero_b)

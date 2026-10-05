@@ -256,6 +256,9 @@ developer has granted standing permission.
 - The server VM has no `os`; time code with `Plat_FloatTime()`. Illusions deal no damage through `ApplyDamage`, and
   `entity_killed` doesn't fire for them.
 - Removing a native item modifier (such as `modifier_item_skadi`) from a unit can crash the game.
+- A pick precaches the hero with its player's cosmetics only. A hero given to another player must be precached for
+  that player first (`PrecacheUnitByNameAsync(name, callback, player_id)`): engine copies such as Tempest Double wear
+  their owner's cosmetics, and unloaded ones crash clients (issue #26, `HeroSwaps:PrecacheHeroFor`).
 - `net_fakelag` doesn't delay the host's own loopback client. `GameUI.SelectUnit` can't select enemy heroes.
 - To drive the real UI, a temporary HUD hook can send orders (`Game.PrepareUnitOrders`) or clicks
   (`$.DispatchEvent("Activated", panel, "mouse")`) and report back to a server listener. Restore the HUD build afterwards.
