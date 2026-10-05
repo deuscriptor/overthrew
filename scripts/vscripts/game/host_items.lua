@@ -37,6 +37,7 @@ end
 function HostItems:OptionForItem(name)
 	if name == "item_rapier" or name == "item_recipe_rapier" then return "divine_rapier" end
 	if name == "item_dagon" or name == "item_recipe_dagon" or name:match("^item_dagon_[1-5]$") then return "dagon" end
+	if name == "item_aeon_disk" or name == "item_recipe_aeon_disk" then return "aeon_disk" end
 end
 
 function HostItems:IsDisabled(name)

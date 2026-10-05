@@ -1,10 +1,10 @@
 HostOptions = HostOptions or {}
 
-local MATCH_FLAGS = {"single_draft", "epic_orbs", "turbo", "backpack_items", "fountain_sloth", "infinite_rerolls", "all_vision", "invincible_wards", "longer_wards", "divine_rapier", "dagon"}
+local MATCH_FLAGS = {"single_draft", "epic_orbs", "turbo", "backpack_items", "fountain_sloth", "infinite_rerolls", "all_vision", "invincible_wards", "longer_wards", "divine_rapier", "dagon", "aeon_disk"}
 -- Flags absent here default off.
 local DEFAULT_ON_FLAGS = {
 	single_draft = true, turbo = true, fountain_sloth = true, infinite_rerolls = true, all_vision = true,
-	invincible_wards = true, longer_wards = true, divine_rapier = true, dagon = true,
+	invincible_wards = true, longer_wards = true, divine_rapier = true, dagon = true, aeon_disk = true,
 }
 
 --- Known host option types

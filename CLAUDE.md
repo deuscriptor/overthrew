@@ -85,6 +85,7 @@ unless every flag is present and is 0/1/true/false.
 | Fountain Sloth (`fountain_sloth`) | on | Balance | Ability cooldowns recover at half speed on the own fountain; 5s grace after each spawn | `game/fountain_sloth.lua`, `modifier_fountain_sloth_lua.lua` |
 | Divine Rapier (`divine_rapier`) | on | Items | Off = item disabled/disassembled | `game/host_items.lua` |
 | Dagon (`dagon`) | on | Items | Off = item disabled/disassembled | `game/host_items.lua` |
+| Aeon Disk (`aeon_disk`) | on | Items | Off = item disabled/disassembled | `game/host_items.lua` |
 | All Vision (`all_vision`) | on | Other | No fog; units on their own fountain are hidden from enemies | `host_options.lua`, `modifier_fountain_rejuvenation_lua.lua` |
 | Infinite Rerolls (`infinite_rerolls`) | on | Other | 999 rerolls | `game/upgrades/rerolls.lua` |
 | Longer Wards (`longer_wards`) | on | Other | 60-min Observer/Sentry lifetime; 4 Observers in stock | `game/host_items.lua` |

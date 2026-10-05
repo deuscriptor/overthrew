@@ -6,7 +6,7 @@ if GameRules:State_Get() == DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP then
 	HostOptions:ClaimHost(0) -- no automatic host: claim it as a player would
 	assert(HostOptions:ApplyRules({PlayerID=0,
 		epic_orbs=0, single_draft=0, turbo=0, backpack_items=0, fountain_sloth=1, kill_goal=50, infinite_rerolls=0,
-		all_vision=0, invincible_wards=1, longer_wards=0, divine_rapier=0, dagon=0}))
+		all_vision=0, invincible_wards=1, longer_wards=0, divine_rapier=0, dagon=0, aeon_disk=0}))
 	print("INVINCIBLE_WARDS_SETUP_PASS")
 	return
 end

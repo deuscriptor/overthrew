@@ -268,6 +268,7 @@ const releaseLoading = loading.slice(loading.indexOf("let loading_screen_release
 	assert.equal(bullets()[2].style.backgroundColor, "#dfc58b");
 	vm.runInContext("matchRulesPageChanged(2)", context);
 	assert.equal(root.FindChildTraverse("MatchRules_items").visible, true);
+	assert.deepEqual(root.FindChildTraverse("MatchRules_items").children.filter(p => p.paneltype === "ToggleButton").map(p => p.id), ["Rule_divine_rapier", "Rule_dagon", "Rule_aeon_disk"], "Items page order");
 	assert.equal(arrowRight.enabled, true);
 	vm.runInContext("matchRulesPageChanged(3)", context);
 	assert.equal(root.FindChildTraverse("MatchRules_other").visible, true);
@@ -278,7 +279,7 @@ const releaseLoading = loading.slice(loading.indexOf("let loading_screen_release
 	assert.equal(waiting.visible, false);
 	assert.equal(start.enabled, true);
 	start.events.onactivate();
-	assert.deepEqual(JSON.parse(JSON.stringify(requests[0])), {name:"HostOptions:apply_rules", args:{single_draft:1,epic_orbs:0,turbo:1,backpack_items:0,fountain_sloth:1,kill_goal:50,infinite_rerolls:0,all_vision:0,invincible_wards:0,longer_wards:1,divine_rapier:0,dagon:0}});
+	assert.deepEqual(JSON.parse(JSON.stringify(requests[0])), {name:"HostOptions:apply_rules", args:{single_draft:1,epic_orbs:0,turbo:1,backpack_items:0,fountain_sloth:1,kill_goal:50,infinite_rerolls:0,all_vision:0,invincible_wards:0,longer_wards:1,divine_rapier:0,dagon:0,aeon_disk:0}});
 	const goal = root.FindChildTraverse("KillGoalInput");
 	assert.equal(goal.text, "50");
 	goal.text = "";

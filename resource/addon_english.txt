@@ -2936,6 +2936,7 @@ If you do not send us your steam URL or steamID we wont be adle to grant you ben
 		"collection_local_free" "Premium & Vanity - Free"
 		"host_rules_divine_rapier" "Divine Rapier"
 		"host_rules_dagon" "Dagon"
+		"host_rules_aeon_disk" "Aeon Disk"
 		"host_rules_category_core" "Core"
 		"host_rules_category_balance" "Balance"
 		"host_rules_fountain_sloth" "Fountain Sloth"
@@ -2976,6 +2977,7 @@ If you do not send us your steam URL or steamID we wont be adle to grant you ben
 		"host_rules_invincible_wards_tip" "Placed wards cannot be attacked or damaged"
 		"host_rules_divine_rapier_tip" "Allow Divine Rapier"
 		"host_rules_dagon_tip" "Allow Dagon"
+		"host_rules_aeon_disk_tip" "Allow Aeon Disk"
 		"host_rules_fountain_sloth_tip" "Heroes on their own fountain take twice as long to recover ability cooldowns. It starts 5 seconds after each respawn or buyback"
 	}
 }
